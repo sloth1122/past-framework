@@ -406,4 +406,31 @@ PAST offers engineers total system explainability, immediate behavioral reversib
 
 *This research is for educational purposes. Past performance does not indicate future results. The Trading Arena uses real capital and accepts the risks of AI-driven trading.*
 
-*Code and backtest harness available at [GitHub repository — to be published August 6, 2026].*
+*Code and backtest harness available at [GitHub repository](https://github.com/sloth1122/past-framework).*
+
+---
+
+## Appendix A: Real-Time Personality Swap — Aschenbrenner → Baker
+
+On July 30, 2026 — one day after this paper was written — Leopold Aschenbrenner's hedge fund (Situational Awareness LP, $45B at peak) was liquidated by margin call. His 4x-leveraged, 76%-concentrated portfolio of AI infrastructure stocks (BE, SNDK, CRWV, IREN, CORZ) declined 35-55% in July, triggering forced liquidation by Goldman Sachs, JPMorgan, and Bank of America. The entire public book was sold to Citadel in a single block trade.
+
+This event validated the paper's Section 7.2 limitation warning, written the day before:
+
+> "Beta's +$754 was dominated by a single +$880 MU trade. In a different market regime, Beta's 27% win rate with 10% stops could produce consecutive losses without a compensating win."
+
+On the same day as the liquidation, Agent Beta's personality vector was swapped from Aschenbrenner to Gavin Baker (Atreides Management, $8.9B AUM, Sharpe 2.46):
+
+| Trait | Aschenbrenner | Baker | $\Delta P$ |
+|---|---|---|---|
+| Risk Tolerance | 6/7 | 5/7 | -1 |
+| Conviction | 7/7 | 6/7 | -1 |
+| Impulsivity | 5/7 | 3/7 | -2 |
+| Patience | 7/7 | 6/7 | -1 |
+| Concentration | 6/7 | 4/7 | -2 |
+| Adaptability | 5/7 | 6/7 | +1 |
+
+The swap was motivated by Baker's survival of the same July 2026 crash that destroyed Aschenbrenner: Baker's diversified, no-leverage, architecture-first approach produced a -3.5% drawdown vs Aschenbrenner's total wipeout.
+
+**This is the PAST framework operating in real time.** The risk was identified in the paper (Section 7.2), alternative personalities were researched, and the personality vector was updated — all without touching model weights. The agent's behavior changed because 6 integers changed.
+
+A detailed case study is available in `docs/CASE_STUDY_Aschenbrenner_to_Baker.md`.
