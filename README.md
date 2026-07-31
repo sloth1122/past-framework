@@ -45,6 +45,16 @@ Jan 1 — Jul 21, 2026 | 6 tickers | $5,000 proforma
 | **Combined** | **+$582.79** | **28** | **32%** |
 | **Return** | **+11.7%** | | |
 
+## Case Study: Aschenbrenner → Baker (July 30, 2026)
+
+The PAST framework identified the risk of Aschenbrenner's leveraged, concentrated profile in the research paper (Section 7.2, written July 29) — **one day before** his $45B fund was liquidated by margin call on July 30. That same day, Agent Beta's personality was swapped from Aschenbrenner to Gavin Baker (Atreides Management, Sharpe 2.46), who survived the same crash with a -3.5% drawdown.
+
+The next day (July 31), the Financial Times reported that Aschenbrenner himself vowed to "fight another day" and committed to **no longer using leverage** — exactly what PAST had already done programmatically by changing 6 Likert scores.
+
+**6 integers changed. No weights updated. No models retrained. The agent's behavior changed.**
+
+📖 **Full case study:** [docs/CASE_STUDY_Aschenbrenner_to_Baker.md](docs/CASE_STUDY_Aschenbrenner_to_Baker.md)
+
 ## Quick Start
 
 ```bash

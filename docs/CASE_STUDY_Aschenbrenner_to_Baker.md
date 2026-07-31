@@ -10,7 +10,21 @@ On **July 30, 2026**, Leopold Aschenbrenner's hedge fund Situational Awareness L
 | Leverage | ~4x gross |
 | Top 5 concentration | 76% of portfolio |
 | July drawdown on key holdings | BE -45%, SNDK -55%, CRWV -38%, NBIS -35%, MU -35% |
-| Outcome | Entire public book sold to Citadel; only $5B Anthropic stake survived |
+| **July fund plunge** | **-67%** (per Financial Times, July 31, 2026) |
+| **Still up YTD** | **+80% despite July losses** |
+| Outcome | Entire public book sold to Citadel at >10% discount; ~$10B remaining (private stakes) |
+
+### Aschenbrenner's Response (FT, July 31, 2026)
+
+In a letter to investors sent July 31, Aschenbrenner wrote:
+
+> "These were very expensive scars, but I am dedicated to ensuring they will be invaluable lessons for our organization and for myself as we move forward. My core promise to you is that we will not waste the opportunity to learn from these events."
+
+> "Over the past two years, we have delivered outstanding results, despite occasional sharp pullbacks. But our fund must always be structured such that we can take a loss and fight another day."
+
+**Key commitment:** Situational Awareness will **no longer borrow money from banks** to magnify its bets — i.e., no more leverage.
+
+This is exactly what the PAST framework did programmatically on July 30: removed leverage from Beta's personality profile by swapping from Aschenbrenner (Risk=6, 4x leverage) to Baker (Risk=5, no leverage).
 
 ## What PAST Identified Before the Collapse
 
