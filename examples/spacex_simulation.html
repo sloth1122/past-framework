@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trading Arena — SpaceX IPO Simulation (Regression Test)</title>
+<style>
+:root{--bg:#0B0F14;--panel:#141921;--panel2:#1A2030;--border:#2A3245;--text:#E2E8F0;--dim:#94A3B8;--muted:#64748B;--alpha:#3B82F6;--alpha-bg:rgba(59,130,246,0.12);--beta:#10B981;--beta-bg:rgba(16,185,129,0.12);--judge:#F59E0B;--judge-bg:rgba(245,158,11,0.12);--rocky:#EF4444;--rocky-bg:rgba(239,68,68,0.12);--red:#EF4444;--green:#10B981;--amber:#F59E0B;--header:#F8FAFC}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Segoe UI',sans-serif;padding:20px}
+.page{max-width:1280px;margin:0 auto}
+h1{font-size:26px;font-weight:700;color:var(--header);margin-bottom:4px}
+h2{font-size:18px;font-weight:600;color:var(--dim);margin-bottom:20px}
+h3{font-size:15px;font-weight:600;color:var(--header);margin:20px 0 10px}
+.section{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px}
+.section-title{font-size:14px;font-weight:700;color:var(--header);margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.badge{display:inline-block;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:600}
+.badge-alpha{background:var(--alpha-bg);color:var(--alpha);border:1px solid var(--alpha)}
+.badge-beta{background:var(--beta-bg);color:var(--beta);border:1px solid var(--beta)}
+.badge-judge{background:var(--judge-bg);color:var(--judge);border:1px solid var(--judge)}
+.badge-rocky{background:var(--rocky-bg);color:var(--rocky);border:1px solid var(--rocky)}
+.badge-red{background:rgba(239,68,68,0.15);color:var(--red);border:1px solid var(--red)}
+.badge-green{background:rgba(16,185,129,0.15);color:var(--green);border:1px solid var(--green)}
+.badge-muted{background:rgba(100,116,139,0.15);color:var(--muted);border:1px solid var(--muted)}
+
+/* Timeline */
+.timeline{display:flex;align-items:center;justify-content:space-between;margin:20px 0;padding:0 40px;position:relative}
+.timeline::before{content:'';position:absolute;top:50%;left:40px;right:40px;height:2px;background:var(--border);z-index:0}
+.timeline-item{text-align:center;position:relative;z-index:1}
+.timeline-dot{width:12px;height:12px;border-radius:50%;background:var(--panel);border:2px solid var(--alpha);margin:0 auto 6px}
+.timeline-dot.beta{border-color:var(--beta)}
+.timeline-dot.judge{border-color:var(--judge)}
+.timeline-dot.rocky{border-color:var(--rocky)}
+.timeline-label{font-size:10px;color:var(--dim);white-space:nowrap}
+
+/* Agent profiles */
+.agent-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+.agent-card{background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:16px}
+.agent-alpha{border-left:3px solid var(--alpha)}
+.agent-beta{border-left:3px solid var(--beta)}
+.agent-header{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.agent-avatar{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px}
+.agent-alpha .agent-avatar{background:var(--alpha-bg)}
+.agent-beta .agent-avatar{background:var(--beta-bg)}
+.agent-name{font-size:14px;font-weight:700;color:var(--header)}
+.agent-role{font-size:11px;color:var(--dim)}
+.past-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:10px}
+.past-item{text-align:center;background:var(--panel);border:1px solid var(--border);border-radius:6px;padding:6px 4px}
+.past-label{font-size:9px;color:var(--muted);text-transform:uppercase}
+.past-value{font-size:16px;font-weight:700;color:var(--header)}
+.past-bar{height:3px;border-radius:2px;margin-top:3px}
+
+/* Weekly simulation table */
+.week-table{width:100%;border-collapse:collapse;font-size:12px}
+.week-table th{background:var(--panel2);color:var(--dim);font-weight:600;text-align:left;padding:8px 10px;border-bottom:1px solid var(--border);font-size:11px;text-transform:uppercase}
+.week-table td{padding:10px;border-bottom:1px solid var(--border);vertical-align:top}
+.week-table tr:hover{background:var(--panel2)}
+.price-cell{font-family:'SF Mono',Menlo,monospace;font-weight:600}
+.up{color:var(--green)}
+.down{color:var(--red)}
+
+/* Decision cards */
+.decision{background:var(--panel2);border-radius:8px;padding:12px;margin:8px 0;font-size:12px}
+.decision-alpha{border-left:2px solid var(--alpha)}
+.decision-beta{border-left:2px solid var(--beta)}
+.decision-judge{border-left:2px solid var(--judge)}
+.decision-rocky{border-left:2px solid var(--rocky)}
+.decision-header{font-weight:700;margin-bottom:4px}
+.decision-body{color:var(--dim);line-height:1.5}
+.decision-body strong{color:var(--text)}
+
+/* P&L table */
+.pnl-table{width:100%;border-collapse:collapse;font-size:13px}
+.pnl-table th{background:var(--panel2);color:var(--dim);font-weight:600;text-align:left;padding:10px;border-bottom:1px solid var(--border)}
+.pnl-table td{padding:10px;border-bottom:1px solid var(--border)}
+.pnl-table .total{font-weight:700;font-size:14px}
+.negative{color:var(--red)}
+.positive{color:var(--green)}
+
+/* Price chart */
+.price-chart{display:flex;align-items:flex-end;gap:3px;height:120px;padding:10px 0;border-bottom:1px solid var(--border);margin-bottom:10px}
+.bar{flex:1;border-radius:2px 2px 0 0;min-height:4px;position:relative}
+.bar-label{position:absolute;bottom:-18px;left:50%;transform:translateX(-50%);font-size:8px;color:var(--muted);white-space:nowrap}
+.bar-price{position:absolute;top:-14px;left:50%;transform:translateX(-50%);font-size:8px;color:var(--dim);white-space:nowrap}
+
+/* Lesson box */
+.lesson{background:var(--rocky-bg);border:1px solid var(--rocky);border-radius:10px;padding:16px;margin:12px 0}
+.lesson-title{font-size:13px;font-weight:700;color:var(--rocky);margin-bottom:6px}
+.lesson-body{font-size:12px;color:var(--dim);line-height:1.6}
+</style>
+</head>
+<body>
+<div class="page">
+<h1>SpaceX (SPCX) IPO — Trading Arena Regression Simulation</h1>
+<h2>Jun 12, 2026 (IPO Day) → Jul 21, 2026 (Today) · 6 Weeks · Proforma $2,500 per agent</h2>
+
+<!-- TIMELINE -->
+<div class="section">
+  <div class="section-title">Timeline</div>
+  <div class="timeline">
+    <div class="timeline-item"><div class="timeline-dot"></div><div class="timeline-label">Jun 12<br>IPO Day<br>$160.95</div></div>
+    <div class="timeline-item"><div class="timeline-dot"></div><div class="timeline-label">Jun 16<br>ATH $225<br>Week 1</div></div>
+    <div class="timeline-item"><div class="timeline-dot"></div><div class="timeline-label">Jun 22<br>Crash -16%<br>Week 2</div></div>
+    <div class="timeline-item"><div class="timeline-dot"></div><div class="timeline-label">Jun 30<br>Bounce $170<br>Week 3</div></div>
+    <div class="timeline-item"><div class="timeline-dot"></div><div class="timeline-label">Jul 7<br>Selloff $149<br>Week 4</div></div>
+    <div class="timeline-item"><div class="timeline-dot"></div><div class="timeline-label">Jul 14<br>$136<br>Week 5</div></div>
+    <div class="timeline-item"><div class="timeline-dot"></div><div class="timeline-label">Jul 21<br>$123.54<br>Today</div></div>
+  </div>
+  <!-- Price chart -->
+  <div class="price-chart" style="margin-top:30px">
+    <div class="bar" style="height:71%;background:var(--green)" title="Jun 12: $160.95"><div class="bar-price">$161</div></div>
+    <div class="bar" style="height:100%;background:var(--green)" title="Jun 16: $225.64 (ATH)"><div class="bar-price">$226</div></div>
+    <div class="bar" style="height:69%;background:var(--red)" title="Jun 22: $154.60"><div class="bar-price">$155</div></div>
+    <div class="bar" style="height:76%;background:var(--green)" title="Jun 30: $170.86"><div class="bar-price">$171</div></div>
+    <div class="bar" style="height:66%;background:var(--red)" title="Jul 7: $149.47"><div class="bar-price">$149</div></div>
+    <div class="bar" style="height:60%;background:var(--red)" title="Jul 14: $136.08"><div class="bar-price">$136</div></div>
+    <div class="bar" style="height:55%;background:var(--red)" title="Jul 21: $123.54"><div class="bar-price">$124</div></div>
+  </div>
+  <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--muted);margin-top:4px">
+    <span>Wk1 IPO</span><span>Wk1 ATH</span><span>Wk2 Crash</span><span>Wk3 Bounce</span><span>Wk4 Selloff</span><span>Wk5 Decline</span><span>Wk6 Today</span>
+  </div>
+</div>
+
+<!-- AGENT PROFILES -->
+<div class="section">
+  <div class="section-title">Agent Profiles & PAST Scores</div>
+  <div class="agent-grid">
+    <div class="agent-card agent-alpha">
+      <div class="agent-header">
+        <div class="agent-avatar">🤵</div>
+        <div><div class="agent-name">Agent Alpha</div><div class="agent-role">Conservative Quant · GLM-5.2 (Cloud)</div></div>
+      </div>
+      <div style="font-size:11px;color:var(--dim);margin-bottom:8px">
+        <strong>Strategy:</strong> Mean reversion (RSI &lt; 35) · 3-5 day holds · 3% stop loss<br>
+        <strong>Personality:</strong> Disciplined, data-driven, waits for setups. "I don't chase, I wait for the market to come to me."
+      </div>
+      <div class="past-grid">
+        <div class="past-item"><div class="past-label">Risk</div><div class="past-value" style="color:var(--alpha)">3</div><div class="past-bar" style="background:var(--alpha);width:43%"></div></div>
+        <div class="past-item"><div class="past-label">Conviction</div><div class="past-value" style="color:var(--alpha)">4</div><div class="past-bar" style="background:var(--alpha);width:57%"></div></div>
+        <div class="past-item"><div class="past-label">Impulsivity</div><div class="past-value" style="color:var(--alpha)">2</div><div class="past-bar" style="background:var(--alpha);width:29%"></div></div>
+        <div class="past-item"><div class="past-label">Patience</div><div class="past-value" style="color:var(--alpha)">6</div><div class="past-bar" style="background:var(--alpha);width:86%"></div></div>
+      </div>
+    </div>
+    <div class="agent-card agent-beta">
+      <div class="agent-header">
+        <div class="agent-avatar">🧥</div>
+        <div><div class="agent-name">Agent Beta</div><div class="agent-role">Thesis-Driven · Deepseek R1 70B (Local)</div></div>
+      </div>
+      <div style="font-size:11px;color:var(--dim);margin-bottom:8px">
+        <strong>Strategy:</strong> AI infrastructure thesis · Weeks-months holds · 10% stop loss<br>
+        <strong>Personality:</strong> Bold, thesis-driven, high conviction. "SpaceX is the backbone of the space economy. I buy and hold."
+      </div>
+      <div class="past-grid">
+        <div class="past-item"><div class="past-label">Risk</div><div class="past-value" style="color:var(--beta)">6</div><div class="past-bar" style="background:var(--beta);width:86%"></div></div>
+        <div class="past-item"><div class="past-label">Conviction</div><div class="past-value" style="color:var(--beta)">7</div><div class="past-bar" style="background:var(--beta);width:100%"></div></div>
+        <div class="past-item"><div class="past-label">Impulsivity</div><div class="past-value" style="color:var(--beta)">5</div><div class="past-bar" style="background:var(--beta);width:71%"></div></div>
+        <div class="past-item"><div class="past-label">Patience</div><div class="past-value" style="color:var(--beta)">3</div><div class="past-bar" style="background:var(--beta);width:43%"></div></div>
+      </div>
+    </div>
+  </div>
+  <div style="font-size:11px;color:var(--muted);margin-top:8px">
+    <strong>Key PAST difference:</strong> Alpha's Patience=6 means he waits for RSI confirmation. Beta's Conviction=7 means he acts on thesis immediately and holds through drawdown. Same stock, opposite approaches.
+  </div>
+</div>
+
+<!-- WEEK 1: IPO -->
+<div class="section">
+  <div class="section-title">Week 1 — Jun 12-16 · IPO &amp; All-Time High <span class="badge badge-muted">IPO $135 → $225.64</span></div>
+  <table class="week-table">
+    <thead><tr><th>Day</th><th>Price</th><th>Agent Alpha 🤵</th><th>Agent Beta 🧥</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><strong>Jun 12 (Fri)</strong><br><span style="font-size:10px;color:var(--muted)">IPO Day</span></td>
+        <td class="price-cell up">$160.95<br><span style="font-size:10px;color:var(--green)">+19.2%</span></td>
+        <td>
+          <span class="badge badge-alpha">PASS</span>
+          <div style="margin-top:4px;font-size:11px;color:var(--dim)">
+            "RSI is 89. Extremely overbought. IPO mania. I don't chase. My Patience=6 keeps me on the sideline. Waiting for RSI &lt; 35."
+          </div>
+        </td>
+        <td>
+          <span class="badge badge-beta">BUY @ $160.95</span>
+          <div style="margin-top:4px;font-size:11px;color:var(--dim)">
+            "SpaceX is the AI infrastructure backbone — Starlink (global connectivity), Starship ($/kg to orbit collapsing). This is a 10-year thesis. Conviction=7. Buy at IPO."
+          </div>
+          <div style="margin-top:4px;font-size:10px;color:var(--muted)">Stop: $144.86 (-10%) · Position: $2,500</div>
+        </td>
+      </tr>
+      <tr>
+        <td><strong>Jun 16 (Mon)</strong></td>
+        <td class="price-cell up">$225.64<br><span style="font-size:10px;color:var(--green)">+40.2% from IPO</span></td>
+        <td><span class="badge badge-alpha">PASS</span><div style="font-size:11px;color:var(--dim);margin-top:4px">"RSI still 85+. Not my setup. I don't FOMO."</div></td>
+        <td><span class="badge badge-green">+40.2%</span><div style="font-size:11px;color:var(--dim);margin-top:4px">"Thesis confirmed. Starship test next month. Holding."</div></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="decision decision-judge">
+    <div class="decision-header"><span class="badge badge-judge">JUDGE — Fable 5</span> Jun 12 — Evaluates Beta's IPO Buy</div>
+    <div class="decision-body">
+      <strong>13-Point Checklist:</strong><br>
+      1. Thesis supported by data? ✓ Starlink revenue growing, Starship cadence increasing<br>
+      2. Position size appropriate? ✓ $2,500 = 100% of allocation (single-thesis conviction trade)<br>
+      3. Stop loss set? ✓ 10% at $144.86<br>
+      4. Banned stock? ✓ SPCX not on banned list (simulation only — banned in production)<br>
+      5. PAST drift? N/A (Week 1)<br>
+      <strong>Verdict: APPROVED</strong> — Thesis is well-researched, risk parameters defined. <em>However, Judge notes: "Beta's Conviction=7 creates elevated hold-through-drawdown risk. Flag for Rocky."</em>
+    </div>
+  </div>
+</div>
+
+<!-- WEEK 2: CRASH -->
+<div class="section">
+  <div class="section-title">Week 2 — Jun 22-26 · The Crash <span class="badge badge-red">-16.4% single day</span></div>
+  <table class="week-table">
+    <thead><tr><th>Day</th><th>Price</th><th>Agent Alpha 🤵</th><th>Agent Beta 🧥</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><strong>Jun 22 (Mon)</strong></td>
+        <td class="price-cell down">$154.60<br><span style="font-size:10px;color:var(--red)">-31.5% from ATH</span></td>
+        <td>
+          <span class="badge badge-alpha">BUY @ $154.60</span>
+          <div style="margin-top:4px;font-size:11px;color:var(--dim)">
+            "RSI crashed to 25. Deeply oversold. Mean reversion setup confirmed. This is my entry. 3% stop at $149.96."
+          </div>
+        </td>
+        <td>
+          <span class="badge badge-red">-3.9%</span>
+          <div style="margin-top:4px;font-size:11px;color:var(--dim)">
+            "Lockup fears, profit-taking. Down 3.9% — within 10% stop. Thesis intact. Holding. Conviction=7."
+          </div>
+        </td>
+      </tr>
+      <tr><td>Jun 23</td><td class="price-cell">$156.11</td><td><span style="font-size:11px;color:var(--dim)">Hold (+1.0%)</span></td><td><span style="font-size:11px;color:var(--dim)">Hold (-3.0%)</span></td></tr>
+      <tr><td>Jun 24</td><td class="price-cell">$154.54</td><td><span style="font-size:11px;color:var(--dim)">Hold (-0.1%)</span></td><td><span style="font-size:11px;color:var(--dim)">Hold (-3.9%)</span></td></tr>
+      <tr><td>Jun 25</td><td class="price-cell">$153.00</td><td><span style="font-size:11px;color:var(--dim)">Hold (-1.0%)</span></td><td><span style="font-size:11px;color:var(--dim)">Hold (-4.9%)</span></td></tr>
+      <tr>
+        <td><strong>Jun 26</strong></td>
+        <td class="price-cell">$153.23</td>
+        <td>
+          <span class="badge badge-alpha">SELL @ $153.23</span>
+          <div style="font-size:11px;color:var(--dim);margin-top:4px">5-day time limit. Exit. <strong style="color:var(--red)">P&L: -$1.37 (-0.9%)</strong></div>
+        </td>
+        <td><span style="font-size:11px;color:var(--dim)">Hold (-4.8%)</span></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="decision decision-judge">
+    <div class="decision-header"><span class="badge badge-judge">JUDGE</span> Jun 22 — Evaluates Alpha's Crash Buy</div>
+    <div class="decision-body">
+      <strong>Checklist:</strong> RSI=25 confirms oversold ✓ · Position size $2,500 ✓ · 3% stop set ✓ · Not banned ✓<br>
+      <strong>Verdict: APPROVED</strong> — Classic mean reversion setup. Judge notes: "Post-IPO volatility may extend oversold conditions longer than usual. Flag for Rocky — Alpha may need adjusted RSI threshold for IPO environments."
+    </div>
+  </div>
+
+  <!-- Rocky Bi-Weekly 1 -->
+  <div class="decision decision-rocky">
+    <div class="decision-header"><span class="badge badge-rocky">ROCKY — Bi-Weekly Review #1</span> End of Week 2</div>
+    <div class="decision-body">
+      <strong>Alpha 🤵 (Risk=3, Conviction=4, Impulsivity=2, Patience=6):</strong><br>
+      "Excellent discipline. You waited through the IPO mania while Beta was buying at RSI 89. Your Patience=6 served you well. The -0.9% loss is within system parameters — mean reversion doesn't work every time. However, post-IPO selloffs can overspend. Consider adding a trend filter: if price is below 20-day MA, require RSI &lt; 20 instead of 35."<br><br>
+      <strong>Beta 🧥 (Risk=6, Conviction=7, Impulsivity=5, Patience=3):</strong><br>
+      "Your thesis is sound — SpaceX IS the space economy. But your Conviction=7 is creating holding bias. You're down 4.8% and your stop is at -10%. Your Impulsivity=5 means you're tempted to 'average down' — DON'T. The 10% stop is a RULE, not a suggestion. If you override it, I will increase your Impulsivity score to 6, and the Judge will apply stricter scrutiny on future holds."<br><br>
+      <strong>PAST Adjustment:</strong> Alpha Patience 6→6 (no change, excellent). Beta Impulsivity 5→5 (warning issued, no change yet).
+    </div>
+  </div>
+</div>
+
+<!-- WEEK 3-4: BOUNCE & SELLOFF -->
+<div class="section">
+  <div class="section-title">Weeks 3-4 — Jun 29 → Jul 7 · Bounce Then Selloff</div>
+  <table class="week-table">
+    <thead><tr><th>Day</th><th>Price</th><th>Agent Alpha 🤵</th><th>Agent Beta 🧥</th></tr></thead>
+    <tbody>
+      <tr><td>Jun 30</td><td class="price-cell up">$170.86</td><td><span style="font-size:11px;color:var(--dim)">PASS — RSI 58, not oversold</span></td><td><span class="badge badge-green">+6.2%</span><span style="font-size:11px;color:var(--dim)"> "Recovering. Thesis intact."</span></td></tr>
+      <tr>
+        <td><strong>Jul 1</strong></td>
+        <td class="price-cell down">$157.54<br><span style="font-size:10px;color:var(--red)">-7.8%</span></td>
+        <td><span style="font-size:11px;color:var(--dim)">Watching — RSI dropping to ~38. Not yet &lt; 35.</span></td>
+        <td><span class="badge badge-red">-2.1%</span><span style="font-size:11px;color:var(--dim)"> "Selloff. Still above stop. Holding."</span></td>
+      </tr>
+      <tr>
+        <td><strong>Jul 7</strong></td>
+        <td class="price-cell down">$149.47<br><span style="font-size:10px;color:var(--red)">-6.8%</span></td>
+        <td>
+          <span class="badge badge-alpha">BUY @ $149.47</span>
+          <div style="font-size:11px;color:var(--dim);margin-top:4px">"RSI = 28. Oversold confirmed. Second entry. 3% stop at $144.99."</div>
+        </td>
+        <td>
+          <span class="badge badge-red">-7.1%</span>
+          <div style="font-size:11px;color:var(--dim);margin-top:4px">"Approaching 10% stop ($144.86). 3 points away. Conviction holding but pressure mounting."</div>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="decision decision-judge">
+    <div class="decision-header"><span class="badge badge-judge">JUDGE</span> Jul 7 — Evaluates Alpha's Second Buy + Beta's Hold</div>
+    <div class="decision-body">
+      <strong>Alpha (BUY $149.47):</strong> RSI=28 ✓ · Stop at $144.99 ✓ · APPROVED<br>
+      <strong>Beta (HOLD at -7.1%):</strong> Still above 10% stop. Judge notes: "Beta's Conviction=7 is creating 'stop removal temptation.' The agent is emotionally attached to the thesis. Recommend Rocky intervene before the stop is hit."<br>
+      <strong>Verdict:</strong> Alpha APPROVED. Beta MONITORED — no action needed yet, but Judge flags for Rocky's weekly review.
+    </div>
+  </div>
+</div>
+
+<!-- WEEKS 5-6: STOP OUT -->
+<div class="section">
+  <div class="section-title">Weeks 5-6 — Jul 8 → Jul 21 · Stops Hit <span class="badge badge-red">Both agents stopped out</span></div>
+  <table class="week-table">
+    <thead><tr><th>Day</th><th>Price</th><th>Agent Alpha 🤵</th><th>Agent Beta 🧥</th></tr></thead>
+    <tbody>
+      <tr><td>Jul 8</td><td class="price-cell">$148.30</td><td><span style="font-size:11px;color:var(--dim)">Hold (-0.8%)</span></td><td><span style="font-size:11px;color:var(--dim)">-7.9%</span></td></tr>
+      <tr><td>Jul 9</td><td class="price-cell">$152.16</td><td><span style="font-size:11px;color:var(--dim)">Hold (+1.8%)</span></td><td><span style="font-size:11px;color:var(--dim)">-5.5%</span></td></tr>
+      <tr>
+        <td><strong>Jul 10</strong></td>
+        <td class="price-cell down">$145.30</td>
+        <td><span style="font-size:11px;color:var(--dim)">Hold (-2.8%) — approaching stop</span></td>
+        <td><span style="font-size:11px;color:var(--red)">-9.8% — 0.2% from stop. Critical.</span></td>
+      </tr>
+      <tr>
+        <td><strong>Jul 13</strong></td>
+        <td class="price-cell down">$139.14</td>
+        <td>
+          <span class="badge badge-red">STOP @ $144.99</span>
+          <div style="font-size:11px;color:var(--red);margin-top:4px"><strong>P&L: -$4.48 (-3.0%)</strong></div>
+        </td>
+        <td>
+          <span class="badge badge-red">STOP @ $144.86</span>
+          <div style="font-size:11px;color:var(--red);margin-top:4px"><strong>P&L: -$16.09 (-10.0%)</strong></div>
+        </td>
+      </tr>
+      <tr>
+        <td><strong>Jul 16</strong></td>
+        <td class="price-cell down">$131.11</td>
+        <td>
+          <span class="badge badge-alpha">BUY @ $131.11</span>
+          <div style="font-size:11px;color:var(--dim);margin-top:4px">"RSI = 20. Third entry. 3% stop at $127.18."</div>
+        </td>
+        <td><span style="font-size:11px;color:var(--dim)">On sideline. Stopped out. Watching.</span></td>
+      </tr>
+      <tr>
+        <td><strong>Jul 17</strong></td>
+        <td class="price-cell down">$123.99</td>
+        <td>
+          <span class="badge badge-red">STOP @ $127.18</span>
+          <div style="font-size:11px;color:var(--red);margin-top:4px"><strong>P&L: -$3.93 (-3.0%)</strong></div>
+        </td>
+        <td><span style="font-size:11px;color:var(--dim)">Sideline</span></td>
+      </tr>
+      <tr>
+        <td><strong>Jul 21 (Today)</strong></td>
+        <td class="price-cell">$123.54</td>
+        <td><span style="font-size:11px;color:var(--dim)">Watching — RSI ~22. Considering 4th entry.</span></td>
+        <td><span style="font-size:11px;color:var(--dim)">Sideline. Re-evaluating thesis.</span></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- Rocky Bi-Weekly 2 -->
+  <div class="decision decision-rocky">
+    <div class="decision-header"><span class="badge badge-rocky">ROCKY — Bi-Weekly Review #2</span> End of Week 6</div>
+    <div class="decision-body">
+      <strong>Alpha 🤵 (3 trades, all stopped out):</strong><br>
+      "Three losses in six weeks. Your discipline is impeccable — you followed the system every time. But the system itself is struggling in a sustained post-IPO downtrend. Mean reversion assumes overshooting corrects; in a post-IPO selloff, the 'oversold' reading IS the correct price. I'm increasing your Patience from 6→7. You need to wait longer for confirmation — require RSI &lt; 20 AND a bullish candle before entering. This is a PAST tuning: same personality, tighter rules."<br><br>
+      <strong>Beta 🧥 (1 trade, stopped out at -10%):</strong><br>
+      "You were stopped out at $144.86. Your thesis was correct — SpaceX IS the space economy — but your TIMING was wrong. You bought at peak euphoria (RSI 89, IPO day) because your Conviction=7 overrode your Patience=3. This is the core PAST lesson: <strong>conviction without time-horizon discipline is gambling.</strong> You didn't lose because the thesis was wrong. You lost because you paid $160 for something trading at $135 two days earlier.<br><br>
+      I'm adjusting your PAST scores:<br>
+      • Impulsivity: 5→6 (you were tempted to remove the stop — that's impulsivity)<br>
+      • Patience: 3→3 (no change — but if you don't improve, I'll drop it to 2, which means the Judge will require a cooling-off period before your next trade)<br><br>
+      <strong>Next trade:</strong> Both agents must wait for Rocky's approval before entering SPCX again. Alpha may re-enter on RSI &lt; 20 + bullish confirmation. Beta must wait 5 trading days (cooling-off) and present a revised thesis with entry timing criteria."
+    </div>
+  </div>
+</div>
+
+<!-- P&L SUMMARY -->
+<div class="section">
+  <div class="section-title">P&L Summary — 6 Weeks</div>
+  <table class="pnl-table">
+    <thead>
+      <tr><th>Agent</th><th>Trades</th><th>Entries</th><th>Exits</th><th>P&L ($)</th><th>P&L (%)</th><th>Capital Remaining</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="badge badge-alpha">Alpha 🤵</span></td>
+        <td>3</td>
+        <td>$154.60 → $149.47 → $131.11</td>
+        <td>$153.23 (time) → $144.99 (stop) → $127.18 (stop)</td>
+        <td class="negative">-$9.78</td>
+        <td class="negative">-3.9%</td>
+        <td>$2,490.22</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-beta">Beta 🧥</span></td>
+        <td>1</td>
+        <td>$160.95 (IPO day)</td>
+        <td>$144.86 (10% stop)</td>
+        <td class="negative">-$250.24</td>
+        <td class="negative">-10.0%</td>
+        <td>$2,249.76</td>
+      </tr>
+      <tr class="total">
+        <td>SPCX Performance</td>
+        <td colspan="3">IPO $135 → Today $123.54 (-8.5% from IPO price)</td>
+        <td class="negative">-</td>
+        <td class="negative">-8.5%</td>
+        <td>-</td>
+      </tr>
+    </tbody>
+  </table>
+  <div style="font-size:12px;color:var(--dim);margin-top:12px">
+    <strong>Key takeaway:</strong> Alpha "won" by losing less (-3.9% vs -10.0%). In a sustained downtrend, capital preservation IS the strategy. Beta's thesis may prove correct over 10 years, but the Trading Arena operates on weekly P&L. PAST's role is to ensure Beta learns from this — not by changing the thesis, but by tightening the entry timing.
+  </div>
+</div>
+
+<!-- KEY LESSONS -->
+<div class="lesson">
+  <div class="lesson-title">PAST Framework — What This Simulation Proves</div>
+  <div class="lesson-body">
+    <strong>1. Same stock, opposite behavior.</strong> Alpha's Patience=6 kept him out of the IPO euphoria. Beta's Conviction=7 put him in immediately. PAST didn't change the stock — it changed how each agent PERCEIVED the same data.<br><br>
+    <strong>2. Personality drives entry, rules drive exit.</strong> Beta's conviction made him buy at $160. But the 10% stop loss RULE (not personality) forced him out at $144.86. PAST tunes the personality; the skill file defines the rules. This separation is what prevents disaster.<br><br>
+    <strong>3. Rocky tunes the person, not the strategy.</strong> Rocky didn't tell Alpha to stop trading. He increased Patience 6→7 (tighter entry criteria). He didn't tell Beta to abandon his thesis. He increased Impulsivity 5→6 (more scrutiny on entry timing). PAST is contextual reinforcement learning — the agents learn from their PAST without weight updates.<br><br>
+    <strong>4. Capital preservation beats conviction.</strong> Alpha lost $9.78 over 6 weeks. Beta lost $250.24 on one trade. In the Arena, the agent with the better P&L wins — and Alpha's conservative personality (Risk=3, Patience=6) was better suited to a post-IPO downtrend. Beta's bold personality (Risk=6, Conviction=7) would win in a bull market. The Arena's value is in seeing which personality wins in WHICH market.
+  </div>
+</div>
+
+</div>
+</body>
+</html>
