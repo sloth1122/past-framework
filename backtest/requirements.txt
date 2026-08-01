@@ -1,3 +1,6 @@
 yfinance>=1.5
 pandas>=2.0
 numpy>=1.24
+# v0.2.0: LLM Judge uses local Ollama (no API key needed)
+# Install Ollama separately: https://ollama.com
+# Pull model: ollama pull deepseek-r1:32b

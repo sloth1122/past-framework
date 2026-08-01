@@ -38,6 +38,8 @@ The Trading Arena implements PAST with four agents:
 
 Jan 1 — Jul 21, 2026 | 6 tickers | $5,000 proforma
 
+> ⚠️ **Integrity update (v0.2.0):** The results below were produced by the original harness (v0.1.0), which had two issues identified by code review (see [CHANGELOG](CHANGELOG.md#v020---2026-08-01---backtest-integrity-update)): (1) target leakage from full-dataset 52-week min/max, and (2) a stub Judge that auto-passed 5 of 13 checks. The corrected harness (`backtest_v2.py`) uses strict rolling windows and a real LLM Judge. Updated return figures will be published once the corrected backtest completes across all tickers.
+
 | Agent | P&L | Trades | Win Rate |
 |-------|-----|-------|----------|
 | Alpha | +$8.86 | 17 | 35% |
@@ -57,6 +59,11 @@ The next day (July 31), the Financial Times reported that Aschenbrenner himself 
 
 ## Quick Start
 
+### Option A — Corrected backtest (v0.2.0, recommended)
+
+Uses strict rolling windows (no target leakage) and a real LLM Judge via
+local Ollama (free, no API keys needed).
+
 ```bash
 # Clone
 git clone https://github.com/sloth1122/past-framework.git
@@ -67,7 +74,20 @@ python3 -m venv venv
 source venv/bin/activate
 pip install -r backtest/requirements.txt
 
-# Run the backtest
+# Install Ollama (https://ollama.com) and pull the Judge model
+ollama pull deepseek-r1:32b
+
+# Run the corrected backtest (single ticker)
+python backtest/backtest_v2.py OKLO 2025-08-01 2026-07-21
+```
+
+### Option B — Original backtest (v0.1.0, reference only)
+
+The original harness is retained for reproducibility. See
+[CHANGELOG](CHANGELOG.md) for known issues.
+
+```bash
+# Run the original backtest
 python backtest/run_backtest.py
 
 # Generate HTML report
@@ -83,13 +103,16 @@ past-framework/
 │   └── PAST_Research_Paper_v2.pdf  ← PDF version
 ├── backtest/
 │   ├── backtest_engine.py          ← Agent rules, indicators (RSI, MA)
-│   ├── backtest_sim.py             ← Simulation, Judge, Rocky PAST tuning
-│   ├── run_backtest.py             ← Runner + go/no-go recommendation
+│   ├── backtest_sim.py             ← [v0.1.0] Simulation, stub Judge, Rocky tuning
+│   ├── backtest_v2.py              ← [v0.2.0] Corrected runner (rolling window, LLM Judge)
+│   ├── llm_judge.py                ← [v0.2.0] LLM Judge + Rocky via local Ollama
+│   ├── run_backtest.py             ← [v0.1.0] Original runner + go/no-go
 │   ├── generate_backtest_report.py ← HTML report generator
 │   └── requirements.txt
 ├── examples/
 │   ├── spacex_simulation.html      ← SpaceX IPO case study
 │   └── backtest_report.html        ← Backtest results dashboard
+├── CHANGELOG.md                    ← Version history + reviewer notes
 └── skills/
     ├── trading-arena-alpha.md      ← Alpha skill (Renaissance/Jim Simons)
     ├── trading-arena-beta.md       ← Beta skill (Gavin Baker/Atreides)
