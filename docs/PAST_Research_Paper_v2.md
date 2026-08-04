@@ -71,12 +71,25 @@ Parameter-Efficient Fine-Tuning (PEFT) techniques like LoRA isolate weight updat
 ## 3. The PAST Framework
 
 ### 3.1 The Likert Personality Vector
-
+### 4.2 The Likert Personality Vector
 Let $P$ represent the personality profile of an agent, defined as a multi-dimensional vector in a discrete parameter space:
 
 $$P = [P_1, P_2, \dots, P_n]^T, \quad \text{where } P_i \in \{1, 2, \dots, 7\}$$
 
-Each dimension $i$ corresponds to an explicit behavioral attribute. In the Trading Arena implementation, the core dimensions are:
+Each dimension $i$ corresponds to an explicit behavioral attribute. The framework supports domain-specific trait definitions. For the Trading Arena, the traits are:
+
+| Trait | Agent Alpha | Agent Beta | What It Controls |
+|---|---|---|---|
+| Risk Tolerance | 3/7 | 5/7 | Max position size, stop-loss width, leverage |
+| Conviction | 4/7 | 6/7 | Whether to hold through drawdowns |
+| Impulsivity | 2/7 | 3/7 | How quickly to act on a signal |
+| Entry Patience | 6/7 | 6/7 | How long to wait for the right entry price |
+| Hold Duration | 3/7 | 7/7 | How long to hold once entered — thesis vs price-based exits |
+| Adaptability | 5/7 | 6/7 | How quickly to shift strategy when conditions change |
+| Sector Specialization | 2/7 | 7/7 | Domain focus (Alpha = agnostic, Beta = AI architecture only) |
+| Position Concentration | 3/7 | 4/7 | Diversification vs concentration |
+
+**Key design decision: splitting Patience into two traits.** An early version of the framework used a single "Patience" score, but this conflated two distinct behaviors: patience to *enter* (sitting in cash waiting for the right price) and patience to *hold* (keeping a position through short-term volatility because the thesis is intact). Agent Beta (Baker) has Entry Patience=6 (waits for pullbacks) but Hold Duration=7 (holds SpaceX-style positions for months to years). Agent Alpha has Entry Patience=6 but Hold Duration=3 (exits in 3-5 days). The split captures the distinction that a single score could not.
 
 | Dimension ($i$) | Attribute | Trading Rule Impact |
 |-----------------|----------|---------------------|
