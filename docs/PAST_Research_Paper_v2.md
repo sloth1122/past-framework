@@ -236,6 +236,20 @@ The Judge is a separate LLM that evaluates every trade proposal before execution
 
 **Separation of powers:** The Judge runs on a different model (Claude Fable 5) from both traders. It cannot be influenced by either agent's reasoning — it pulls its own data and applies the checklist independently. This is analogous to the separation between prosecution and judiciary in legal systems.
 
+### 5.3.1 Pre-Trade Gate vs Post-Trade Audit
+
+A critical design decision: the Judge serves as a **pre-trade gate**, not a post-trade auditor. The execution flow is:
+
+1. Agent builds a trade thesis and writes it to a shared queue
+2. Agent invokes the Judge (via Claude Code subprocess) BEFORE placing any order
+3. Judge independently evaluates the thesis using the 13-point checklist
+4. Judge writes APPROVED or REJECTED to the queue
+5. **Only APPROVED theses are executed** — no trade is placed without Judge approval
+
+A separate Judge audit runs at 2:10 PM MST (market close + 10 minutes) as a **post-trade verification** — confirming the agents followed the pre-trade decisions, respected stop-losses, and stayed within their PAST profiles.
+
+This two-phase design prevents a significant practical problem: if the Judge rejected trades *after* execution (as in a post-trade-only design), agents would be forced to exit positions same-day, creating unnecessary trading costs, tax noise (short-term gains/losses, wash sale risk), and day-trading patterns. By gating trades *before* execution, the system ensures only validated trades reach the real account.
+
 ---
 
 ## 6. Experimental Setup
