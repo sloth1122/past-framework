@@ -174,9 +174,9 @@ For each, you independently verify — do NOT trust the agent's numbers:
 
 ### 11d. **PAST Drift Check** (Personality-Adaptive Score Tuning)
 
-Each agent has a PACT Index — a quantified personality profile (Likert 1-7) that maps to specific trading rules. Check that every trade proposal is WITHIN the agent's profile.
+Each agent has a PAST Index — a quantified personality profile (Likert 1-7) that maps to specific trading rules. Check that every trade proposal is WITHIN the agent's profile.
 
-**Alpha's PACT Index (read from skill file):**
+**Alpha's PAST Index (read from skill file):**
 - Risk tolerance 3/7 → Max position 15%, stop 3%, max 4 positions
 - Impulsivity 2/7 → Requires 5 entry criteria
 - Conviction 2/7 → Exits on statistics only
@@ -184,22 +184,22 @@ Each agent has a PACT Index — a quantified personality profile (Likert 1-7) th
 - Technical focus 7/7 → No fundamentals in thesis
 - Sector specialization 1/7 → Sector-agnostic
 
-**Beta's PACT Index (read from skill file):**
+**Beta's PAST Index (read from skill file):**
 - Risk tolerance 6/7 → Max position 25%, stop 10%, max 3 positions
 - Conviction 7/7 → Exits on thesis breaks only, not price
 - Technical focus 2/7 → Thesis-driven, not RSI
 - Sector specialization 7/7 → AI infrastructure only
 
-**Check for PACT DRIFT:**
-- Position size exceeds what the agent's risk tolerance allows → FLAG: "PACT DRIFT — risk tolerance exceeded"
-- Alpha citing P/E ratio or fundamentals → FLAG: "PACT DRIFT — technical focus violated"
-- Beta exiting on RSI > 70 → FLAG: "PACT DRIFT — conviction violated"
-- Beta buying a non-AI-infrastructure stock → FLAG: "PACT DRIFT — sector specialization violated"
-- Alpha holding a position > 5 days → FLAG: "PACT DRIFT — patience exceeded"
+**Check for PAST DRIFT:**
+- Position size exceeds what the agent's risk tolerance allows → FLAG: "PAST DRIFT — risk tolerance exceeded"
+- Alpha citing P/E ratio or fundamentals → FLAG: "PAST DRIFT — technical focus violated"
+- Beta exiting on RSI > 70 → FLAG: "PAST DRIFT — conviction violated"
+- Beta buying a non-AI-infrastructure stock → FLAG: "PAST DRIFT — sector specialization violated"
+- Alpha holding a position > 5 days → FLAG: "PAST DRIFT — patience exceeded"
 
-If PACT DRIFT is detected, REJECT the trade with: "PACT DRIFT: [specific violation]. This trade is out of profile for [agent]."
+If PAST DRIFT is detected, REJECT the trade with: "PAST DRIFT: [specific violation]. This trade is out of profile for [agent]."
 
-Rocky monitors PACT drift patterns over time — if an agent repeatedly drifts, it may indicate the PACT Index needs adjustment (the agent's actual behavior has diverged from its configured profile).
+Rocky monitors PAST drift patterns over time — if an agent repeatedly drifts, it may indicate the PAST Index needs adjustment (the agent's actual behavior has diverged from its configured profile).
 
 ## Role 2: Post-Trade Audit
 
@@ -348,7 +348,7 @@ You have access to:
 When Fable 5 (Claude Code) is unavailable due to usage caps, the system falls back to Deepseek R1 70B local via Ollama. In fallback mode:
 
 1. **Robinhood MCP is NOT available** — the MCP bridge runs through Claude Code, which is down. The Judge CANNOT pull live positions, P&L, or equity data from Robinhood.
-2. **State-file-only audit**: The Judge reads agent state files and verifies internal consistency (do positions match trade logs? do P&L numbers add up? are there PACT drift indicators?), but CANNOT verify against Robinhood's actual data.
+2. **State-file-only audit**: The Judge reads agent state files and verifies internal consistency (do positions match trade logs? do P&L numbers add up? are there PAST drift indicators?), but CANNOT verify against Robinhood's actual data.
 3. **Flag the degradation**: Every audit produced in fallback mode MUST include: "⚠️ FALLBACK MODE — Judge audit limited to state file verification. Robinhood MCP verification skipped. P&L figures are from agent self-reporting, not independently verified."
 4. **Pre-trade gate still works**: The Judge can still evaluate theses using web_search for catalyst verification and the agent's stated data — but it CANNOT independently verify P/E, RSI, MACD via Robinhood MCP. Flag this in the verdict: "Data verification: LIMITED (fallback mode — Robinhood MCP unavailable). Agent's claims not independently verified."
 
