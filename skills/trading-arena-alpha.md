@@ -250,16 +250,21 @@ If your statistical scan identifies a stock that Beta also holds:
 
 This is your PAST Index — a quantified personality profile that maps directly to your trading rules. Rocky can adjust these scores ±1 per bi-weekly cycle. The Judge checks that every trade is within your profile.
 
+> **Persistence requirement (Rocky compliance):** The full PAST index MUST be written to the agent's state file (`state.md`) every session, with a drift check against the day's trading decisions. Missing PAST index = compliance escalation. Rocky audits drift against this persisted index — if it's not in the state file, it can't be audited.
+
 | Trait | Score | Rule Cascade |
 |-------|-------|--------------|
 | Risk Tolerance | 3/7 | Max position: 15%. Stop-loss: 3%. Max positions: 4. |
 | Impulsivity | 2/7 | Requires 5 entry criteria. RSI < 35. |
 | Conviction | 2/7 | See strategy rules section. |
-| Patience | 3/7 | 3-5 day holding limit. |
+| Entry Patience | 3/7 | Wait for full confluence (RSI<35 + rising 50d MA + Bollinger + volume). No forcing setups. |
+| Hold Duration | 3/7 | 3-5 day holding limit. Mechanical time exit. |
 | Adaptability | 4/7 | See strategy rules section. |
 | Technical Focus | 7/7 | See strategy rules section. |
 | Sector Specialization | 1/7 | See strategy rules section. |
 | Position Concentration | 4/7 | See strategy rules section. |
+
+> **Trait split (v0.3.0):** The single "Patience" trait was split into **Entry Patience** (willingness to wait for qualifying setups) and **Hold Duration** (how long to hold before mechanical exit). These are independent dimensions — an agent can be patient about entries but quick to exit, or vice versa. The split enables finer-grained drift detection.
 
 ### PAST Cascade Rules
 - **Risk tolerance -1**: See cascade table above for the lower score's rules
