@@ -104,6 +104,75 @@ existing hold-period rules (Alpha 3/7 = 3-5 days, Beta 7/7 = weeks).
 
 ---
 
+### Fixed — Claude OAuth Token Reliability (Recurring Auth Failures)
+
+**Problem:** Claude Code's OAuth token expired every 24-48 hours, causing
+"OAuth session expired and could not be refreshed" errors that took down
+the Robinhood MCP, Judge gate, and all trading operations. This required
+manual `claude auth login` intervention 3+ times in the first week of
+live trading (Aug 10, Aug 12, Aug 13).
+
+**Root cause (3 interacting bugs):**
+
+1. **`claude -p` does not persist refreshed tokens** (GitHub #37402).
+   Claude Code refreshes the OAuth access token in-memory during active
+   sessions, but `--print` (headless) mode does not write the refreshed
+   token back to `~/.claude/.credentials.json`. New subprocesses read the
+   stale file and may fail.
+
+2. **Credentials file vs Keychain confusion.** Claude Code on macOS stores
+   credentials in the **Keychain** (service: `Claude Code-credentials`),
+   not the legacy `.credentials.json` file. The file may show an expired
+   token while the Keychain has a fresh one. The token monitor script was
+   reading the stale file, generating false alerts even when Claude was
+   working fine.
+
+3. **Refresh token aging** (GitHub #65761). After weeks of refresh-only
+   usage (no interactive login), the underlying `refresh_token` expires
+   or is rotated server-side. When this happens, neither in-memory refresh
+   nor file-based refresh works — only a full `claude auth login` (browser
+   OAuth flow) fixes it.
+
+**Fix (3 layers):**
+
+1. **Token monitor now reads Keychain (not file).** The `claude_token_monitor.py`
+   script (runs every 30 min) now reads from the macOS Keychain as primary
+   source, falling back to the file only if Keychain is unavailable. This
+   eliminates false alerts when the file is stale but the Keychain token is
+   fresh.
+
+2. **Token keepalive cron (every 2h).** New `claude_token_keepalive.py`
+   script runs every 2 hours and tests actual `claude -p` connectivity
+   (ground truth — not the file). If connectivity works, it stays silent.
+   If connectivity fails, it alerts to Telegram. Running `claude -p`
+   periodically also keeps the in-memory session active and the refresh
+   token from going stale prematurely.
+
+3. **Connectivity-based alerting (not file-based).** Both the monitor and
+   keepalive scripts now alert based on actual `claude -p` connectivity
+   test results, not the credentials file timestamp. The file is a cache;
+   connectivity is ground truth. This eliminates false positives from the
+   stale file.
+
+**Files changed:**
+- `~/.hermes/scripts/claude_token_monitor.py` — reads Keychain (primary),
+  file (fallback); clearer comments about the stale-file bug
+- `~/.hermes/scripts/claude_token_keepalive.py` — new script, tests
+  connectivity every 2h, silent on pass, alerts on fail
+
+**Cron jobs:**
+- `Claude OAuth Token Monitor` (every 30 min) — fixed, reads Keychain
+- `Claude OAuth Token Keepalive` (every 2h) — new, connectivity test
+
+**References:**
+- GitHub #37402: OAuth token not persisted for --print mode
+- GitHub #65761: Stale refresh token causes persistent 401
+- GitHub #44945: OAuth auto-refresh broken in long-running sessions
+- GitHub #37512: CLAUDE_CODE_OAUTH_TOKEN silently deletes Keychain credentials
+- macOS Keychain service: `Claude Code-credentials`
+
+---
+
 ## [v0.2.0] — 2026-08-01 — Backtest Integrity Update
 
 ### Reviewer
