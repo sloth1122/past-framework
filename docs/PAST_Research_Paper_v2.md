@@ -192,16 +192,18 @@ At the start of each trading session, agents read their state file (containing t
 
 ### 5.1 Four-Agent Design
 
-The Trading Arena deploys four agents with distinct roles, models, and providers:
+The Trading Arena deploys four agents with distinct roles, using a two-layer model architecture (execution layer + reasoning layer):
 
-| Agent | Role | Model | Provider | Location |
-|-------|------|-------|----------|----------|
-| **Alpha** | Trader (Renaissance) | GLM-5.2 | Z.AI API | Cloud |
-| **Beta** | Trader (Aschenbrenner) | Deepseek R1 70B | Ollama | Local |
-| **Judge** | Independent verifier | Claude Fable 5 | Claude Code | Cloud |
-| **Rocky** | Coach (PAST tuning) | Claude Fable 5 | Claude Code | Cloud |
+| Agent | Role | Execution Layer | Reasoning Layer | Provider | Location |
+|-------|------|----------------|-----------------|----------|----------|
+| **Alpha** | Trader (Renaissance) | GLM-5.2 | GLM-5.2 | Z.AI API | Cloud |
+| **Beta** | Trader (Baker/Atreides) | GLM-5.2 | Deepseek R1 70B | Z.AI + Ollama | Cloud + Local |
+| **Judge** | Independent verifier | Claude Fable 5 | — | Claude Code | Cloud |
+| **Rocky** | Coach (PAST tuning) | GLM-5.2 | — | Z.AI API | Cloud |
 
-**Design principle: cognitive diversity.** Alpha and Beta run on different models from different providers. Alpha uses a 744B MoE model (GLM-5.2) optimized for long-context reasoning. Beta uses a 70B dense model (Deepseek R1) optimized for local inference. The Judge and Coach use Anthropic's Claude (Fable 5) for independent verification. This three-model diversity prevents single-model bias — no two agents share the same "brain."
+**Design principle: cognitive diversity.** Alpha and Beta run on different reasoning models from different providers. Alpha uses a 744B MoE model (GLM-5.2) optimized for long-context reasoning. Beta's reasoning layer uses a 70B dense model (Deepseek R1) optimized for local inference. The Judge uses Anthropic's Claude (Fable 5) for independent verification. This three-model diversity prevents single-model bias — no two agents share the same "brain."
+
+**Two-layer architecture note:** GLM-5.2 (via Z.AI cloud API) is the execution layer for ALL agents — it runs the Hermes Agent cron sessions, handles all tooling (`web_search`, `terminal`, file I/O), invokes the Judge gate via `claude -p`, and places orders. Deepseek R1 70B (local via Ollama) is Beta's reasoning brain — it analyzes the AI compute stack and formulates trade theses. GLM-5.2 executes; Deepseek reasons. This two-layer design demonstrates that PAST's persona-driven approach works across heterogeneous model configurations.
 
 ### 5.2 Agent Personalities
 

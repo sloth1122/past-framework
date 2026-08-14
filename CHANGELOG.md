@@ -5,6 +5,62 @@ Format based on [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [v0.3.2] — 2026-08-14 — CodeRabbit Review Fixes (Documentation Consistency)
+
+### Summary
+
+CodeRabbit AI reviewed PR #1 and flagged 2 actionable issues: (1) model
+identity inconsistency for Judge/Rocky between README and CHANGELOG, and
+(2) stale model documentation in the research paper and SpaceX simulation
+that didn't reflect the two-layer architecture. Both were documentation
+consistency issues — no code bugs.
+
+---
+
+### Fixed — Model Identity Consistency (README vs CHANGELOG)
+
+**Problem:** The README listed Rocky as "Claude Fable 5" while the
+CHANGELOG v0.3.1 table listed Rocky as "GLM-5.2 (Z.AI)". The Judge was
+listed as just "Claude Fable 5" in the README without noting it runs
+via `claude -p` subprocess.
+
+**Fix:**
+- `README.md` — Rocky now shows "GLM-5.2 (exec)" (consistent with
+  CHANGELOG). Judge now shows "Claude Fable 5 (Claude Code)" with
+  `claude -p` subprocess note.
+
+---
+
+### Fixed — Stale Documentation (Research Paper + SpaceX Simulation)
+
+**Problem:** Two files still had the old single-model architecture:
+- `docs/PAST_Research_Paper_v2.md` Section 5.1: Listed Beta as
+  "Aschenbrenner" (personality was swapped to Baker on Jul 30), used
+  a single "Model" column instead of execution/reasoning layers, and
+  listed Rocky as "Claude Fable 5" instead of GLM-5.2.
+- `examples/spacex_simulation.html`: Alpha's role said "GLM-5.2
+  (Cloud)" and Beta's said "Deepseek R1 70B (Local)" — neither
+  reflected the two-layer architecture.
+
+**Fix:**
+- `docs/PAST_Research_Paper_v2.md` — Updated Section 5.1 table to
+  two-layer format (Execution Layer + Reasoning Layer columns), changed
+  Beta role from "Aschenbrenner" to "Baker/Atreides", updated Rocky to
+  GLM-5.2, added two-layer architecture explanatory paragraph.
+- `examples/spacex_simulation.html` — Alpha role updated to "GLM-5.2
+  (exec + reasoning)", Beta role updated to "GLM-5.2 (exec) / Deepseek
+  R1 70B (reasoning)".
+
+---
+
+### Process Improvement — Daily Code Audit
+
+Added a daily evening cron job to audit the repository for documentation
+inconsistencies, stale references, and organizational issues. This ensures
+issues are caught within 24 hours instead of accumulating over weeks.
+
+---
+
 ## [v0.3.1] — 2026-08-14 — Model Documentation Fix (Two-Layer Architecture)
 
 ### Summary

@@ -31,8 +31,8 @@ The Trading Arena implements PAST with four agents:
 |-------|------|-------|----------|
 | **Alpha** 🤵 | Trader | GLM-5.2 (exec + reasoning) | Renaissance / mean reversion (RSI < 35, 3% stop) |
 | **Beta** 🧥 | Trader | GLM-5.2 (exec) / Deepseek R1 70B (reasoning) | Atreides / architecture-first AI (10% stop, diversified) |
-| **Judge** 🔨 | Verifier | Claude Fable 5 | 13-point checklist, independent verification |
-| **Rocky** 🦊 | Coach | Claude Fable 5 | Bi-weekly PAST tuning, ±1 trust region |
+| **Judge** 🔨 | Verifier | Claude Fable 5 (Claude Code) | 13-point checklist, independent verification via `claude -p` |
+| **Rocky** 🦊 | Coach | GLM-5.2 (exec) | Bi-weekly PAST tuning, ±1 trust region |
 
 ## Backtest Results
 
