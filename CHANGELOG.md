@@ -5,6 +5,208 @@ Format based on [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [v0.3.3] — 2026-08-14 — Engineering Infrastructure (CodeRabbit, Branch Protection, Model Split)
+
+### Summary
+
+Three infrastructure improvements to enforce code quality and operational
+reliability: (1) CodeRabbit AI installed for automated PR review, (2) `main`
+branch protected with required review + force-push/deletion blocks, (3)
+session model switched to Claude Sonnet 4.5 for engineering work while
+trading cron jobs remain on GLM-5.2 for cost control.
+
+---
+
+### Added — CodeRabbit AI Code Review
+
+**What:** CodeRabbit AI bot installed on the `sloth1122/past-framework`
+GitHub repository. Automatically reviews every PR with actionable
+comments, walkthrough summaries, and pre-merge checks.
+
+**First review:** PR #1 (v0.3.1 model docs fix). CodeRabbit flagged 2
+actionable issues (model identity inconsistency, stale documentation in
+research paper and SpaceX simulation). Both fixed in v0.3.2.
+
+**Workflow enforced:** All changes to `main` now go through branch →
+PR → CodeRabbit review → approval → merge.
+
+---
+
+### Added — Branch Protection (`main`)
+
+**What:** `main` branch protected via GitHub API with the following rules:
+
+| Rule | Setting |
+|------|---------|
+| Required pull request reviews | 1 approving review required |
+| Dismiss stale reviews | Yes (new commits clear old approvals) |
+| Allow force pushes | No (blocked) |
+| Allow deletions | No (blocked) |
+| Enforce for administrators | Yes (applies to repo owner too) |
+
+**Why:** Prevents accidental history rewrites, direct commits to `main`,
+and merging without review. The repo is public — protection ensures
+every change is traceable and reviewed.
+
+---
+
+### Changed — Session Model Split (Engineering vs Trading)
+
+**What:** Hermes Agent session model switched from GLM-5.2 (Z.AI) to
+Claude Sonnet 4.5 (Anthropic) for engineering, code review, and repo
+management work. Trading cron jobs (Alpha, Beta, Rocky, Judge Audit,
+Token Monitor, Weekly Review) pinned to GLM-5.2 via Z.AI for cost
+control ($384/qtr plan).
+
+**Why:** GLM-5.2 is capable for constrained trading tasks but lacks the
+proactive initiative and cross-document consistency checking needed for
+engineering work. Claude Sonnet 4.5 provides senior-engineer-level code
+review, architecture reasoning, and repo hygiene.
+
+**Architecture update:**
+
+| Layer | Model | Provider | Use Case |
+|-------|-------|----------|----------|
+| Engineering session | Claude Sonnet 4.5 | Anthropic | Code review, repo management, architecture |
+| Trading execution (all agents) | GLM-5.2 | Z.AI ($384/qtr) | Cron sessions, tooling, MCP, order placement |
+| Beta reasoning | Deepseek R1 70B | Ollama (local) | Baker architecture-first thesis analysis |
+| Judge | Claude Fable 5 | Claude Code (`claude -p`) | 13-point trade verification |
+
+**Cron jobs pinned (6):** Alpha, Beta, Rocky, Judge Audit, Token Monitor,
+Weekly Review — all pinned to `z-ai/glm-5.2` via `nous` provider to
+prevent fail-closed on global model drift.
+
+---
+
+### Fixed — Mac Sleep (Root Cause of Cron Failures)
+
+**Problem:** Mac Studio `pmset` had `sleep=1` (sleep after 1 min idle)
+and `disksleep=10`. While Hermes, Claude, and Perplexity held
+`NoIdleSleepAssertion`, if any of those apps crashed, the Mac would
+sleep within 1 minute — causing cron jobs to miss their schedules
+(Aug 12-13 Alpha/Beta failures).
+
+**Fix:** `sudo pmset -a sleep 0 disksleep 0` — system sleep and disk
+sleep permanently disabled. Display sleep remains at 10 min (cron jobs
+don't need the screen). `tcpkeepalive=1` and `powernap=1` retained.
+
+---
+
+## [v0.3.2] — 2026-08-14 — CodeRabbit Review Fixes (Documentation Consistency)
+
+### Summary
+
+CodeRabbit AI reviewed PR #1 and flagged 2 actionable issues: (1) model
+identity inconsistency for Judge/Rocky between README and CHANGELOG, and
+(2) stale model documentation in the research paper and SpaceX simulation
+that didn't reflect the two-layer architecture. Both were documentation
+consistency issues — no code bugs.
+
+---
+
+### Fixed — Model Identity Consistency (README vs CHANGELOG)
+
+**Problem:** The README listed Rocky as "Claude Fable 5" while the
+CHANGELOG v0.3.1 table listed Rocky as "GLM-5.2 (Z.AI)". The Judge was
+listed as just "Claude Fable 5" in the README without noting it runs
+via `claude -p` subprocess.
+
+**Fix:**
+- `README.md` — Rocky now shows "GLM-5.2 (exec)" (consistent with
+  CHANGELOG). Judge now shows "Claude Fable 5 (Claude Code)" with
+  `claude -p` subprocess note.
+
+---
+
+### Fixed — Stale Documentation (Research Paper + SpaceX Simulation)
+
+**Problem:** Two files still had the old single-model architecture:
+- `docs/PAST_Research_Paper_v2.md` Section 5.1: Listed Beta as
+  "Aschenbrenner" (personality was swapped to Baker on Jul 30), used
+  a single "Model" column instead of execution/reasoning layers, and
+  listed Rocky as "Claude Fable 5" instead of GLM-5.2.
+- `examples/spacex_simulation.html`: Alpha's role said "GLM-5.2
+  (Cloud)" and Beta's said "Deepseek R1 70B (Local)" — neither
+  reflected the two-layer architecture.
+
+**Fix:**
+- `docs/PAST_Research_Paper_v2.md` — Updated Section 5.1 table to
+  two-layer format (Execution Layer + Reasoning Layer columns), changed
+  Beta role from "Aschenbrenner" to "Baker/Atreides", updated Rocky to
+  GLM-5.2, added two-layer architecture explanatory paragraph.
+- `examples/spacex_simulation.html` — Alpha role updated to "GLM-5.2
+  (exec + reasoning)", Beta role updated to "GLM-5.2 (exec) / Deepseek
+  R1 70B (reasoning)".
+
+---
+
+### Process Improvement — Daily Code Audit
+
+Added a daily evening cron job to audit the repository for documentation
+inconsistencies, stale references, and organizational issues. This ensures
+issues are caught within 24 hours instead of accumulating over weeks.
+
+---
+
+## [v0.3.1] — 2026-08-14 — Model Documentation Fix (Two-Layer Architecture)
+
+### Summary
+
+Corrected a documentation discrepancy where Beta's model was listed as
+"Deepseek R1 70B" without mentioning GLM-5.2 as the execution layer. The
+Trading Arena uses a **two-layer model architecture** — GLM-5.2 (via Z.AI
+cloud API) is the execution/orchestration layer for ALL agents, and
+Deepseek R1 70B (local via Ollama) is Beta's reasoning brain. The docs
+incorrectly implied Beta runs entirely on a local model.
+
+---
+
+### Fixed — Model Identity Documentation (Beta + Alpha)
+
+**Problem:** The skills and README listed Beta's model as "Deepseek R1
+70B (local via Ollama)" with no mention of GLM-5.2. This was inaccurate
+because GLM-5.2 (cloud, via Z.AI) is the model that actually runs the
+cron sessions, handles all tooling (web_search, terminal, file I/O,
+Robinhood MCP via `claude -p`), invokes the Judge, and places orders.
+Deepseek R1 70B is Beta's *reasoning* layer — it analyzes the AI compute
+stack, identifies bottlenecks, and formulates trade theses. The docs made
+it look like Beta was a fully local model when in reality GLM-5.2 (cloud)
+does most of the work.
+
+**The correct architecture:**
+
+| Agent | Execution Layer | Reasoning Layer | Notes |
+|-------|----------------|-----------------|-------|
+| Alpha | GLM-5.2 (Z.AI) | GLM-5.2 (Z.AI) | Single model — Alpha is purely statistical, no deep reasoning needed |
+| Beta | GLM-5.2 (Z.AI) | Deepseek R1 70B (Ollama) | Two-layer — GLM-5.2 executes, Deepseek reasons (Baker architecture-first thesis) |
+| Judge | Claude Fable 5 (Claude Code) | — | Independent trade verification via `claude -p` subprocess |
+| Rocky | GLM-5.2 (Z.AI) | — | Coaching sessions, PAST tuning |
+
+**Files changed:**
+- `skills/trading-arena-beta.md` — Replaced single "Model Identity" line
+  with a full "Model Architecture — Two-Layer" section documenting both
+  GLM-5.2 (execution) and Deepseek R1 70B (reasoning), how they interact,
+  and what each layer is responsible for. Updated frontmatter description.
+- `skills/trading-arena-alpha.md` — Added "Model Architecture —
+  Single-Layer" section documenting that GLM-5.2 handles both execution
+  and reasoning, with explanation of why Alpha doesn't need a separate
+  reasoning model (purely statistical approach).
+- `README.md` — Updated architecture table: Alpha now shows "GLM-5.2
+  (exec + reasoning)", Beta now shows "GLM-5.2 (exec) / Deepseek R1 70B
+  (reasoning)".
+- `CHANGELOG.md` — This entry.
+
+**Why this matters:** Accurate model documentation is essential for
+reproducibility. A reader following the old docs would believe they need
+only a local Ollama instance to run Beta, when in reality the cron
+sessions, tooling, MCP calls, and order execution all go through GLM-5.2
+via Hermes Agent's Z.AI integration. The two-layer architecture is also
+architecturally significant — it demonstrates that PAST's persona-driven
+approach works across heterogeneous model configurations (cloud + local,
+statistical + deliberative).
+
+---
+
 ## [v0.3.0] — 2026-08-10 — PAST Persistence Fix + Trait Split
 
 ### Summary
