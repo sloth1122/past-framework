@@ -5,6 +5,65 @@ Format based on [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [v0.3.1] — 2026-08-14 — Model Documentation Fix (Two-Layer Architecture)
+
+### Summary
+
+Corrected a documentation discrepancy where Beta's model was listed as
+"Deepseek R1 70B" without mentioning GLM-5.2 as the execution layer. The
+Trading Arena uses a **two-layer model architecture** — GLM-5.2 (via Z.AI
+cloud API) is the execution/orchestration layer for ALL agents, and
+Deepseek R1 70B (local via Ollama) is Beta's reasoning brain. The docs
+incorrectly implied Beta runs entirely on a local model.
+
+---
+
+### Fixed — Model Identity Documentation (Beta + Alpha)
+
+**Problem:** The skills and README listed Beta's model as "Deepseek R1
+70B (local via Ollama)" with no mention of GLM-5.2. This was inaccurate
+because GLM-5.2 (cloud, via Z.AI) is the model that actually runs the
+cron sessions, handles all tooling (web_search, terminal, file I/O,
+Robinhood MCP via `claude -p`), invokes the Judge, and places orders.
+Deepseek R1 70B is Beta's *reasoning* layer — it analyzes the AI compute
+stack, identifies bottlenecks, and formulates trade theses. The docs made
+it look like Beta was a fully local model when in reality GLM-5.2 (cloud)
+does most of the work.
+
+**The correct architecture:**
+
+| Agent | Execution Layer | Reasoning Layer | Notes |
+|-------|----------------|-----------------|-------|
+| Alpha | GLM-5.2 (Z.AI) | GLM-5.2 (Z.AI) | Single model — Alpha is purely statistical, no deep reasoning needed |
+| Beta | GLM-5.2 (Z.AI) | Deepseek R1 70B (Ollama) | Two-layer — GLM-5.2 executes, Deepseek reasons (Baker architecture-first thesis) |
+| Judge | Claude Fable 5 (Claude Code) | — | Independent trade verification via `claude -p` subprocess |
+| Rocky | GLM-5.2 (Z.AI) | — | Coaching sessions, PAST tuning |
+
+**Files changed:**
+- `skills/trading-arena-beta.md` — Replaced single "Model Identity" line
+  with a full "Model Architecture — Two-Layer" section documenting both
+  GLM-5.2 (execution) and Deepseek R1 70B (reasoning), how they interact,
+  and what each layer is responsible for. Updated frontmatter description.
+- `skills/trading-arena-alpha.md` — Added "Model Architecture —
+  Single-Layer" section documenting that GLM-5.2 handles both execution
+  and reasoning, with explanation of why Alpha doesn't need a separate
+  reasoning model (purely statistical approach).
+- `README.md` — Updated architecture table: Alpha now shows "GLM-5.2
+  (exec + reasoning)", Beta now shows "GLM-5.2 (exec) / Deepseek R1 70B
+  (reasoning)".
+- `CHANGELOG.md` — This entry.
+
+**Why this matters:** Accurate model documentation is essential for
+reproducibility. A reader following the old docs would believe they need
+only a local Ollama instance to run Beta, when in reality the cron
+sessions, tooling, MCP calls, and order execution all go through GLM-5.2
+via Hermes Agent's Z.AI integration. The two-layer architecture is also
+architecturally significant — it demonstrates that PAST's persona-driven
+approach works across heterogeneous model configurations (cloud + local,
+statistical + deliberative).
+
+---
+
 ## [v0.3.0] — 2026-08-10 — PAST Persistence Fix + Trait Split
 
 ### Summary
