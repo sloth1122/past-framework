@@ -5,6 +5,93 @@ Format based on [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [v0.3.3] — 2026-08-14 — Engineering Infrastructure (CodeRabbit, Branch Protection, Model Split)
+
+### Summary
+
+Three infrastructure improvements to enforce code quality and operational
+reliability: (1) CodeRabbit AI installed for automated PR review, (2) `main`
+branch protected with required review + force-push/deletion blocks, (3)
+session model switched to Claude Sonnet 4.5 for engineering work while
+trading cron jobs remain on GLM-5.2 for cost control.
+
+---
+
+### Added — CodeRabbit AI Code Review
+
+**What:** CodeRabbit AI bot installed on the `sloth1122/past-framework`
+GitHub repository. Automatically reviews every PR with actionable
+comments, walkthrough summaries, and pre-merge checks.
+
+**First review:** PR #1 (v0.3.1 model docs fix). CodeRabbit flagged 2
+actionable issues (model identity inconsistency, stale documentation in
+research paper and SpaceX simulation). Both fixed in v0.3.2.
+
+**Workflow enforced:** All changes to `main` now go through branch →
+PR → CodeRabbit review → approval → merge.
+
+---
+
+### Added — Branch Protection (`main`)
+
+**What:** `main` branch protected via GitHub API with the following rules:
+
+| Rule | Setting |
+|------|---------|
+| Required pull request reviews | 1 approving review required |
+| Dismiss stale reviews | Yes (new commits clear old approvals) |
+| Allow force pushes | No (blocked) |
+| Allow deletions | No (blocked) |
+| Enforce for administrators | Yes (applies to repo owner too) |
+
+**Why:** Prevents accidental history rewrites, direct commits to `main`,
+and merging without review. The repo is public — protection ensures
+every change is traceable and reviewed.
+
+---
+
+### Changed — Session Model Split (Engineering vs Trading)
+
+**What:** Hermes Agent session model switched from GLM-5.2 (Z.AI) to
+Claude Sonnet 4.5 (Anthropic) for engineering, code review, and repo
+management work. Trading cron jobs (Alpha, Beta, Rocky, Judge Audit,
+Token Monitor, Weekly Review) pinned to GLM-5.2 via Z.AI for cost
+control ($384/qtr plan).
+
+**Why:** GLM-5.2 is capable for constrained trading tasks but lacks the
+proactive initiative and cross-document consistency checking needed for
+engineering work. Claude Sonnet 4.5 provides senior-engineer-level code
+review, architecture reasoning, and repo hygiene.
+
+**Architecture update:**
+
+| Layer | Model | Provider | Use Case |
+|-------|-------|----------|----------|
+| Engineering session | Claude Sonnet 4.5 | Anthropic | Code review, repo management, architecture |
+| Trading execution (all agents) | GLM-5.2 | Z.AI ($384/qtr) | Cron sessions, tooling, MCP, order placement |
+| Beta reasoning | Deepseek R1 70B | Ollama (local) | Baker architecture-first thesis analysis |
+| Judge | Claude Fable 5 | Claude Code (`claude -p`) | 13-point trade verification |
+
+**Cron jobs pinned (6):** Alpha, Beta, Rocky, Judge Audit, Token Monitor,
+Weekly Review — all pinned to `z-ai/glm-5.2` via `nous` provider to
+prevent fail-closed on global model drift.
+
+---
+
+### Fixed — Mac Sleep (Root Cause of Cron Failures)
+
+**Problem:** Mac Studio `pmset` had `sleep=1` (sleep after 1 min idle)
+and `disksleep=10`. While Hermes, Claude, and Perplexity held
+`NoIdleSleepAssertion`, if any of those apps crashed, the Mac would
+sleep within 1 minute — causing cron jobs to miss their schedules
+(Aug 12-13 Alpha/Beta failures).
+
+**Fix:** `sudo pmset -a sleep 0 disksleep 0` — system sleep and disk
+sleep permanently disabled. Display sleep remains at 10 min (cron jobs
+don't need the screen). `tcpkeepalive=1` and `powernap=1` retained.
+
+---
+
 ## [v0.3.2] — 2026-08-14 — CodeRabbit Review Fixes (Documentation Consistency)
 
 ### Summary

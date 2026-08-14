@@ -119,6 +119,43 @@ past-framework/
     └── trade-judge.md              ← Judge skill (13-point checklist)
 ```
 
+## Development Workflow
+
+### Branch Protection
+
+The `main` branch is protected:
+- **PR required** — no direct commits to `main`
+- **1 review required** — CodeRabbit AI or human approval before merge
+- **Force-push blocked** — history cannot be rewritten
+- **Deletion blocked** — branch cannot be deleted
+- **Admins enforced** — rules apply to repo owner
+
+### Code Review
+
+[CodeRabbit AI](https://coderabbit.ai) reviews every pull request automatically. Each PR receives:
+- Actionable comments with specific file/line references
+- Walkthrough summary of changes
+- Pre-merge checks (5+ automated validations)
+
+### Model Architecture
+
+The PAST Framework uses a split model strategy:
+
+| Layer | Model | Provider | Use Case |
+|-------|-------|----------|----------|
+| Engineering session | Claude Sonnet 4.5 | Anthropic | Code review, repo management, architecture |
+| Trading execution (all agents) | GLM-5.2 | Z.AI ($384/qtr) | Cron sessions, tooling, MCP, order placement |
+| Beta reasoning | Deepseek R1 70B | Ollama (local) | Baker architecture-first thesis analysis |
+| Judge | Claude Fable 5 | Claude Code (`claude -p`) | 13-point trade verification |
+
+### Contributing
+
+1. Create a feature branch from `main` (`git checkout -b feat/your-feature`)
+2. Make changes and commit with conventional format (`feat:`, `fix:`, `docs:`)
+3. Push and open a PR against `main`
+4. CodeRabbit will review automatically — address any actionable comments
+5. Merge after approval
+
 ## PAST vs Other Alignment Methods
 
 | Dimension | DPO / RLHF | LoRA / PEFT | PAST |
