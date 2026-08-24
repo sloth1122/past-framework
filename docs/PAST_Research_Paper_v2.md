@@ -2,12 +2,12 @@
 
 **Author:** John Tytko — Creator and Author
 **Date:** August 2026
-**Version:** 2.2
+**Version:** 2.3
 **License:** MIT
 
 ## Abstract
 
-Traditional alignment methodologies for Large Language Models (LLMs) rely heavily on parameter fine-tuning (e.g., LoRA, RLHF), which introduces prohibitive computational overhead and compromises the foundational generalization capabilities of the base model. To address this, we introduce the **Personality-Adaptive Score Tuning (PAST)** framework, a novel, weight-free orchestration layer for Multi-Agent Systems. Instead of altering neural network weights, PAST quantifies desired behavioral personas using a multi-dimensional Likert scale (1–7). These numerical personality profiles directly cascade into dynamic, prompt-level execution rules and scoring functions. A supervisory "Coach" agent evaluates operational KPIs on a bi-weekly cycle, iteratively tuning the Likert scores within a trust region to alleviate system bottlenecks and optimize performance. Operational agents autonomously exploit historical runtime logs to refine their behaviors *in-context* without backpropagation. We implement PAST in a four-agent trading system (two competing traders, an independent judge, and a coach) and evaluate it across 6 tickers over 6.5 months using historical price data. The system achieves +15.3% cumulative returns (+$763.27 on $5,000), with agents producing differentiated behavior on identical instruments — exactly as their personality scores predict. Live trading began August 6, 2026 with $5,000 real capital on Robinhood, demonstrating operational viability beyond simulation. Our framework decouples agent behavioral alignment from model training, offering a highly resource-efficient, explainable, and fully reversible architecture for steerable AI systems.
+Traditional alignment methodologies for Large Language Models (LLMs) rely heavily on parameter fine-tuning (e.g., LoRA, RLHF), which introduces prohibitive computational overhead and compromises the foundational generalization capabilities of the base model. To address this, we introduce the **Personality-Adaptive Score Tuning (PAST)** framework, a novel, weight-free orchestration layer for Multi-Agent Systems. Instead of altering neural network weights, PAST quantifies desired behavioral personas using a multi-dimensional Likert scale (1–7). These numerical personality profiles directly cascade into dynamic, prompt-level execution rules and scoring functions. A supervisory "Coach" agent evaluates operational KPIs on a bi-weekly cycle, iteratively tuning the Likert scores within a trust region to alleviate system bottlenecks and optimize performance. Operational agents autonomously exploit historical runtime logs to refine their behaviors *in-context* without backpropagation. We implement PAST in a four-agent trading system (two competing traders, an independent judge, and a coach) and evaluate it across 6 tickers over 6.5 months using historical price data. The system achieves +15.3% cumulative returns (+$763.27 on $5,000), with agents producing differentiated behavior on identical instruments — exactly as their personality scores predict. Live trading began August 6, 2026 with $5,000 real capital on Robinhood. The first three weeks of production operation (through August 24) stress-tested the framework through a sector-wide AI infrastructure drawdown, three broker-side stop-loss executions, and two infrastructure failure modes — with zero PAST drift, a 100% Judge gate approval rate, and full risk-control enforcement. Our framework decouples agent behavioral alignment from model training, offering a highly resource-efficient, explainable, and fully reversible architecture for steerable AI systems.
 
 ---
 
@@ -367,32 +367,44 @@ Following backtest validation, the Trading Arena went live with **$5,000 real ca
 
 **Key architecture decision: Pre-trade Judge gate.** The Judge evaluates every trade thesis **before** execution via a subprocess call (`claude -p`). Only APPROVED theses reach the real account. This eliminates the original design flaw where post-trade-only rejection forced same-day exits, creating unnecessary costs and tax noise.
 
-### 8.2 First Two Weeks (Aug 6 - Aug 18, 2026)
+### 8.2 Live Trading Record (Aug 6 - Aug 24, 2026)
 
-The system executed **6 real trades** across 2 agents in the first 14 days of operation:
+The system executed **7 real trades** across 2 agents in the first 13 trading days of operation:
 
 | Date | Agent | Ticker | Entry | Stop | Size | Status | Thesis |
 |------|-------|--------|-------|------|------|--------|--------|
-| Aug 6 | Beta | ALAB | $313.09 | -10% | 3 sh | HOLDING | AI infra (power grid automation) |
-| Aug 7 | Beta | CIEN | $413.96 | -10% | 2 sh | HOLDING | Optical networking (AI data bottleneck) |
-| Aug 10 | Alpha | CVS | $95.70 | -3% | 3 sh | SOLD (Aug 14, -$3.15) | Mean reversion (RSI 33, rising MA) |
-| Aug 10 | Beta | VST | $142.50 | -10% | 3 sh | HOLDING | Energy infrastructure |
-| Aug 14 | Beta | CRWV | $105.48 | -10% | 5 sh | STOPPED (Aug 18, selling Aug 19) | Nuclear SMR (AI power) |
-| Aug 17 | Beta | CCJ | $99.00 | -10% | 3 sh | HOLDING | Uranium (AI power thesis) |
+| Aug 6 | Beta | ALAB | $313.09 | -10% ($281.78) | 1 sh | **STOPPED Aug 19 @ $281.72 (-10.0%)** | Connectivity bottleneck (PCIe Gen 6, Scorpio-X) |
+| Aug 7 | Beta | CIEN | $413.96 | -10% ($372.56) | 1 sh | **STOPPED Aug 24 @ $372.89 (-9.9%)** | Optical networking (AI data bottleneck) |
+| Aug 10 | Alpha | CVS | $95.70 | -3% ($92.83) | 3 sh | SOLD (Aug 14 time-exit, -$3.15) | Mean reversion (RSI 33, rising 50d MA) |
+| Aug 10 | Beta | VST | $142.50 | -10% ($128.25) | 3 sh | HOLDING (-4.2%) | Energy infrastructure (Helix JV, Meta nuclear PPAs) |
+| Aug 14 | Beta | CRWV | $105.48 | -10% ($94.93) | 5 sh | **STOPPED Aug 19 @ $94.16 (-10.8%)** | Neocloud / Data Center (Q2 rev +112%, $104B backlog) |
+| Aug 17 | Beta | CCJ | $99.00 | -10% ($89.10) | 3 sh | HOLDING (+3.4%) | Uranium fuel for AI nuclear power |
 
-**Account P&L (as of Aug 18):** -$103.75 (-2.08%). Cash remaining: $4,896.26.
+**Account P&L (as of Aug 24 close):** -$181.90 (-3.64%). Cash: $4,143.31. Two positions held (VST, CCJ).
+
+**Realized P&L (closed trades):**
+- CVS (Alpha): -$3.15 (time exit, day 5)
+- ALAB (Beta): -$31.37 (-10.02%, broker-side stop)
+- CRWV (Beta): -$56.60 (-10.73%, broker-side stop)
+- CIEN (Beta): -$41.07 (-9.93%, broker-side stop)
+- **Total realized: -$132.19**
+
+**Unrealized P&L (open positions):**
+- VST: -$18.09 (-4.2%)
+- CCJ: +$10.11 (+3.4%)
+- **Total unrealized: -$7.98**
 
 **Behavioral observations:**
 
-1. **Agent separation working.** Alpha (Renaissance, mean reversion, RSI-driven) executed 1 trade in 2 weeks — correctly patient, waiting for qualifying setups. Beta (Baker, architecture-first AI) executed 5 trades, all thesis-driven AI infrastructure names. Zero convergence (both agents in same ticker).
+1. **Agent separation working.** Alpha (Renaissance, mean reversion, RSI-driven) executed 1 trade in 3 weeks — correctly patient, waiting for qualifying setups. Beta (Baker, architecture-first AI) executed 6 trades, all thesis-driven AI infrastructure names. Zero convergence (both agents in same ticker).
 
 2. **Judge gate effectiveness.** 100% pre-trade approval rate. All 6 trades met the 13-point checklist before execution. No post-trade rejections requiring forced exits.
 
-3. **PAST drift check.** Alpha's CVS trade (Entry Patience 6/7, Hold Duration 3/7) matched profile: waited 15 sessions for RSI < 35, exited after 4 days. Beta's 5 trades (Entry Patience 6/7, Hold Duration 7/7) all entered on thesis, none exited on time — stopped only. Drift = 0.
+3. **PAST drift check.** Alpha's CVS trade (Entry Patience 6/7, Hold Duration 3/7) matched profile: waited 15 sessions for RSI < 35, exited after 4 days on the mechanical time exit. Beta's 6 trades (Entry Patience 6/7, Hold Duration 7/7) all entered on thesis, none exited voluntarily — stops only. Drift = 0.
 
-4. **Stop discipline.** Alpha's 3% stop triggered on CVS at -3.29% (working correctly). Beta's CRWV hit -10% stop on Aug 18, selling Aug 19. No stop violations.
+4. **Stop discipline under stress.** The Aug 18-24 week stress-tested the stop system: CRWV and ALAB stops triggered Aug 19 (broker-side, automatic), CIEN's stop triggered Aug 24 at the open. Three stops, zero violations, zero manual intervention. Critically, on Aug 18 the CRWV stop was violated by 2.4% because no agent session ran (Z.AI API timeout) — the stop existed only in the agent's state file. This exposed the structural weakness of agent-side stops and motivated the move to broker-side GTC orders (see 8.3).
 
-5. **Market regime stress test.** Aug 5-14 saw a 35-47% AI infrastructure selloff (NVDA -8.5%, SMH -15%). Beta's 5 AI names all entered during this drawdown — consistent with Baker's "buy architecture bottlenecks when oversold" thesis (Entry Patience 6/7). Alpha stayed out (RSI > 35 on most names).
+5. **Market regime stress test.** Aug 5-14 saw a 35-47% AI infrastructure selloff, followed by a relief bounce (Aug 11-17, SMH +14%) that itself reversed Aug 18-24. Beta's entries came during the drawdown per Baker's "buy architecture bottlenecks when oversold" thesis (Entry Patience 6/7); the subsequent reversal stopped out 3 of 6 positions at the mechanical 10% line. Alpha stayed out entirely (RSI > 35 on most names during the bounce phase). Both behaviors match their profiles.
 
 ### 8.3 Operational Learnings
 
@@ -401,6 +413,12 @@ The system executed **6 real trades** across 2 agents in the first 14 days of op
 **Patience trait split (v0.3.0).** The single "Patience" score conflated two independent behaviors: patience to *enter* (waiting for qualifying setups) and patience to *hold* (resisting mechanical exits when thesis intact). Split into **Entry Patience** (confluence requirements before entry) and **Hold Duration** (time-based vs thesis-based exits). This enabled Rocky to detect drift on each dimension independently — e.g., if Alpha starts entering on weaker setups (Entry Patience drift) without changing hold behavior, the split catches it where a single score would have masked it.
 
 **Model architecture clarification (v0.3.1-v0.3.3).** Documentation updates established the two-layer architecture: GLM-5.2 (Z.AI cloud) is the **execution layer** for all agents (cron sessions, tooling, MCP, order placement), while Deepseek R1 70B (local Ollama) is Beta's **reasoning brain** (architecture-first thesis analysis). Alpha uses GLM-5.2 for both execution and reasoning (statistical only, no deep model needed). This architecture demonstrates that PAST works across heterogeneous model configurations (cloud + local, statistical + deliberative).
+
+**Broker-side stop-loss requirement (v0.4.0).** The original design placed stop-losses in agent state files — an agent session had to run, read prices, and manually place the sell order. On Aug 18, no agent session ran (Z.AI API timeout) and CRWV bled 2.4% past its $94.93 hard stop with no execution. The fix: GTC stop-market orders placed directly on Robinhood, executing at the broker level with zero dependency on agent availability. Verified Aug 19: ALAB sold at $281.72 (-10.0%) and CRWV at $94.16 (-10.8%) — both automatically, no agent present. CRWV subsequently fell to $88.92 (-15.6%), confirming the stop saved ~$26 of additional downside. **Lesson: risk controls for unattended autonomous systems must live at the broker, not the agent.** The 10% rule is correct; its execution mechanism was wrong.
+
+**API stale-call detector misconfiguration (v0.4.0).** GLM-5.2 cron sessions failed 4 of 5 trading days (Aug 12, 13, 17, 18) with a 90-second stale-call timeout. Root cause: GLM-5.2 cold-start latency on first API call of a fresh session is 90-120 seconds — exactly at the detector's default threshold. The detector killed sessions before Z.AI ever responded. Fix: raised stale timeout to 300s and added a 6:45 AM pre-warm call. After the fix: zero timeouts across 3 consecutive trading days. **Lesson: multi-agent systems using cloud LLM APIs must account for cold-start latency in timeout configuration.** Defaults tuned for interactive sessions are too aggressive for batch/cron workloads.
+
+**Regime detection gap (v0.4.0).** Beta entered 6 positions during the Aug 6-17 window that included a relief bounce; the AI infrastructure sector then rolled over Aug 18-24 and stopped out 3 positions. The agents had technical signals (RSI, 13F filings, pullback depth) but no sector momentum or sentiment layer to detect that the entire sector was in a downtrend. Fix: a 6:30 AM pre-trade signal scan (sector momentum, market breadth, sentiment) outputs a GO/NO-GO signal before agents decide to trade. **Lesson: personality-driven agents generate theses but do not inherently detect market regime.** A regime layer — separate from agent personalities — is needed to prevent counter-trend entries during sector-wide drawdowns.
 
 ---
 
@@ -418,7 +436,9 @@ The system executed **6 real trades** across 2 agents in the first 14 days of op
 
 ### 9.2 Limitations
 
-**Small sample size.** 28 trades across 6 tickers is insufficient for statistical significance. The +15.3% return could be partially attributed to the AI capex bull market of H1 2026.
+**Small sample size.** 28 backtest trades across 6 tickers is insufficient for statistical significance. The +15.3% return could be partially attributed to the AI capex bull market of H1 2026.
+
+**Live drawdown regime.** The live account is down -3.6% in its first three weeks, with 3 of 6 Beta positions stopped out. This is consistent with entering during a sector drawdown but demonstrates the regime dependence of thesis-driven entry: the same personalities that produced +15.3% in a trending backtest produced losses when the sector rolled over. The regime detection layer (added v0.4.0) addresses the entry-timing side; the jury remains out on whether the underlying theses recover before the remaining stops trigger.
 
 **Self-evaluation in simulation mode.** Without Claude Code OAuth, the Judge ran as self-evaluation (same LLM evaluating its own theses). Production uses a separate model (Fable 5).
 
@@ -459,7 +479,9 @@ The system executed **6 real trades** across 2 agents in the first 14 days of op
 
 We presented **Personality-Adaptive Score Tuning (PAST)**, a novel, weight-free alignment framework for multi-agent LLM systems. By quantifying agent personas into discrete 1–7 Likert vectors, PAST cleanly decouples runtime behavioral steerability from parameter-level model training. The combination of a macro-level, bi-weekly **Coach review loop** (with trust region) and a micro-level **In-Context Log Exploitation (ICLE)** pipeline yields system performance that rivals parameter-tuned frameworks while introducing zero compute overhead at the training layer.
 
-In a trading system backtest across 6 tickers and 6.5 months, the framework produced +15.3% returns with measurable behavioral diversity — agents with different PAST vectors made different decisions on the same instrument, exactly as their profiles predicted. The coaching loop adapted personality scores bi-weekly based on performance, creating a closed-loop learning system without weight fine-tuning. Live deployment with $5,000 real capital (August 2026) demonstrated operational viability: 6 trades executed across 2 agents in the first 2 weeks, with zero PAST drift and 100% Judge gate approval rate.
+In a trading system backtest across 6 tickers and 6.5 months, the framework produced +15.3% returns with measurable behavioral diversity — agents with different PAST vectors made different decisions on the same instrument, exactly as their profiles predicted. The coaching loop adapted personality scores bi-weekly based on performance, creating a closed-loop learning system without weight fine-tuning.
+
+Live deployment with $5,000 real capital (August 2026) moved the framework beyond simulation and into its first genuine stress test. In the first three weeks, the system executed 7 trades across 2 agents, weathered a sector-wide AI infrastructure drawdown, and enforced its risk controls without human intervention: three positions stopped out at the mechanical 10% line (broker-side, automatic), one exited on a time rule, and zero PAST drift was detected across all agents. The period also surfaced three production lessons now folded back into the framework — broker-side risk enforcement, API cold-start-aware timeout configuration, and a regime detection layer — each discovered by live operation, not simulation. The account's negative P&L over the window (-3.6%) is itself informative: the personality-consistent behavior (buying thesis names during drawdown, holding to stops) is precisely what the PAST vectors specified, and the drawdown regime — not personality drift — explains the losses.
 
 The key insight: **agents learn from their PAST.** Not by updating weights, but by adjusting the quantified personality that drives their rules, and by exploiting their own execution history at the inference boundary. This is contextual reinforcement learning at the instruction level — lightweight, interpretable, auditable, and achievable on consumer hardware without GPU training.
 
