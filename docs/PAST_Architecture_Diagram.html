@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PAST Framework Architecture</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: #0B0F14;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+        
+        svg {
+            max-width: 100%;
+            height: auto;
+        }
+
+        .agent-box {
+            fill: #1a2332;
+            stroke: #2a3f5f;
+            stroke-width: 2;
+        }
+
+        .alpha-box {
+            fill: #1a2332;
+            stroke: #3b82f6;
+            stroke-width: 2;
+        }
+
+        .beta-box {
+            fill: #1a2332;
+            stroke: #10b981;
+            stroke-width: 2;
+        }
+
+        .judge-box {
+            fill: #1a2332;
+            stroke: #f59e0b;
+            stroke-width: 2;
+        }
+
+        .rocky-box {
+            fill: #1a2332;
+            stroke: #8b5cf6;
+            stroke-width: 2;
+        }
+
+        .agent-label {
+            fill: #ffffff;
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .agent-role {
+            fill: #9ca3af;
+            font-size: 14px;
+        }
+
+        .agent-model {
+            fill: #6b7280;
+            font-size: 12px;
+            font-family: 'SF Mono', Monaco, monospace;
+        }
+
+        .arrow {
+            stroke: #4b5563;
+            stroke-width: 2;
+            fill: none;
+            marker-end: url(#arrowhead);
+        }
+
+        .arrow-label {
+            fill: #9ca3af;
+            font-size: 12px;
+        }
+
+        .judge-arrow {
+            stroke: #f59e0b;
+            stroke-width: 2;
+            stroke-dasharray: 5,5;
+            fill: none;
+            marker-end: url(#judge-arrowhead);
+        }
+
+        .coach-arrow {
+            stroke: #8b5cf6;
+            stroke-width: 2;
+            fill: none;
+            marker-end: url(#coach-arrowhead);
+        }
+
+        .title {
+            fill: #ffffff;
+            font-size: 28px;
+            font-weight: 700;
+        }
+
+        .subtitle {
+            fill: #9ca3af;
+            font-size: 16px;
+        }
+
+        .icon {
+            font-size: 24px;
+        }
+
+        .legend-box {
+            fill: #1a2332;
+            stroke: #2a3f5f;
+            stroke-width: 1;
+        }
+
+        .legend-text {
+            fill: #d1d5db;
+            font-size: 11px;
+        }
+    </style>
+</head>
+<body>
+    <svg viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg">
+        <!-- Arrow markers -->
+        <defs>
+            <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+                <polygon points="0 0, 10 3, 0 6" fill="#4b5563" />
+            </marker>
+            <marker id="judge-arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+                <polygon points="0 0, 10 3, 0 6" fill="#f59e0b" />
+            </marker>
+            <marker id="coach-arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+                <polygon points="0 0, 10 3, 0 6" fill="#8b5cf6" />
+            </marker>
+        </defs>
+
+        <!-- Title -->
+        <text x="600" y="40" text-anchor="middle" class="title">PAST Framework Architecture</text>
+        <text x="600" y="65" text-anchor="middle" class="subtitle">Four-Agent Competitive Trading System with Pre-Trade Gate</text>
+
+        <!-- Agent Alpha -->
+        <rect x="50" y="150" width="250" height="180" rx="8" class="alpha-box"/>
+        <text x="175" y="180" text-anchor="middle" class="icon">🤵</text>
+        <text x="175" y="210" text-anchor="middle" class="agent-label">Agent Alpha</text>
+        <text x="175" y="235" text-anchor="middle" class="agent-role">Renaissance / Mean Reversion</text>
+        <text x="175" y="260" text-anchor="middle" class="agent-model">GLM-5.2 (exec + reasoning)</text>
+        <text x="175" y="280" text-anchor="middle" class="agent-model">RSI &lt; 35, 3% stop, 3-5 day hold</text>
+        <text x="175" y="300" text-anchor="middle" class="agent-model">Risk: 3/7 | Conviction: 4/7</text>
+        <text x="175" y="315" text-anchor="middle" class="agent-model">Entry Patience: 6/7</text>
+
+        <!-- Agent Beta -->
+        <rect x="900" y="150" width="250" height="180" rx="8" class="beta-box"/>
+        <text x="1025" y="180" text-anchor="middle" class="icon">🧥</text>
+        <text x="1025" y="210" text-anchor="middle" class="agent-label">Agent Beta</text>
+        <text x="1025" y="235" text-anchor="middle" class="agent-role">Atreides / Architecture-First AI</text>
+        <text x="1025" y="260" text-anchor="middle" class="agent-model">GLM-5.2 (exec) / Deepseek R1 70B (reason)</text>
+        <text x="1025" y="280" text-anchor="middle" class="agent-model">Thesis-driven, 10% stop, weeks-months</text>
+        <text x="1025" y="300" text-anchor="middle" class="agent-model">Risk: 5/7 | Conviction: 6/7</text>
+        <text x="1025" y="315" text-anchor="middle" class="agent-model">Entry Patience: 6/7</text>
+
+        <!-- Judge (Pre-Trade Gate) -->
+        <rect x="450" y="150" width="300" height="180" rx="8" class="judge-box"/>
+        <text x="600" y="180" text-anchor="middle" class="icon">⚖️</text>
+        <text x="600" y="210" text-anchor="middle" class="agent-label">Judge (Pre-Trade Gate)</text>
+        <text x="600" y="235" text-anchor="middle" class="agent-role">Independent Trade Verifier</text>
+        <text x="600" y="260" text-anchor="middle" class="agent-model">Claude Fable 5 (Claude Code)</text>
+        <text x="600" y="280" text-anchor="middle" class="agent-model">13-point checklist</text>
+        <text x="600" y="300" text-anchor="middle" class="agent-model">PAST drift check, IPO ban, liquidity</text>
+        <text x="600" y="315" text-anchor="middle" class="agent-model">Score ≥ 10/13 → APPROVED</text>
+
+        <!-- Rocky (Coach) -->
+        <rect x="425" y="500" width="350" height="160" rx="8" class="rocky-box"/>
+        <text x="600" y="530" text-anchor="middle" class="icon">🦊</text>
+        <text x="600" y="560" text-anchor="middle" class="agent-label">Rocky (Coach)</text>
+        <text x="600" y="585" text-anchor="middle" class="agent-role">PAST Score Tuning (Bi-Weekly)</text>
+        <text x="600" y="610" text-anchor="middle" class="agent-model">GLM-5.2 (exec)</text>
+        <text x="600" y="630" text-anchor="middle" class="agent-model">Trust region: ±1 per trait per cycle</text>
+        <text x="600" y="645" text-anchor="middle" class="agent-model">Observes outcomes → adjusts Likert scores</text>
+
+        <!-- Arrows: Alpha → Judge (thesis submission) -->
+        <path d="M 300 240 L 450 240" class="judge-arrow"/>
+        <text x="375" y="230" text-anchor="middle" class="arrow-label">Thesis</text>
+
+        <!-- Arrows: Beta → Judge (thesis submission) -->
+        <path d="M 900 240 L 750 240" class="judge-arrow"/>
+        <text x="825" y="230" text-anchor="middle" class="arrow-label">Thesis</text>
+
+        <!-- Arrows: Judge → Alpha (approval) -->
+        <path d="M 450 280 L 300 280" class="judge-arrow"/>
+        <text x="375" y="300" text-anchor="middle" class="arrow-label">APPROVED / REJECTED</text>
+
+        <!-- Arrows: Judge → Beta (approval) -->
+        <path d="M 750 280 L 900 280" class="judge-arrow"/>
+        <text x="825" y="300" text-anchor="middle" class="arrow-label">APPROVED / REJECTED</text>
+
+        <!-- Arrows: Rocky → Alpha (PAST tuning) -->
+        <path d="M 475 500 L 175 330" class="coach-arrow"/>
+        <text x="300" y="410" text-anchor="middle" class="arrow-label">PAST tuning (±1)</text>
+
+        <!-- Arrows: Rocky → Beta (PAST tuning) -->
+        <path d="M 725 500 L 1025 330" class="coach-arrow"/>
+        <text x="900" y="410" text-anchor="middle" class="arrow-label">PAST tuning (±1)</text>
+
+        <!-- Arrows: Alpha → Rocky (performance data) -->
+        <path d="M 175 330 L 475 500" class="coach-arrow"/>
+        
+        <!-- Arrows: Beta → Rocky (performance data) -->
+        <path d="M 1025 330 L 725 500" class="coach-arrow"/>
+
+        <!-- Legend -->
+        <rect x="50" y="700" width="1100" height="80" rx="8" class="legend-box"/>
+        <text x="70" y="725" class="legend-text" font-weight="600">Daily Flow (7:00 AM MST):</text>
+        <text x="70" y="745" class="legend-text">1. Agents scan market → build thesis → invoke Judge (pre-trade gate via subprocess)</text>
+        <text x="70" y="760" class="legend-text">2. Judge evaluates 13-point checklist independently (pulls own data, never trusts agent claims)</text>
+        <text x="70" y="775" class="legend-text">3. Only APPROVED theses execute → real Robinhood orders placed with GTC stop-market stops</text>
+    </svg>
+</body>
+</html>
