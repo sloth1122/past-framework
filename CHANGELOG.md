@@ -5,6 +5,174 @@ Format based on [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [v0.4.0] — 2026-08-24 — Live Trading Lessons (Aug 18-24): Risk, Reliability, Regime
+
+### Summary
+
+One week of live trading (Aug 18-24) exposed three structural weaknesses
+in the PAST Trading Arena: (1) stop-loss execution depended on agent
+presence (not broker-side), (2) the Hermes API stale-call detector was
+misconfigured (90s default killed GLM-5.2 cold-start), and (3) the
+pre-trade signal layer lacked sector momentum and sentiment checks.
+All three are now fixed. The arena survived its first broad AI
+infrastructure selloff with stops functioning correctly — but entered
+positions during a relief bounce that reversed, highlighting the need
+for regime detection before entry.
+
+**Live P&L as of Aug 24:** -$140.74 (-2.81%). 6 trades placed, 3 sold
+(2 stops triggered, 1 time-exit), 3 held. Stop-loss system worked —
+CRWV sold at -10.8%, stock subsequently fell to -15.6%.
+
+---
+
+### Fixed — Stop-Loss Execution Moved to Broker-Side
+
+**Problem:** Stop-loss was "manual" — an agent session had to run, read
+prices, and manually place a sell order. On Aug 18, no agent session ran
+(Z.AI timeout), and CRWV bled from $94.93 (stop) to $92.51 (actual) with
+no sell executed. The position was held 2.4% past its hard stop.
+
+**Root cause:** Robinhood cash accounts do not support automated stop
+orders via the API — but they DO support `stop_market` GTC (good-till-
+cancelled) orders. The agents were placing stops in state files, not on
+the broker.
+
+**Fix:** All positions now have GTC stop-market sell orders placed
+directly on Robinhood. These execute automatically when the price hits
+the trigger — no agent session needed, even if Z.AI is down or the Mac
+is asleep. The 10% hard stop is enforced by the broker, not by the agent.
+
+**Evidence:** On Aug 19, ALAB stop triggered at $281.72 (10.0% loss) and
+CRWV stop triggered at $94.16 (10.8% loss, $0.77 slippage) — both
+automatically, no agent present. CRWV subsequently fell to $88.92
+(-15.6%), confirming the stop saved ~$26 of additional downside.
+
+---
+
+### Fixed — Z.AI GLM-5.2 API Timeout (Recurring 90s Stale Detector)
+
+**Problem:** GLM-5.2 cron sessions failed 4 out of 5 trading days (Aug
+12, 13, 17, 18) with `RuntimeError: Non-streaming API call timed out
+after 90s with no response (threshold: 90s)`.
+
+**Root cause:** Hermes Agent has a non-streaming stale-call detector
+(`HERMES_API_CALL_STALE_TIMEOUT`) defaulting to 90 seconds. GLM-5.2
+cold-start latency on first API call of a new session is 90-120s —
+exactly at the threshold. The detector killed the session before Z.AI
+responded.
+
+**Fix:** Set `providers.nous.stale_timeout_seconds = 300` and
+`providers.nous.request_timeout_seconds = 600` in Hermes config.
+This gives GLM-5.2 5 minutes for cold-start (vs 90 seconds). Verified
+Aug 21: both agents fired at 7:00/7:05 AM, zero timeouts, first clean
+5-day streak.
+
+**Pre-warm cron added:** A Z.AI pre-warm script runs at 6:45 AM MST
+(15 min before agents) to establish the API connection. Silent on
+success, alerts on failure.
+
+---
+
+### Fixed — Health Check MCP Test (5 → 10 Turns)
+
+**Problem:** Pre-market health check reported CRITICAL: Robinhood MCP
+FAILED on Aug 24. Root cause: `test_robinhood_mcp()` used
+`--max-turns 5`, insufficient for Claude Code to establish the
+claude.ai MCP connector session. Claude ran out of turns before
+connecting.
+
+**Fix:** Increased to `--max-turns 10` and timeout 120s → 180s.
+Verified: MCP returns account value successfully with 10 turns.
+
+---
+
+### Added — Pre-Trade Signal Scan (Sector Momentum + Sentiment)
+
+**Problem:** Beta entered 5 positions during a relief bounce (Aug 6-14)
+that immediately reversed in the AI infrastructure selloff. All 5
+positions went red simultaneously. The agents lacked a regime
+detection layer — they saw technical setups (RSI oversold) but didn't
+check whether the AI infrastructure sector was in an uptrend or
+downtrend before entering.
+
+**Fix:** New `pretrade_signal_scan.py` runs at 6:30 AM MST (30 min
+before agents). It checks:
+1. Sector momentum: are AI infra stocks above/below 50-day MA?
+2. Market breadth: are SPY/QQQ/SMH above 20-day MA?
+3. X/Twitter sentiment: bullish vs bearish posts for candidate tickers
+
+Output: GO or NO-GO signal. If NO-GO (sector in downtrend), agents stay
+defensive — no new entries, manage existing positions only.
+
+**Reference:** TradingAgents framework (TauricResearch, 80K+ GitHub
+stars, UCLA/MIT) uses a similar bull/bear debate structure with
+sentiment analysts. Our PAST framework's pre-trade scan adds the
+sentiment/flow layer that was missing from the original design.
+
+---
+
+### Fixed — model_status.md Auto-Update Ordering
+
+**Problem:** model_status.md was flagged as stale (167h+) every Monday
+because no process updated it. The auto-update function was added but
+ran AFTER the stale check, so the alert fired before the update.
+
+**Fix:** Moved `update_model_status()` to run BEFORE `check_state_files()`
+in the health check. The file is now refreshed every morning at 5 AM
+before the stale check runs.
+
+---
+
+### Fixed — Retry Script Could Not Trigger Retries
+
+**Problem:** The mid-morning (10 AM) and afternoon (12 PM) retry checks
+detected agent failures (state file not updated today) but could not
+actually trigger retries. The script called `claude -p "test"` instead
+of `hermes cron run <job_id>`.
+
+**Fix:** Updated retry script to use `hermes cron run` for both Alpha
+and Beta job IDs. Also added Z.AI connectivity test before retry — if
+Z.AI is down, automatically switches to Ollama fallback model before
+retrying, then switches back to Z.AI for the next day.
+
+---
+
+### Added — GTC Stop-Market Orders (Broker-Side Risk Management)
+
+**All remaining positions have GTC stop-market sell orders on Robinhood:**
+
+| Position | Shares | Stop Price | Stop % Below Fill | Status |
+|----------|--------|------------|-------------------|--------|
+| CIEN | 1 | $372.56 | 10% below $413.96 | Active |
+| VST | 3 | $128.25 | 10% below $142.50 | Active |
+| CCJ | 3 | $89.10 | 10% below $99.00 | Active |
+
+Previous positions (ALAB, CRWV) had their stops triggered and sold
+automatically on Aug 19.
+
+**Agent skill updated:** All future trades MUST place a GTC stop-market
+order on Robinhood immediately after fill. This is non-negotiable and
+removes the dependency on agent presence for stop execution.
+
+---
+
+### Infrastructure Changes (Aug 18-24)
+
+| Change | What | Impact |
+|--------|------|--------|
+| Z.AI stale timeout | 90s → 300s | No more cold-start timeouts |
+| Pre-warm cron | 6:45 AM daily | Warms Z.AI before agents fire |
+| Retry script | Uses `hermes cron run` | Retries actually work now |
+| Ollama fallback | Auto-switch if Z.AI down | Agents always run |
+| GTC stop-market | Broker-side stops | Stops fire without agent |
+| model_status auto-update | 5 AM daily | No more stale alerts |
+| MCP health check | 5 → 10 turns | No more false MCP failures |
+| Pre-trade signal scan | 6:30 AM daily | Regime detection before entry |
+| Cron schedule | 7 days/week | No weekend gaps |
+| Mac sleep settings | 45 min idle | Monitors off when idle |
+
+---
+
 ## [v0.3.3] — 2026-08-14 — Engineering Infrastructure (CodeRabbit, Branch Protection, Model Split)
 
 ### Summary
