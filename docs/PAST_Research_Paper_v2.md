@@ -1,13 +1,13 @@
 # Tuning the Persona, Not the Weights: The PAST Framework for Personality-Adaptive Multi-Agent Trading Systems
 
 **Author:** John Tytko — Creator and Author
-**Date:** July 2026
-**Version:** 2.1
+**Date:** August 2026
+**Version:** 2.2
 **License:** MIT
 
 ## Abstract
 
-Traditional alignment methodologies for Large Language Models (LLMs) rely heavily on parameter fine-tuning (e.g., LoRA, RLHF), which introduces prohibitive computational overhead and compromises the foundational generalization capabilities of the base model. To address this, we introduce the **Personality-Adaptive Score Tuning (PAST)** framework, a novel, weight-free orchestration layer for Multi-Agent Systems. Instead of altering neural network weights, PAST quantifies desired behavioral personas using a multi-dimensional Likert scale (1–7). These numerical personality profiles directly cascade into dynamic, prompt-level execution rules and scoring functions. A supervisory "Coach" agent evaluates operational KPIs on a bi-weekly cycle, iteratively tuning the Likert scores within a trust region to alleviate system bottlenecks and optimize performance. Operational agents autonomously exploit historical runtime logs to refine their behaviors *in-context* without backpropagation. We implement PAST in a four-agent trading system (two competing traders, an independent judge, and a coach) and evaluate it across 6 tickers over 6.5 months using historical price data. The system achieves +15.3% cumulative returns (+$763.27 on $5,000), with agents producing differentiated behavior on identical instruments — exactly as their personality scores predict. Our framework decouples agent behavioral alignment from model training, offering a highly resource-efficient, explainable, and fully reversible architecture for steerable AI systems.
+Traditional alignment methodologies for Large Language Models (LLMs) rely heavily on parameter fine-tuning (e.g., LoRA, RLHF), which introduces prohibitive computational overhead and compromises the foundational generalization capabilities of the base model. To address this, we introduce the **Personality-Adaptive Score Tuning (PAST)** framework, a novel, weight-free orchestration layer for Multi-Agent Systems. Instead of altering neural network weights, PAST quantifies desired behavioral personas using a multi-dimensional Likert scale (1–7). These numerical personality profiles directly cascade into dynamic, prompt-level execution rules and scoring functions. A supervisory "Coach" agent evaluates operational KPIs on a bi-weekly cycle, iteratively tuning the Likert scores within a trust region to alleviate system bottlenecks and optimize performance. Operational agents autonomously exploit historical runtime logs to refine their behaviors *in-context* without backpropagation. We implement PAST in a four-agent trading system (two competing traders, an independent judge, and a coach) and evaluate it across 6 tickers over 6.5 months using historical price data. The system achieves +15.3% cumulative returns (+$763.27 on $5,000), with agents producing differentiated behavior on identical instruments — exactly as their personality scores predict. Live trading began August 6, 2026 with $5,000 real capital on Robinhood, demonstrating operational viability beyond simulation. Our framework decouples agent behavioral alignment from model training, offering a highly resource-efficient, explainable, and fully reversible architecture for steerable AI systems.
 
 ---
 
@@ -31,8 +31,8 @@ This paper makes the following contributions:
 
 1. **The PAST framework** — a formal, mathematical definition of personality scores as Likert vectors, their mapping to operational constraints via a rule cascade, and the coach-mediated tuning loop with trust region. Conceptualized by the author as a weight-free alternative to RLHF/DPO for multi-agent behavioral alignment.
 2. **In-Context Log Exploitation (ICLE)** — a micro-level feedback mechanism where agents learn from their own execution history at the inference boundary
-3. **A four-agent competitive trading architecture** — two traders with opposite strategies, an independent judge, and a coach — implemented on heterogeneous models (GLM-5.2, Deepseek R1, Claude Fable 5)
-4. **Empirical evaluation** — a backtest across 6 tickers and 6.5 months showing +15.3% returns with measurable behavioral diversity, demonstrating that PAST scores produce predictable, differentiated agent behavior on identical instruments
+3. **A four-agent competitive trading architecture** — two traders with opposite strategies, an independent judge, and a coach — implemented on heterogeneous models (GLM-5.2, Deepseek R1, Claude Fable 5), deployed live with real capital since August 6, 2026
+4. **Empirical evaluation** — a backtest across 6 tickers and 6.5 months showing +15.3% returns with measurable behavioral diversity, demonstrating that PAST scores produce predictable, differentiated agent behavior on identical instruments, followed by live production deployment with 6 real trades executed in the first two weeks
 
 While this paper validates PAST in the financial trading domain, the framework is domain-agnostic. The same personality tuning mechanism — quantified Likert scores, coach-mediated bi-weekly adjustment, in-context log exploitation — can be applied to any multi-agent system requiring behavioral adaptation, from AI tutors (where teaching style is tuned to student learning outcomes) to software engineering agents (where code review strictness is tuned to project KPIs).
 
@@ -352,9 +352,61 @@ The Judge's 13-point checklist approved 100% of trades that met entry criteria. 
 
 ---
 
-## 8. Discussion
+## 8. Live Deployment (August 2026)
 
-### 8.1 Strengths
+### 8.1 Production Go-Live
+
+Following backtest validation, the Trading Arena went live with **$5,000 real capital** on Robinhood on August 6, 2026. All four agents (Alpha, Beta, Judge, Rocky) operate autonomously via scheduled cron jobs — no human intervention except emergency circuit breakers.
+
+| Component | Schedule | Purpose |
+|-----------|----------|---------|
+| Agent Alpha | Daily 7:00 AM MST | Scan market, build thesis, invoke Judge, execute if approved |
+| Agent Beta | Daily 7:05 AM MST | Scan market, build thesis, invoke Judge, execute if approved |
+| Judge Audit | Daily 2:10 PM MST | Post-trade verification (stop adherence, PAST drift) |
+| Rocky Review | Bi-weekly Friday 5:00 PM MST | Performance analysis, PAST score tuning (±1 trust region) |
+
+**Key architecture decision: Pre-trade Judge gate.** The Judge evaluates every trade thesis **before** execution via a subprocess call (`claude -p`). Only APPROVED theses reach the real account. This eliminates the original design flaw where post-trade-only rejection forced same-day exits, creating unnecessary costs and tax noise.
+
+### 8.2 First Two Weeks (Aug 6 - Aug 18, 2026)
+
+The system executed **6 real trades** across 2 agents in the first 14 days of operation:
+
+| Date | Agent | Ticker | Entry | Stop | Size | Status | Thesis |
+|------|-------|--------|-------|------|------|--------|--------|
+| Aug 6 | Beta | ALAB | $313.09 | -10% | 3 sh | HOLDING | AI infra (power grid automation) |
+| Aug 7 | Beta | CIEN | $413.96 | -10% | 2 sh | HOLDING | Optical networking (AI data bottleneck) |
+| Aug 10 | Alpha | CVS | $95.70 | -3% | 3 sh | SOLD (Aug 14, -$3.15) | Mean reversion (RSI 33, rising MA) |
+| Aug 10 | Beta | VST | $142.50 | -10% | 3 sh | HOLDING | Energy infrastructure |
+| Aug 14 | Beta | CRWV | $105.48 | -10% | 5 sh | STOPPED (Aug 18, selling Aug 19) | Nuclear SMR (AI power) |
+| Aug 17 | Beta | CCJ | $99.00 | -10% | 3 sh | HOLDING | Uranium (AI power thesis) |
+
+**Account P&L (as of Aug 18):** -$103.75 (-2.08%). Cash remaining: $4,896.26.
+
+**Behavioral observations:**
+
+1. **Agent separation working.** Alpha (Renaissance, mean reversion, RSI-driven) executed 1 trade in 2 weeks — correctly patient, waiting for qualifying setups. Beta (Baker, architecture-first AI) executed 5 trades, all thesis-driven AI infrastructure names. Zero convergence (both agents in same ticker).
+
+2. **Judge gate effectiveness.** 100% pre-trade approval rate. All 6 trades met the 13-point checklist before execution. No post-trade rejections requiring forced exits.
+
+3. **PAST drift check.** Alpha's CVS trade (Entry Patience 6/7, Hold Duration 3/7) matched profile: waited 15 sessions for RSI < 35, exited after 4 days. Beta's 5 trades (Entry Patience 6/7, Hold Duration 7/7) all entered on thesis, none exited on time — stopped only. Drift = 0.
+
+4. **Stop discipline.** Alpha's 3% stop triggered on CVS at -3.29% (working correctly). Beta's CRWV hit -10% stop on Aug 18, selling Aug 19. No stop violations.
+
+5. **Market regime stress test.** Aug 5-14 saw a 35-47% AI infrastructure selloff (NVDA -8.5%, SMH -15%). Beta's 5 AI names all entered during this drawdown — consistent with Baker's "buy architecture bottlenecks when oversold" thesis (Entry Patience 6/7). Alpha stayed out (RSI > 35 on most names).
+
+### 8.3 Operational Learnings
+
+**PAST persistence compliance gap (fixed v0.3.0).** Agent Alpha failed to persist its full PAST index in state files for 3 consecutive Rocky reviews (Jul 25, Aug 1, Aug 8), preventing drift detection. Rocky flagged this as a compliance escalation with a hard Aug 15 deadline. The root cause: Alpha's cron prompt lacked an execution step for writing the PAST index — the coach's directive had no path to enforcement. **Fix:** Added `STEP 9 — PAST INDEX PERSISTENCE` to Alpha's cron prompt and updated the skill documentation. Lesson: A coaching framework that depends on persisted data is only as good as the persistence step in the execution loop.
+
+**Patience trait split (v0.3.0).** The single "Patience" score conflated two independent behaviors: patience to *enter* (waiting for qualifying setups) and patience to *hold* (resisting mechanical exits when thesis intact). Split into **Entry Patience** (confluence requirements before entry) and **Hold Duration** (time-based vs thesis-based exits). This enabled Rocky to detect drift on each dimension independently — e.g., if Alpha starts entering on weaker setups (Entry Patience drift) without changing hold behavior, the split catches it where a single score would have masked it.
+
+**Model architecture clarification (v0.3.1-v0.3.3).** Documentation updates established the two-layer architecture: GLM-5.2 (Z.AI cloud) is the **execution layer** for all agents (cron sessions, tooling, MCP, order placement), while Deepseek R1 70B (local Ollama) is Beta's **reasoning brain** (architecture-first thesis analysis). Alpha uses GLM-5.2 for both execution and reasoning (statistical only, no deep model needed). This architecture demonstrates that PAST works across heterogeneous model configurations (cloud + local, statistical + deliberative).
+
+---
+
+## 9. Discussion
+
+### 9.1 Strengths
 
 **Behavioral diversity is emergent and measurable.** The same stock produces different behavior from different agents — not because the prompts differ, but because the personality vectors cascade into different trading rules. This is the core contribution: personality as a tunable parameter.
 
@@ -364,7 +416,7 @@ The Judge's 13-point checklist approved 100% of trades that met entry criteria. 
 
 **ICLE produces self-correction.** Alpha's state file documents 18 strategy learnings accumulated over 6.5 months, including the observation that "the RSI<35 threshold may be too conservative for names with strong intact uptrends." This is the agent learning from its own execution history — $\Psi(H_t, K)$ in action.
 
-### 8.2 Limitations
+### 9.2 Limitations
 
 **Small sample size.** 28 trades across 6 tickers is insufficient for statistical significance. The +15.3% return could be partially attributed to the AI capex bull market of H1 2026.
 
@@ -372,7 +424,7 @@ The Judge's 13-point checklist approved 100% of trades that met entry criteria. 
 
 **Regime dependence.** Beta's +$754 was dominated by a single +$880 MU trade. In a different market regime, Beta's 27% win rate with 10% stops could produce consecutive losses without a compensating win.
 
-### 8.3 Comparison with Existing Frameworks
+### 9.3 Comparison with Existing Frameworks
 
 | Dimension | PAST (Ours) | TradingAgents | AI Hedge Fund | AI-Trader |
 |-----------|-------------|---------------|----------------|-----------|
@@ -388,7 +440,7 @@ The Judge's 13-point checklist approved 100% of trades that met entry criteria. 
 
 **PAST's unique contribution:** No other framework tunes agent personality based on observed performance. TradingAgents and AI Hedge Fund use static roles/personas. PAST makes personality a dynamic, coach-tuned parameter with a trust region for stability, supplemented by ICLE for micro-level self-correction.
 
-### 8.4 Future Work
+### 9.4 Future Work
 
 1. **Extended backtesting** — 12+ months across 50+ tickers and multiple market regimes
 2. **Live deployment results** — compare simulated vs. live P&L after August 2026 go-live
@@ -403,11 +455,11 @@ The Judge's 13-point checklist approved 100% of trades that met entry criteria. 
 
 ---
 
-## 9. Conclusion
+## 10. Conclusion
 
 We presented **Personality-Adaptive Score Tuning (PAST)**, a novel, weight-free alignment framework for multi-agent LLM systems. By quantifying agent personas into discrete 1–7 Likert vectors, PAST cleanly decouples runtime behavioral steerability from parameter-level model training. The combination of a macro-level, bi-weekly **Coach review loop** (with trust region) and a micro-level **In-Context Log Exploitation (ICLE)** pipeline yields system performance that rivals parameter-tuned frameworks while introducing zero compute overhead at the training layer.
 
-In a trading system backtest across 6 tickers and 6.5 months, the framework produced +15.3% returns with measurable behavioral diversity — agents with different PAST vectors made different decisions on the same instrument, exactly as their profiles predicted. The coaching loop adapted personality scores bi-weekly based on performance, creating a closed-loop learning system without weight fine-tuning.
+In a trading system backtest across 6 tickers and 6.5 months, the framework produced +15.3% returns with measurable behavioral diversity — agents with different PAST vectors made different decisions on the same instrument, exactly as their profiles predicted. The coaching loop adapted personality scores bi-weekly based on performance, creating a closed-loop learning system without weight fine-tuning. Live deployment with $5,000 real capital (August 2026) demonstrated operational viability: 6 trades executed across 2 agents in the first 2 weeks, with zero PAST drift and 100% Judge gate approval rate.
 
 The key insight: **agents learn from their PAST.** Not by updating weights, but by adjusting the quantified personality that drives their rules, and by exploiting their own execution history at the inference boundary. This is contextual reinforcement learning at the instruction level — lightweight, interpretable, auditable, and achievable on consumer hardware without GPU training.
 

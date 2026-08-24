@@ -1,0 +1,135 @@
+# PAST Framework Architecture — Text Diagram
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                      PAST FRAMEWORK ARCHITECTURE                             │
+│                   Four-Agent Competitive Trading System                      │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌────────────────────┐                                      ┌────────────────────┐
+│   AGENT ALPHA 🤵   │                                      │   AGENT BETA 🧥    │
+│  Renaissance/Mean  │                                      │ Atreides/Baker AI  │
+│     Reversion      │                                      │   Architecture     │
+├────────────────────┤                                      ├────────────────────┤
+│ Model:             │                                      │ Model:             │
+│  GLM-5.2 (exec +   │                                      │  GLM-5.2 (exec)    │
+│  reasoning)        │                                      │  Deepseek R1 70B   │
+│                    │                                      │  (reasoning)       │
+├────────────────────┤                                      ├────────────────────┤
+│ Strategy:          │                                      │ Strategy:          │
+│  RSI < 35          │                                      │  Thesis-driven     │
+│  Rising 50-day MA  │                                      │  AI infra only     │
+│  3% stop loss      │                                      │  10% stop loss     │
+│  3-5 day hold      │                                      │  Weeks-months hold │
+├────────────────────┤                                      ├────────────────────┤
+│ PAST Scores:       │                                      │ PAST Scores:       │
+│  Risk: 3/7         │                                      │  Risk: 5/7         │
+│  Conviction: 4/7   │                                      │  Conviction: 6/7   │
+│  Entry Patience:   │                                      │  Entry Patience:   │
+│    6/7             │                                      │    6/7             │
+│  Hold Duration:    │                                      │  Hold Duration:    │
+│    3/7             │                                      │    7/7             │
+└────────────────────┘                                      └────────────────────┘
+         │                                                           │
+         │ Daily 7:00 AM MST                        Daily 7:05 AM MST │
+         │ Build thesis                              Build thesis     │
+         ▼                                                           ▼
+         │────────────────────────┐       ┌────────────────────────│
+                                  │       │
+                                  ▼       ▼
+                    ┌──────────────────────────────────┐
+                    │    JUDGE ⚖️  (Pre-Trade Gate)    │
+                    │   Independent Trade Verifier     │
+                    ├──────────────────────────────────┤
+                    │ Model: Claude Fable 5            │
+                    │        (Claude Code subprocess)  │
+                    ├──────────────────────────────────┤
+                    │ 13-Point Checklist:              │
+                    │  1. Thesis supported by data     │
+                    │  2. Position size appropriate    │
+                    │  3. Stop loss set                │
+                    │  4. PAST drift check             │
+                    │  5. Convergence check            │
+                    │  6. Earnings < 5 days            │
+                    │  7. Liquidity check              │
+                    │  8. PAST personality fit         │
+                    │  9. Options budget               │
+                    │ 10. Catalyst present             │
+                    │ 11. State file honesty           │
+                    │ 11b. Restricted stock check      │
+                    │ 11c. IPO ban (< 90 days)         │
+                    │ 11d. PAST drift detection        │
+                    ├──────────────────────────────────┤
+                    │ Score ≥ 10/13 → APPROVED         │
+                    │ Score < 10/13 → REJECTED         │
+                    └──────────────────────────────────┘
+                                  │
+         ┌────────────────────────┼────────────────────────┐
+         │                        │                        │
+         │ APPROVED              │ REJECTED               │ APPROVED
+         │                        │                        │
+         ▼                        ▼                        ▼
+    Execute trade          No action taken           Execute trade
+    + GTC stop-market                                + GTC stop-market
+         │                                                │
+         │                                                │
+         └────────────────────┬───────────────────────────┘
+                              │
+                              │ Bi-weekly Friday 5:00 PM MST
+                              │ Performance data
+                              ▼
+                    ┌──────────────────────────────────┐
+                    │       ROCKY 🦊 (Coach)           │
+                    │    PAST Score Tuning Loop        │
+                    ├──────────────────────────────────┤
+                    │ Model: GLM-5.2 (exec)            │
+                    ├──────────────────────────────────┤
+                    │ Function:                        │
+                    │  1. Observe outcomes (P&L,       │
+                    │     learnings, drift patterns)   │
+                    │  2. Identify bottlenecks         │
+                    │  3. Adjust PAST scores           │
+                    │     (Trust region: ±1 per trait) │
+                    │  4. Write new scores to skills   │
+                    ├──────────────────────────────────┤
+                    │ ΔP(i,t) = γ·σ(i)·Φ(K_target -    │
+                    │           K_observed,t)          │
+                    │ |ΔP(i,t)| ≤ 1  (trust region)    │
+                    └──────────────────────────────────┘
+                              │
+                              │ PAST tuning (±1)
+         ┌────────────────────┼────────────────────────┐
+         │                                             │
+         ▼                                             ▼
+    Update Alpha                                  Update Beta
+    PAST scores                                   PAST scores
+    in skill file                                 in skill file
+
+
+═══════════════════════════════════════════════════════════════════════════════
+                              DAILY SCHEDULE (7 days/week)
+───────────────────────────────────────────────────────────────────────────────
+ 5:00 AM MST   │  Pre-Market Health Check (state files, connectivity)
+ 6:45 AM MST   │  Z.AI Pre-Warm (avoid cold-start timeout)
+ 7:00 AM MST   │  Agent Alpha session (scan, thesis, Judge gate, execute)
+ 7:05 AM MST   │  Agent Beta session (scan, thesis, Judge gate, execute)
+ 2:10 PM MST   │  Daily Judge Audit (post-trade verification, drift check)
+ 2:20 PM MST   │  Email Dashboard (P&L, positions, alerts)
+ Every 30 min  │  Claude OAuth Token Monitor
+ Every 2h      │  Claude OAuth Keepalive + Zombie Cleanup
+───────────────────────────────────────────────────────────────────────────────
+ Bi-weekly     │  Rocky Review (performance analysis, PAST score tuning)
+ Friday 5 PM   │  Trust region: ±1 per trait per cycle
+═══════════════════════════════════════════════════════════════════════════════
+
+
+KEY DESIGN PRINCIPLES:
+
+1. PRE-TRADE GATE: Judge evaluates BEFORE execution → no forced same-day exits
+2. COGNITIVE DIVERSITY: 3 models (GLM-5.2, Deepseek R1, Claude) → no single-model bias
+3. SEPARATION OF POWERS: Judge runs on different model from traders → independence
+4. TRUST REGION STABILITY: ±1 per trait per cycle → prevents wild oscillation
+5. ICLE (In-Context Log Exploitation): Agents read own execution history at start
+6. GTC STOP-MARKET ORDERS: Automatic execution when price hits stop → no agent needed
+7. ZERO HUMAN INTERVENTION: System runs autonomously 7 days/week
+```
