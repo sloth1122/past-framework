@@ -18,6 +18,7 @@ import subprocess
 import os
 import sys
 import json
+import re
 import datetime
 import glob
 
@@ -92,9 +93,9 @@ def check_claude_oauth_and_connectivity():
                   f"and auto-refresh FAILED. Judge gate + Robinhood MCP are DOWN. "
                   f"Run `claude auth login` NOW.")
         else:
-            alert(f"CRITICAL: Claude Code connectivity test FAILED. "
-                  f"Judge gate + Robinhood MCP are DOWN. "
-                  f"Run `claude auth login` or check Claude installation.")
+            alert("CRITICAL: Claude Code connectivity test FAILED. "
+                  "Judge gate + Robinhood MCP are DOWN. "
+                  "Run `claude auth login` or check Claude installation.")
     except Exception as e:
         alert(f"ERROR reading Claude credentials: {e}")
 
@@ -117,7 +118,7 @@ def test_claude_connectivity():
         return False
 
 def test_zai_api():
-    """Check Z.AI API (GLM-5.2 for agent reasoning)."""
+    """Check Z.AI API (GLM-5.2 for agent reasoning). Returns True if healthy."""
     try:
         result = subprocess.run(
             ["curl", "-s", "-o", "/dev/null", "-w", "%{http_code}",
@@ -129,12 +130,15 @@ def test_zai_api():
             alert(f"WARNING: Z.AI API returned HTTP {code} (expected 200). "
                   f"GLM-5.2 (agent reasoning) may be down. "
                   f"Check .env for ZAI_API_KEY or plan credits.")
+            return False
+        return True
     except Exception as e:
         alert(f"WARNING: Z.AI API check failed: {e}. "
               f"GLM-5.2 (agent reasoning) may be down.")
+        return False
 
 def test_ollama():
-    """Check Ollama (Deepseek R1 fallback for Judge/Beta)."""
+    """Check Ollama (Deepseek R1 fallback for Judge/Beta). Returns True if healthy."""
     try:
         result = subprocess.run(
             ["ollama", "list"], capture_output=True, text=True, timeout=OLLAMA_TIMEOUT
@@ -142,23 +146,30 @@ def test_ollama():
         if result.returncode != 0:
             alert(f"WARNING: Ollama not responding (exit {result.returncode}). "
                   f"Deepseek R1 fallback is DOWN. Start with `ollama serve`.")
-            return
+            return False
         if "deepseek-r1:70b" not in result.stdout:
             alert("WARNING: Ollama running but deepseek-r1:70b not found. "
                   "Judge/Beta fallback is unavailable. Run `ollama pull deepseek-r1:70b`.")
+            return False
+        return True
     except FileNotFoundError:
         alert("WARNING: Ollama not installed. Judge/Beta fallback is unavailable.")
+        return False
     except subprocess.TimeoutExpired:
         alert(f"WARNING: Ollama timed out after {OLLAMA_TIMEOUT}s. "
               f"Fallback model may be hung. Try `ollama serve`.")
+        return False
     except Exception as e:
         alert(f"WARNING: Ollama check error: {e}")
+        return False
 
 def test_robinhood_mcp():
-    """Quick Robinhood MCP test via claude -p (read-only account check)."""
+    """Quick Robinhood MCP test via claude -p (read-only account check).
+    Returns True if healthy."""
     try:
         cmd = ("Use the robinhood-trading MCP to get_account overview for the account "
-               "with nickname 'Agentic' ending in 8877. Report just the buying power. "
+               "with nickname 'Agentic' ending in 8877. Report just the buying power "
+               "preceded by the exact marker MCP_OK: (e.g. 'MCP_OK:5000.00'). "
                "If MCP is not available, reply: MCP_UNAVAILABLE")
         result = subprocess.run(
             [CLAUDE_BIN, "-p", cmd,
@@ -169,22 +180,27 @@ def test_robinhood_mcp():
             alert(f"CRITICAL: Robinhood MCP test FAILED (exit {result.returncode}). "
                   f"Trades cannot execute. Check MCP server config. "
                   f"Stderr: {result.stderr[:200] if result.stderr else 'none'}")
-            return
+            return False
         if "MCP_UNAVAILABLE" in result.stdout:
             alert("CRITICAL: Robinhood MCP server is NOT connected to Claude Code. "
                   "Trades cannot execute. Check `claude mcp list` or restart Claude.")
-            return
-        # If we got a buying power number, MCP works
-        if "buying power" in result.stdout.lower() or "$" in result.stdout:
-            return  # MCP is working
-        # Ambiguous response — flag as warning
-        alert("WARNING: Robinhood MCP test returned unclear response. "
-              "MCP may be partially down. Verify manually: `claude -p 'get account 8877'`")
+            return False
+        # Require explicit MCP_OK:<buying_power> marker to prove get_account completed
+        mcp_match = re.search(r"MCP_OK:(\S+)", result.stdout)
+        if mcp_match:
+            return True  # MCP is working — got explicit success marker
+        # No explicit marker — treat as failure
+        alert("CRITICAL: Robinhood MCP test returned no MCP_OK marker. "
+              "get_account did not complete or MCP is partially down. "
+              "Verify manually: `claude -p 'get account 8877'`")
+        return False
     except subprocess.TimeoutExpired:
-        alert("CRITICAL: Robinhood MCP test timed out (120s). "
+        alert("CRITICAL: Robinhood MCP test timed out (180s). "
               "MCP server may be hung. Trades cannot execute.")
+        return False
     except Exception as e:
         alert(f"CRITICAL: Robinhood MCP test error: {e}")
+        return False
 
 def check_state_files():
     """Check that state files exist and are recent."""
@@ -208,22 +224,37 @@ def check_state_files():
                   f"{mtime.strftime('%b %d %H:%M')}). May cause agents to trade on "
                   f"outdated data.")
 
-def update_model_status():
-    """Auto-update model_status.md with current timestamp so it doesn't go stale."""
+def update_model_status(zai_ok=False, ollama_ok=False, mcp_ok=False):
+    """Auto-update model_status.md with current timestamp and actual probe results.
+    Only writes ALL OPERATIONAL when all probes succeeded."""
     try:
         now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M MT")
+        all_ok = zai_ok and ollama_ok and mcp_ok
+        if all_ok:
+            status_line = "## Current Status: ALL OPERATIONAL\n\n"
+            header_note = "> All models operational (verified by health check).\n\n"
+        else:
+            failed = []
+            if not zai_ok:
+                failed.append("Z.AI/GLM-5.2")
+            if not ollama_ok:
+                failed.append("Ollama/Deepseek R1")
+            if not mcp_ok:
+                failed.append("Robinhood MCP/Claude")
+            status_line = f"## Current Status: DEGRADED ({', '.join(failed)} failed)\n\n"
+            header_note = "> One or more probes failed — see alerts above.\n\n"
         with open(MODEL_STATUS, 'w') as f:
-            f.write(f"# Model Status — Trading Arena\n\n")
+            f.write("# Model Status — Trading Arena\n\n")
             f.write(f"> Auto-updated by pre-market health check: {now}\n")
-            f.write(f"> All models operational (verified by health check).\n\n")
-            f.write(f"## Current Status: ALL OPERATIONAL\n\n")
-            f.write(f"| Model | Provider | Status |\n")
-            f.write(f"|---|---|---|\n")
-            f.write(f"| GLM-5.2 | Z.AI (cloud) | ✅ Active |\n")
-            f.write(f"| Deepseek R1 70B | Ollama (local) | ✅ Fallback |\n")
-            f.write(f"| Claude Fable 5 | Claude Code | ✅ Judge gate |\n")
-    except Exception:
-        pass  # Non-critical — don't fail the health check
+            f.write(header_note)
+            f.write(status_line)
+            f.write("| Model | Provider | Status |\n")
+            f.write("|---|---|---|\n")
+            f.write(f"| GLM-5.2 | Z.AI (cloud) | {'✅ Active' if zai_ok else '❌ Down'} |\n")
+            f.write(f"| Deepseek R1 70B | Ollama (local) | {'✅ Fallback' if ollama_ok else '❌ Down'} |\n")
+            f.write(f"| Claude Fable 5 | Claude Code | {'✅ Judge gate' if mcp_ok else '❌ Down'} |\n")
+    except Exception as e:
+        alert(f"WARNING: Failed to update model_status.md: {e}")
 
 def main():
     # Clean up zombie cron executions first (prevents 7 AM agent crons from being blocked)
@@ -236,12 +267,12 @@ def main():
 
     # Run all checks
     check_claude_oauth_and_connectivity()  # 1+2. OAuth token + Claude connectivity
-    test_zai_api()             # 3. Z.AI API (GLM-5.2)
-    test_ollama()               # 4. Ollama fallback
-    test_robinhood_mcp()        # 5. Robinhood MCP end-to-end
+    zai_ok = test_zai_api()             # 3. Z.AI API (GLM-5.2)
+    ollama_ok = test_ollama()           # 4. Ollama fallback
+    mcp_ok = test_robinhood_mcp()       # 5. Robinhood MCP end-to-end
 
     # Auto-update model_status.md BEFORE checking state files (so it's always fresh)
-    update_model_status()
+    update_model_status(zai_ok=zai_ok, ollama_ok=ollama_ok, mcp_ok=mcp_ok)
 
     check_state_files()         # 6. State files exist & fresh (now sees fresh model_status)
 
