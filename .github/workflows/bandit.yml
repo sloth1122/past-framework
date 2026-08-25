@@ -1,0 +1,22 @@
+name: "Bandit Security Scan"
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  bandit:
+    name: Bandit Security Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run Bandit
+        uses: jxnlp/run-bandit@v1
+        with:
+          path: scripts/ backtest/
+          level: LOW
+          fail_on: HIGH
