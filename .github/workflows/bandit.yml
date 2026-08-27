@@ -14,9 +14,27 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Run Bandit
-        uses: jxnlp/run-bandit@v1
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
-          path: scripts/ backtest/
-          level: LOW
-          fail_on: HIGH
+          python-version: '3.11'
+
+      - name: Install Bandit
+        run: pip install bandit
+
+      - name: Run Bandit
+        run: bandit -r scripts/ backtest/ -f json -o /tmp/bandit_results.json || true
+
+      - name: Check for HIGH severity findings
+        run: |
+          python3 -c "
+          import json
+          with open('/tmp/bandit_results.json') as f:
+              results = json.load(f).get('results', [])
+          high = [r for r in results if r['issue_severity'] == 'HIGH']
+          if high:
+              for h in high:
+                  print(f\"HIGH: {h['filename']}:{h['line_number']} {h['test_id']} {h['issue_text']}\")
+              exit(1)
+          print(f'Bandit: {len(results)} findings (0 HIGH)')
+          "
