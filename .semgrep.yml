@@ -38,20 +38,30 @@ rules:
     languages: [python]
     severity: ERROR
     patterns:
-      - pattern: '"$2,500.00"'
+      - pattern-either:
+          - pattern: '"$2,500.00"'
+          - pattern: '"$2,500"'
+          - pattern: '"2500.00"'
+          - pattern: '"2,500.00"'
+          - pattern: '"2,500"'
+          - pattern: '$X = 2500'
+          - pattern: '$X = 2500.00'
     paths:
       include:
         - "**/send_dashboard_email.py"
         - "**/generate_dashboard.py"
         - "**/orchestrator.py"
 
-  # Rule 4: Z.AI timeout must not be 90 seconds (must be 300+)
+  # Rule 4: Z.AI timeout must be >= 300 seconds (must not be below 300)
   - id: past-zai-stale-timeout-minimum
-    message: "Z.AI CLAUDE_TIMEOUT must be >= 300 (GLM-5.2 cold-start takes 90-120s, 90s default kills it)"
+    message: "Z.AI CLAUDE_TIMEOUT must be >= 300 (GLM-5.2 cold-start takes 90-120s, low values kill it)"
     languages: [python]
     severity: ERROR
     patterns:
-      - pattern: CLAUDE_TIMEOUT = 90
+      - pattern: CLAUDE_TIMEOUT = $N
+      - metavariable-comparison:
+          metavariable: $N
+          comparison: str($N).isdigit() and int($N) < 300
     paths:
       include:
         - "**/trading_arena_premarket_health.py"
@@ -62,7 +72,13 @@ rules:
     languages: [python]
     severity: WARNING
     patterns:
-      - pattern: '"$2,500"'
+      - pattern-either:
+          - pattern: '"$2,500"'
+          - pattern: '"$2,500.00"'
+          - pattern: '"2,500"'
+          - pattern: '"2500"'
+          - pattern: '"2500.00"'
+          - pattern: '"2,500.00"'
     paths:
       include:
         - "**/*.py"

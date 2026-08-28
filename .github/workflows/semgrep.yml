@@ -10,11 +10,28 @@ jobs:
   semgrep:
     name: Semgrep Architecture Scan
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Checkout base-branch Semgrep policy
+        if: github.event_name == 'pull_request'
+        run: |
+          git fetch origin "${{ github.base_ref }}" --depth=1
+          git show "origin/${{ github.base_ref }}:.semgrep.yml" > /tmp/base.semgrep.yml
+          cp /tmp/base.semgrep.yml .semgrep.yml
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Semgrep (pinned)
+        run: pip install semgrep==1.85.0
 
       - name: Run Semgrep
-        uses: returntocorp/semgrep-action@v1
-        with:
-          config: .semgrep.yml
+        run: semgrep scan --config .semgrep.yml --error --json

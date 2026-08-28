@@ -15,6 +15,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -25,7 +27,7 @@ jobs:
         run: pip install bandit==1.9.4
 
       - name: Run Bandit
-        run: bandit -r scripts/ backtest/ -f json -o /tmp/bandit_results.json
+        run: bandit -r scripts/ backtest/ -f json -o /tmp/bandit_results.json --exit-zero
 
       - name: Check for HIGH findings and scan errors
         run: |
