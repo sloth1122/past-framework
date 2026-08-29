@@ -185,10 +185,13 @@ def test_robinhood_mcp():
             alert("CRITICAL: Robinhood MCP server is NOT connected to Claude Code. "
                   "Trades cannot execute. Check `claude mcp list` or restart Claude.")
             return False
-        # Require explicit MCP_OK:<buying_power> marker to prove get_account completed
-        mcp_match = re.search(r"MCP_OK:(\S+)", result.stdout)
+        # Require exact MCP_OK:<buying_power> numeric response to prove get_account completed
+        mcp_match = re.fullmatch(
+            r"MCP_OK:\d+(?:\.\d{2})?",
+            result.stdout.strip(),
+        )
         if mcp_match:
-            return True  # MCP is working — got explicit success marker
+            return True  # MCP is working — got explicit numeric buying-power response
         # No explicit marker — treat as failure
         alert("CRITICAL: Robinhood MCP test returned no MCP_OK marker. "
               "get_account did not complete or MCP is partially down. "
