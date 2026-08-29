@@ -1,0 +1,51 @@
+name: "Bandit Security Scan"
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  bandit:
+    name: Bandit Security Check
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Bandit (pinned)
+        run: pip install bandit==1.9.4
+
+      - name: Run Bandit
+        run: bandit -r scripts/ backtest/ -f json -o /tmp/bandit_results.json --exit-zero
+
+      - name: Check for HIGH findings and scan errors
+        run: |
+          python3 -c "
+          import json, sys
+          with open('/tmp/bandit_results.json') as f:
+              data = json.load(f)
+          results = data.get('results', [])
+          errors = data.get('errors', [])
+          high = [r for r in results if r['issue_severity'] == 'HIGH']
+          if errors:
+              for e in errors:
+                  print(f'ERROR: {e.get(\"filename\", \"?\")} — {e.get(\"reason\", \"unknown\")}')
+              print(f'Bandit scan had {len(errors)} parse error(s) — scan may be incomplete')
+              sys.exit(1)
+          if high:
+              for h in high:
+                  print(f'HIGH: {h[\"filename\"]}:{h[\"line_number\"]} {h[\"test_id\"]} {h[\"issue_text\"]}')
+              sys.exit(1)
+          print(f'Bandit: {len(results)} findings (0 HIGH, 0 errors)')
+          "
