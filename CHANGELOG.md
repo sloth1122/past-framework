@@ -5,6 +5,51 @@ Format based on [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [v0.5.0] — 2026-09-28 — Gate 1: Deterministic Pre-Gate for the LLM Judge
+
+### Summary
+
+A new mechanical fact-check layer (`gate1/gate1_pregate.py`) now runs
+**before** the LLM Judge on every agent thesis submission. Motivated by
+an audit of the Judge's own decision log: nearly every catch across
+Sep 16–28 was arithmetic, not reasoning — misstated market caps (5.5x,
+6x), buying-power misrepresentation (shared-account cash claimed as
+deployable), stale prices placed into pre-market gaps, and R/R ratios
+that don't recompute. No LLM should spend reasoning budget on arithmetic
+a script cannot get wrong.
+
+Also included: the stop-out recovery audit that drove the `STOP` check.
+Of 7 consecutive stopped-out positions, 3 recovered above their stop
+price within days (ALAB +24.7%, MU +16.2%, COHR +2.1% same-day) — the
+theses were right, but a fixed 10% stop on a high-ATR name is ~2 days
+of normal volatility, so thesis-correct trades were being converted
+into permanent losses by the risk rule itself. The fix: stops must
+clear 2× ATR14, with position size reduced so dollar risk is unchanged.
+
+### Added — `gate1/` (9 deterministic checks, zero LLM)
+
+`CAPITAL` (deployable math) · `SLOTS` (book/layer caps) · `MKTCAP`
+(claimed vs verified ±10%) · `PRICE` (freshness <5 min, ±2% sanity,
+gap-chase detection) · `RR` (recomputed from entry/target/stop; floor
+2:1; >5% misrepresentation rejected) · `STOP` (2×ATR14 minimum, 20%
+cap) · `RISK` (wider stop ⇒ smaller size, dollar risk constant) ·
+`EARN` (7-day blackout) · `REENTRY` (5-day ban after stop-out).
+
+**Validation methodology:** (1) selftest replays every historical
+Judge catch as a test case — 12/12 reproduce mechanically; run after
+any edit; (2) shadow mode logs verdicts alongside the LLM Judge for
+comparison before enforcement (danger case: gate-FAIL + Judge-APPROVE
+→ mandatory human review); (3) enforce when disagreement < 10%. Check
+crashes are treated as FAILs, never silent passes; every verdict is
+appended to an append-only JSONL audit log with claimed-vs-verified
+evidence.
+
+**Integration:** the pre-market health check now runs the Gate 1
+selftest every morning (5 AM) alongside model/API checks — any edit
+that breaks a check alerts before agents trade.
+
+---
+
 ## [v0.4.0] — 2026-08-24 — Live Trading Lessons (Aug 18-24): Risk, Reliability, Regime
 
 ### Summary

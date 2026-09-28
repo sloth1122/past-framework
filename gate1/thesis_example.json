@@ -1,0 +1,22 @@
+{
+  "thesis_id": "EXAMPLE-2026-01-01-A",
+  "ticker": "TEST",
+  "entry_price": 100.0,
+  "target_price": 120.0,
+  "stop_price": 90.0,
+  "shares": 1.0,
+  "position_value": 100.0,
+  "market_cap": 50000000000,
+  "layer": "compute",
+  "claimed_rr": 2.0,
+  "allocation_share": 1.0,
+  "account": {"cash": 3000.0},
+  "market": {
+    "last_price": 100.0,
+    "quote_time": "NOTE: replace with a fresh UTC ISO timestamp before running — the PRICE check rejects quotes older than 5 minutes (the example date below is intentionally stale so you can see the gate fire)",
+    "market_cap": 50000000000,
+    "atr14": 4.0,
+    "earnings_date": null
+  },
+  "agent_book": {"positions": [], "recent_stop_exits": []}
+}
