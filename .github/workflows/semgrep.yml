@@ -22,8 +22,12 @@ jobs:
         if: github.event_name == 'pull_request'
         run: |
           git fetch origin "${{ github.base_ref }}" --depth=1
-          git show "origin/${{ github.base_ref }}:.semgrep.yml" > /tmp/base.semgrep.yml
-          cp /tmp/base.semgrep.yml .semgrep.yml
+          if git show "origin/${{ github.base_ref }}:.semgrep.yml" > /tmp/base.semgrep.yml 2>/dev/null; then
+            cp /tmp/base.semgrep.yml .semgrep.yml
+            echo "Using base-branch .semgrep.yml from origin/${{ github.base_ref }}"
+          else
+            echo "No .semgrep.yml on origin/${{ github.base_ref }} — using PR's own .semgrep.yml"
+          fi
 
       - name: Set up Python
         uses: actions/setup-python@v5
