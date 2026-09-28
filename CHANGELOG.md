@@ -35,14 +35,21 @@ gap-chase detection) · `RR` (recomputed from entry/target/stop; floor
 cap) · `RISK` (wider stop ⇒ smaller size, dollar risk constant) ·
 `EARN` (7-day blackout) · `REENTRY` (5-day ban after stop-out).
 
-**Validation methodology:** (1) selftest replays every historical
-Judge catch as a test case — 12/12 reproduce mechanically; run after
-any edit; (2) shadow mode logs verdicts alongside the LLM Judge for
-comparison before enforcement (danger case: gate-FAIL + Judge-APPROVE
-→ mandatory human review); (3) enforce when disagreement < 10%. Check
-crashes are treated as FAILs, never silent passes; every verdict is
-appended to an append-only JSONL audit log with claimed-vs-verified
-evidence.
+**Validation methodology:** (1) selftest runs 19 synthetic scenarios
+built from the failure patterns documented in the Judge's decision log
+(including positive controls and adversarial cases — backdated-clock
+attack, understated position value, allocation_share inflation,
+circular risk budget); run after any edit; (2) shadow mode logs
+verdicts alongside the LLM Judge for comparison before enforcement
+(danger case: gate-FAIL + Judge-APPROVE → mandatory human review);
+(3) enforce when disagreement < 10%. Check crashes are treated as
+FAILs, never silent passes; every verdict is appended to an
+append-only JSONL audit log with claimed-vs-verified evidence.
+
+**Trust model:** enforce mode accepts account/market/book data only
+from the harness (live MCP pulls). Thesis-embedded data is restricted
+to explicit `--demo` mode; the evaluation clock is always the gate's
+own, preventing backdated freshness checks.
 
 **Integration:** the pre-market health check now runs the Gate 1
 selftest every morning (5 AM) alongside model/API checks — any edit

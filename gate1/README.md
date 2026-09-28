@@ -34,11 +34,25 @@ Every verdict is appended to `gate1_log.jsonl` with claimed-vs-verified
 evidence. A check that *crashes* is treated as a FAIL, never a silent
 pass — the gate cannot fail quietly by construction.
 
+## Trust model
+
+Account, market, and agent-book data is trusted ONLY when injected by
+the harness from live MCP pulls (`--account/--market/--book`). A thesis
+file may embed these values ONLY in explicit `--demo` mode — enforce
+mode refuses to run on submitter-controlled data, and the evaluation
+clock is always the gate's own (a thesis cannot backdate freshness
+checks).
+
 ## Validation methodology (how you know the gate works but isn't wrong)
 
-1. **Selftest = replay of real catches.** Each test case is a real
-   historical failure the LLM Judge caught. The gate must reproduce
-   every one mechanically. 12 cases: 12 pass.
+1. **Selftest = synthetic scenarios built from real failure patterns.**
+   Each test case reconstructs a failure pattern documented in the
+   Judge's decision log (capital misrep, market-cap error, gap chase,
+   R/R misrep, whipsaw stop, re-entry ban, blackout, stale quote,
+   layer cap, price-parse deviation) — not byte-for-byte replays of
+   historical submissions. Includes positive controls and adversarial
+   cases (backdated-clock attack, understated position value,
+   allocation_share inflation, circular risk budget). 19 cases: 19 pass.
 2. **Shadow mode.** Run before the LLM Judge for N sessions, logging only.
    Compare verdicts. The danger case is Gate-FAIL + Judge-APPROVE
    (over-rejection) — those get mandatory human review. Gate-PASS +
