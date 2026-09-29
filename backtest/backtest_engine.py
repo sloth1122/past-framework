@@ -63,7 +63,7 @@ def beta_should_enter(row, position, ticker_info):
     pulled_back = price <= high_52 * 0.85
     return near_low or pulled_back
 
-def beta_should_exit(row, entry, days_held):
+def beta_should_exit(row, entry, days_held=None):
     """Beta exits on 10% stop only (thesis holds, weeks-months timeframe)."""
     price = row['Close']
     stop = entry['entry_price'] * 0.90  # 10% stop
@@ -95,7 +95,7 @@ def calc_rsi(prices, period=14):
         rsi[i] = 100.0 - (100.0 / (1.0 + rs))
     return rsi
 
-def prepare_data(df, ticker):
+def prepare_data(df, ticker=None):
     """Add RSI, MA50, MA50 slope to the dataframe."""
     prices = df['Close'].values
     df = df.copy()

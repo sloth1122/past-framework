@@ -1,8 +1,12 @@
 #!/usr/bin/env python3
 """Simulation runner, Judge checklist, Rocky PAST tuning."""
-import json, os, sys, datetime
+import json, os, sys, datetime, math
 sys.path.insert(0, os.path.dirname(__file__))
-from backtest_engine import *
+from backtest_engine import (
+    ALLOC, prepare_data, calc_rsi,
+    alpha_should_enter, alpha_should_exit,
+    beta_should_enter, beta_should_exit
+)
 
 # ─── JUDGE 13-POINT CHECKLIST (simplified for backtest) ───
 def judge_evaluate(agent, ticker, entry_price, row, past_scores, agent_name):
@@ -17,8 +21,8 @@ def judge_evaluate(agent, ticker, entry_price, row, past_scores, agent_name):
         else: notes.append(f'RSI {rsi:.1f} >= 35 ✗')
     else:
         low52 = row.get('Low52', entry_price)
-        if entry_price <= low52 * 1.25: score += 1; notes.append(f'Within 25% of 52wk low ✓')
-        else: notes.append(f'Not near 52wk low ✗')
+        if entry_price <= low52 * 1.25: score += 1; notes.append('Within 25% of 52wk low ✓')
+        else: notes.append('Not near 52wk low ✗')
     
     # 2. Position size appropriate ($2,500 allocation)?
     score += 1; notes.append('Position <= $2,500 ✓')
@@ -161,7 +165,7 @@ def run_simulation(df, ticker, ticker_info, agent_name, start_date, end_date):
                         shares = min(cash / entry_price, ALLOC * max_pct / entry_price)
                     else:
                         shares = min(cash / entry_price, ALLOC * 0.25 / entry_price)  # Baker: 25% max per position (diversified)
-                    shares = round(shares, 1)
+                    shares = max(0, math.floor(shares * 10) / 10)  # floor to 1 decimal, never round up past cash
                     cost = entry_price * shares
                     cash -= cost
                     position = {

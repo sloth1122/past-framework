@@ -20,7 +20,6 @@ import sys
 import json
 import re
 import datetime
-import glob
 
 # ── Paths ──
 CLAUDE_BIN = "/Users/johntytko/.local/bin/claude"
@@ -173,7 +172,9 @@ def test_robinhood_mcp():
                "If MCP is not available, reply: MCP_UNAVAILABLE")
         result = subprocess.run(
             [CLAUDE_BIN, "-p", cmd,
-             "--max-turns", "10", "--dangerously-skip-permissions"],
+             "--max-turns", "10",
+             "--allowedTools", "mcp__robinhood-trading__get_account", "mcp__robinhood-trading__get_positions",
+             "--dangerously-skip-permissions"],
             capture_output=True, text=True, timeout=180
         )
         if result.returncode != 0:
@@ -225,7 +226,7 @@ def check_state_files():
         if age_hours > STATE_STALE_HOURS:
             alert(f"WARNING: {name} is stale ({age_hours:.0f}h old, last modified "
                   f"{mtime.strftime('%b %d %H:%M')}). May cause agents to trade on "
-                  f"outdated data.")
+                  "outdated data.")
 
 def update_model_status(zai_ok=False, ollama_ok=False, mcp_ok=False):
     """Auto-update model_status.md with current timestamp and actual probe results.

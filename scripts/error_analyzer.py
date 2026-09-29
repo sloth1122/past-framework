@@ -29,7 +29,66 @@ import datetime
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from arena_logger import get_error_summary, query_events, init_db
 
-def analyze_errors(hours=24, dry_run=False):
+def _diagnose_timeout(source, msg):
+    """Diagnose timeout-related errors."""
+    if "terminal_cwd" in msg or "write lock" in msg or "read lock" in msg:
+        return (f"  {source}: Terminal lock contention (Hermes #79768). "
+                f"FIX: Stagger cron schedules so jobs don't run simultaneously. "
+                f"Alpha=7:00, Beta=7:05.")
+    if "api" in msg or "z.ai" in msg or "90s" in msg:
+        return (f"  {source}: Z.AI API timeout (90s non-streaming). "
+                f"FIX: Enable streaming=true in config. Stagger agent start times. "
+                f"Increase API timeout if possible.")
+    if "claude" in msg or "oauth" in msg or "auth" in msg:
+        return (f"  {source}: Claude OAuth/auth timeout. "
+                f"FIX: Check claude auth status. May need manual 'claude auth login'. "
+                f"Keychain token may have expired.")
+    return None
+
+
+def _diagnose_error(source, msg, etype):
+    """Rule-based diagnosis for a single error. Returns a diagnostic string or None."""
+    if "timeout" in msg or "timed out" in msg:
+        return _diagnose_timeout(source, msg)
+    if "zombie" in msg or "stale execution" in msg:
+        return (f"  {source}: Zombie execution blocking schedule. "
+                f"FIX: cron_zombie_cleanup.py should handle this. "
+                f"If recurring, increase cleanup frequency.")
+    if "oauth" in msg and ("expired" in msg or "failed" in msg):
+        return (f"  {source}: Claude OAuth token expired/refresh failed. "
+                f"FIX: Run 'claude auth login' in a separate terminal. "
+                f"Check keepalive cron is running every 2h.")
+    if "mcp" in msg and ("unavailable" in msg or "queued" in msg or "not filled" in msg):
+        return (f"  {source}: Robinhood MCP order execution issue. "
+                f"Known: claude.ai MCP connectors unreliable in -p headless mode (#26364). "
+                f"FIX: Let agents place orders through their own cron sessions. "
+                f"Avoid manual order placement via claude -p from chat.")
+    if "invalid_grant" in msg or "401" in msg:
+        return (f"  {source}: Auth credential rejection (401/invalid_grant). "
+                f"FIX: Delete ~/.claude/.credentials.json and run 'claude auth login' fresh. "
+                f"Refresh token may have aged out (GitHub #65761).")
+    return None
+
+
+def _recommended_actions(summary):
+    """Build the recommended actions set from the error summary."""
+    actions = set()
+    for s in summary:
+        msg = s["sample_message"].lower()
+        if "terminal_cwd" in msg or "write lock" in msg:
+            actions.add("Stagger agent cron schedules (already done: Alpha 7:00, Beta 7:05)")
+        if "zombie" in msg:
+            actions.add("Verify zombie cleanup cron is running every 2h")
+        if "oauth" in msg and ("expired" in msg or "failed" in msg or "401" in msg):
+            actions.add("Run 'claude auth login' in a separate terminal")
+        if "90s" in msg or "non-streaming" in msg:
+            actions.add("Verify streaming=true in Z.AI config")
+        if "mcp" in msg and ("queued" in msg or "not filled" in msg):
+            actions.add("Stop manual order placement via claude -p — use agent cron sessions only")
+    return actions
+
+
+def analyze_errors(hours=24):
     """Analyze recent errors and produce a diagnostic report.
 
     Returns: (should_alert: bool, report: str)
@@ -52,8 +111,8 @@ def analyze_errors(hours=24, dry_run=False):
     report_lines = [
         f"TRADING ARENA — ERROR ANALYSIS — {now}",
         f"Reviewing last {hours}h of execution logs.",
-        f"",
-        f"=== RECURRING ERRORS (3+ occurrences) ===",
+        "",
+        "=== RECURRING ERRORS (3+ occurrences) ===",
     ]
 
     for s in recurring:
@@ -63,9 +122,9 @@ def analyze_errors(hours=24, dry_run=False):
         )
         report_lines.append(f"    sample: {s['sample_message']}")
 
-    if criticals and not recurring:
-        report_lines.append(f"")
-        report_lines.append(f"=== CRITICAL ERRORS (immediate attention) ===")
+    if criticals:
+        report_lines.append("")
+        report_lines.append("=== CRITICAL ERRORS (immediate attention) ===")
         for s in criticals:
             report_lines.append(
                 f"  {s['source']:15s} | {s['severity']:8s} | {s['event_type']:25s} | "
@@ -83,8 +142,8 @@ def analyze_errors(hours=24, dry_run=False):
             since=(datetime.datetime.now() - datetime.timedelta(hours=hours)).isoformat(),
             limit=5
         )
-        report_lines.append(f"")
-        report_lines.append(f"=== DETAILED LOGS (top pattern, last 5) ===")
+        report_lines.append("")
+        report_lines.append("=== DETAILED LOGS (top pattern, last 5) ===")
         for d in details:
             report_lines.append(f"  [{d['timestamp'][:19]}] {d['message'][:150]}")
             if d.get("data_json"):
@@ -96,84 +155,26 @@ def analyze_errors(hours=24, dry_run=False):
                     pass
 
     # Pattern diagnosis (rule-based, no LLM needed for common patterns)
-    report_lines.append(f"")
-    report_lines.append(f"=== DIAGNOSIS ===")
+    report_lines.append("")
+    report_lines.append("=== DIAGNOSIS ===")
 
     for s in summary:
         msg = s["sample_message"].lower()
         source = s["source"]
         etype = s["event_type"]
+        diagnosis = _diagnose_error(source, msg, etype)
+        if diagnosis:
+            report_lines.append(diagnosis)
 
-        if "timeout" in msg or "timed out" in msg:
-            if "terminal_cwd" in msg or "write lock" in msg or "read lock" in msg:
-                report_lines.append(
-                    f"  {source}: Terminal lock contention (Hermes #79768). "
-                    f"FIX: Stagger cron schedules so jobs don't run simultaneously. "
-                    f"Alpha=7:00, Beta=7:05."
-                )
-            elif "api" in msg or "z.ai" in msg or "90s" in msg:
-                report_lines.append(
-                    f"  {source}: Z.AI API timeout (90s non-streaming). "
-                    f"FIX: Enable streaming=true in config. Stagger agent start times. "
-                    f"Increase API timeout if possible."
-                )
-            elif "claude" in msg or "oauth" in msg or "auth" in msg:
-                report_lines.append(
-                    f"  {source}: Claude OAuth/auth timeout. "
-                    f"FIX: Check claude auth status. May need manual 'claude auth login'. "
-                    f"Keychain token may be expired."
-                )
-
-        elif "zombie" in msg or "stale execution" in msg:
-            report_lines.append(
-                f"  {source}: Zombie execution blocking schedule. "
-                f"FIX: cron_zombie_cleanup.py should handle this. "
-                f"If recurring, increase cleanup frequency."
-            )
-
-        elif "oauth" in msg and ("expired" in msg or "failed" in msg):
-            report_lines.append(
-                f"  {source}: Claude OAuth token expired/refresh failed. "
-                f"FIX: Run 'claude auth login' in a separate terminal. "
-                f"Check keepalive cron is running every 2h."
-            )
-
-        elif "mcp" in msg and ("unavailable" in msg or "queued" in msg or "not filled" in msg):
-            report_lines.append(
-                f"  {source}: Robinhood MCP order execution issue. "
-                f"Known: claude.ai MCP connectors unreliable in -p headless mode (#26364). "
-                f"FIX: Let agents place orders through their own cron sessions. "
-                f"Avoid manual order placement via claude -p from chat."
-            )
-
-        elif "invalid_grant" in msg or "401" in msg:
-            report_lines.append(
-                f"  {source}: Auth credential rejection (401/invalid_grant). "
-                f"FIX: Delete ~/.claude/.credentials.json and run 'claude auth login' fresh. "
-                f"Refresh token may have aged out (GitHub #65761)."
-            )
-
-    report_lines.append(f"")
-    report_lines.append(f"=== RECOMMENDED ACTIONS ===")
-    actions = set()
-    for s in summary:
-        msg = s["sample_message"].lower()
-        if "terminal_cwd" in msg or "write lock" in msg:
-            actions.add("Stagger agent cron schedules (already done: Alpha 7:00, Beta 7:05)")
-        if "zombie" in msg:
-            actions.add("Verify zombie cleanup cron is running every 2h")
-        if "oauth" in msg and ("expired" in msg or "failed" in msg or "401" in msg):
-            actions.add("Run 'claude auth login' in a separate terminal")
-        if "90s" in msg or "non-streaming" in msg:
-            actions.add("Verify streaming=true in Z.AI config")
-        if "mcp" in msg and ("queued" in msg or "not filled" in msg):
-            actions.add("Stop manual order placement via claude -p — use agent cron sessions only")
+    report_lines.append("")
+    report_lines.append("=== RECOMMENDED ACTIONS ===")
+    actions = _recommended_actions(summary)
 
     if actions:
         for a in sorted(actions):
             report_lines.append(f"  → {a}")
     else:
-        report_lines.append(f"  → No automated fixes identified. Manual investigation needed.")
+        report_lines.append("  → No automated fixes identified. Manual investigation needed.")
 
     report = "\n".join(report_lines)
     return True, report
@@ -182,10 +183,10 @@ def main():
     import argparse
     parser = argparse.ArgumentParser(description="Trading Arena Error Analyzer")
     parser.add_argument("--hours", type=int, default=24, help="Hours to analyze")
-    parser.add_argument("--dry-run", action="store_true", help="Don't alert, just print")
+    parser.add_argument("--dry-run", action="store_true", help="Show what would be analyzed, don't alert")
     args = parser.parse_args()
 
-    should_alert, report = analyze_errors(hours=args.hours, dry_run=args.dry_run)
+    should_alert, report = analyze_errors(hours=args.hours)
 
     if should_alert:
         print(report)

@@ -240,7 +240,7 @@ def rocky_tune_llm(agent_name, trades, past_scores, week_num, strategy, call_log
         for trait, new_val in adjustments.items():
             if trait in past_scores:
                 old_val = past_scores[trait]
-                clamped = max(old_val - 1, min(old_val + 1, int(new_val)))
+                clamped = max(1, min(7, max(old_val - 1, min(old_val + 1, int(new_val)))))
                 if clamped != old_val:
                     new_past[trait] = clamped
                     actual_adj[trait] = {"old": old_val, "new": clamped}
@@ -250,8 +250,8 @@ def rocky_tune_llm(agent_name, trades, past_scores, week_num, strategy, call_log
             "cascade": out.get("cascade_after", "")
         }
         return new_past, info, result.get("usage", {})
-    except json.JSONDecodeError:
-        return past_scores, {"note": f"Rocky parse error", "adjustments": {}}, result.get("usage", {})
+    except (json.JSONDecodeError, ValueError, TypeError) as e:
+        return past_scores, {"note": f"Rocky parse error: {e}", "adjustments": {}}, result.get("usage", {})
 
 
 def get_token_log():

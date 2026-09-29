@@ -2,7 +2,11 @@
 """Run the full backtest across multiple stocks and generate HTML report."""
 import json, os, sys, datetime
 sys.path.insert(0, os.path.dirname(__file__))
-from backtest_engine import *
+from backtest_engine import (
+    ALLOC, prepare_data, calc_rsi,
+    alpha_should_enter, alpha_should_exit,
+    beta_should_enter, beta_should_exit
+)
 from backtest_sim import run_simulation, rocky_tune
 
 import yfinance as yf
