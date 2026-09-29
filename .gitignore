@@ -34,3 +34,4 @@ Thumbs.db
 # Trading Arena state (contains real account data)
 state/
 transcripts/
+gate1_log.jsonl
