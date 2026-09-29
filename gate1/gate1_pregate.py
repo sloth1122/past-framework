@@ -57,7 +57,7 @@ CONFIG = {
     "stop_cap_pct": 0.20,              # widened stop allowed up to 20% w/ sizing
     "entry_price_sanity_pct": 0.02,   # thesis price vs live quote tolerance ±2%
     "position_value_tolerance": 0.02, # position_value vs shares×entry tolerance ±2%
-    "max_position_value": 500.0,      # FIXED budget baseline per trade (allocation cap)
+    "max_position_value": 750.0,      # FIXED budget baseline per trade (allocation cap, raised from $500 by John 2026-09-28)
     "earnings_blackout_days": 7,      # no entries within N days BEFORE earnings
     "no_reentry_days": 5,             # banned from re-entering a recent stop-out
     "market_cap_tolerance": 0.10,     # claimed mktcap within 10% of source
@@ -541,13 +541,13 @@ def selftest():
              copy.deepcopy(base_book), False, clock=now)
 
     # 6b. circular-risk exploit: huge position setting its own budget
-    # (RISK now uses the FIXED budget: 10% of $500 = $50)
+    # (RISK uses the FIXED budget: 10% of $750 = $75)
     t = copy.deepcopy(base_thesis)
     t.update({"entry_price": 100.0, "stop_price": 80.0, "shares": 10.0,
               "position_value": 1000.0, "target_price": 140.0,
               "claimed_rr": 3.0, "allocation_share": 1.0})
     a = copy.deepcopy(base_account); a["cash"] = 100000.0  # capital passes
-    # dollar risk = 10 * 20 = $200 >> $50 budget → reject
+    # dollar risk = 10 * 20 = $200 >> $75 budget → reject
     run_case("oversized dollar risk vs fixed budget", t, a,
              copy.deepcopy(base_market), copy.deepcopy(base_book), False, clock=now)
 
