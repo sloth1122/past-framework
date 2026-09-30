@@ -11,11 +11,43 @@ Usage:
   python3 backtest_v2.py [ticker] [start_date] [end_date]
   python3 backtest_v2.py OKLO 2025-08-01 2026-07-21
 """
-import json, os, sys, datetime, time
+import json, os, sys, datetime, time, math
 sys.path.insert(0, os.path.dirname(__file__))
 
+def safe_path(path, base_dir=None):
+    """Canonicalize and validate a path to prevent path traversal.
+
+    Resolves the path to its canonical form and ensures it stays
+    within the allowed base directory.  Raises ValueError if the
+    resolved path escapes base_dir.
+    """
+    if base_dir is None:
+        base_dir = os.path.realpath(os.getcwd())
+    else:
+        base_dir = os.path.realpath(base_dir)
+    resolved = os.path.realpath(path)
+    # Ensure base_dir ends with a separator to prevent partial-path bypass
+    # (e.g. "/data/resources-secret" must NOT match base "/data/resources")
+    if resolved != base_dir and not resolved.startswith(base_dir + os.sep):
+        raise ValueError(f"path {path!r} resolves outside the allowed directory {base_dir!r}")
+    return resolved
+
+
+def safe_filename(name, base_dir):
+    """Sanitize a user-supplied filename component and join it to base_dir.
+
+    Strips directory separators from *name* so it cannot escape base_dir,
+    then validates the resulting full path with safe_path().
+    """
+    # Remove any path separators or parent-directory components
+    clean = os.path.basename(name)
+    if clean != name:
+        raise ValueError(f"filename {name!r} contains path separators — rejected")
+    full = os.path.join(base_dir, clean)
+    return safe_path(full, base_dir)
+
 from backtest_engine import (
-    ALLOC, calc_rsi, prepare_data,
+    ALLOC, prepare_data,
     alpha_should_enter, alpha_should_exit,
     beta_should_enter, beta_should_exit
 )
@@ -25,7 +57,6 @@ from llm_judge import (
 )
 import yfinance as yf
 import pandas as pd
-import numpy as np
 
 OUT_DIR = "/Users/johntytko/trading-arena/state/backtests"
 
@@ -83,6 +114,147 @@ def fetch_rolling_data(ticker, backtest_start, backtest_end, lookback_weeks=52):
 # ════════════════════════════════════════════════════════════
 # FIX #2: LLM-IN-THE-LOOP SIMULATION
 # ════════════════════════════════════════════════════════════
+def _process_exit(position, agent, row, ticker, day_str, days_held, verbose):
+    """Check if an existing position should exit. Returns (exit_trade, new_position, cash_delta) or (None, position, 0)."""
+    if not position:
+        return None, position, 0
+
+    if agent == 'alpha':
+        exit_reason = alpha_should_exit(row, position, days_held)
+    else:
+        exit_reason = beta_should_exit(row, position, days_held)
+
+    if not exit_reason:
+        return None, position, 0
+
+    exit_price = row['Close']
+    shares = position['shares']
+    pnl = (exit_price - position['entry_price']) * shares
+    pnl_pct = (exit_price - position['entry_price']) / position['entry_price']
+    cash_delta = exit_price * shares
+
+    trade = {
+        'ticker': ticker, 'agent': agent,
+        'entry_date': position['entry_date'].strftime('%Y-%m-%d'),
+        'exit_date': day_str,
+        'entry_price': position['entry_price'],
+        'exit_price': exit_price, 'shares': shares,
+        'pnl': pnl, 'pnl_pct': pnl_pct,
+        'exit_reason': exit_reason, 'status': 'CLOSED'
+    }
+    if verbose:
+        print(f"    [{day_str}] EXIT {ticker} @ ${exit_price:.2f} "
+              f"({pnl_pct*100:+.1f}%) [{exit_reason}]")
+    return trade, None, cash_delta
+
+
+def _process_entry(position, just_exited, trades_today_count, agent, row, ticker,
+                   day_str, past, max_pos, stop_pct, holding, strategy, call_log,
+                   cash, ALLOC_val, verbose):
+    """Check for a new entry signal. Returns (position, cash_delta, verdict, trades_today_delta) or (None, 0, None, 0)."""
+    if position is not None or just_exited or trades_today_count >= 2:
+        return None, 0, None, 0
+
+    row_info = {'low_52': row.get('Low52', row['Close']),
+                'high_52': row.get('High52', row['Close'])}
+
+    if agent == 'alpha':
+        should_enter = alpha_should_enter(row, position)
+    else:
+        should_enter = beta_should_enter(row, position, row_info)
+
+    if not should_enter:
+        return None, 0, None, 0
+
+    size_pct = 8 if (agent == 'alpha' and should_enter == 'SECONDARY') else max_pos
+
+    approved, judge_score, judge_notes, usage = judge_evaluate_llm(
+        agent_name=agent, ticker=ticker, entry_price=row['Close'],
+        row=row, past_scores=past,
+        position_size_pct=size_pct, stop_pct=stop_pct,
+        holding=holding, strategy=strategy, call_log=call_log
+    )
+
+    verdict = {
+        'date': day_str, 'ticker': ticker, 'agent': agent,
+        'approved': approved, 'score': judge_score,
+        'notes': '; '.join(judge_notes[-3:])
+    }
+
+    if verbose:
+        status = "APPROVED" if approved else "REJECTED"
+        print(f"    [{day_str}] JUDGE {status} {ticker} "
+              f"(score {judge_score}/13)")
+
+    if not approved:
+        return None, 0, verdict, 0
+
+    entry_price = row['Close']
+    shares = min(cash / entry_price, ALLOC_val * size_pct / 100 / entry_price)
+    shares = max(0, math.floor(shares * 10) / 10)
+    if shares <= 0:
+        return None, 0, verdict, 0
+
+    cost = entry_price * shares
+    new_position = {
+        'entry_price': entry_price, 'shares': shares,
+        'entry_date': row.name, 'entry_row': row
+    }
+    if verbose:
+        print(f"    [{day_str}] ENTER {ticker} @ ${entry_price:.2f} "
+              f"({shares} shares, {size_pct}% size)")
+    return new_position, -cost, verdict, 1
+
+
+def _process_rocky_tuning(i, agent, trades, past, strategy, call_log, bi_weekly_counter,
+                          past_history, verbose):
+    """Run bi-weekly Rocky LLM tuning. Returns (new_past, new_history_entries, new_counter)."""
+    if i <= 0 or i % 10 != 0:
+        return past, [], bi_weekly_counter
+
+    new_counter = bi_weekly_counter + 1
+    new_past, info, usage = rocky_tune_llm(
+        agent_name=agent, trades=trades, past_scores=past,
+        week_num=new_counter, strategy=strategy, call_log=call_log
+    )
+    if not info.get('adjustments'):
+        return past, [], new_counter
+
+    history_entry = {
+        'cycle': new_counter,
+        'scores': new_past.copy(),
+        'note': info.get('note', ''),
+        'adjustments': info.get('adjustments', {}),
+        'cascade': info.get('cascade', '')
+    }
+    if verbose:
+        for trait, adj in info['adjustments'].items():
+            print(f"    ROCKY: {trait} {adj['old']}→{adj['new']}")
+    return new_past, [history_entry], new_counter
+
+
+def _close_final_position(position, ticker, agent, df, ALLOC_val, trades):
+    """Close any remaining position at the last bar. Returns (cash_delta, trade)."""
+    if not position:
+        return 0, None
+
+    last_row = df.iloc[-1]
+    exit_price = last_row['Close']
+    pnl = (exit_price - position['entry_price']) * position['shares']
+    pnl_pct = (exit_price - position['entry_price']) / position['entry_price']
+    cash_delta = exit_price * position['shares']
+    trade = {
+        'ticker': ticker, 'agent': agent,
+        'entry_date': position['entry_date'].strftime('%Y-%m-%d'),
+        'exit_date': df.index[-1].strftime('%Y-%m-%d'),
+        'entry_price': position['entry_price'],
+        'exit_price': exit_price, 'shares': position['shares'],
+        'pnl': pnl, 'pnl_pct': pnl_pct,
+        'exit_reason': 'END_OF_PERIOD', 'status': 'CLOSED'
+    }
+    return cash_delta, trade
+
+
 def run_simulation_llm(df, ticker, agent_name, strategy_meta, call_log, verbose=False):
     """
     Run full simulation with LLM Judge + Rocky.
@@ -109,130 +281,44 @@ def run_simulation_llm(df, ticker, agent_name, strategy_meta, call_log, verbose=
 
     for i, (date, row) in enumerate(df.iterrows()):
         day_str = date.strftime('%Y-%m-%d')
-        # Reset daily trade counter
         if day_str != current_day:
             trades_today_count = 0
             current_day = day_str
+        just_exited = False
 
         days_held = (date - position['entry_date']).days if position else 0
 
-        # ── CHECK EXIT ON EXISTING POSITION ──
-        if position:
-            if agent == 'alpha':
-                exit_reason = alpha_should_exit(row, position, days_held)
-            else:
-                exit_reason = beta_should_exit(row, position, days_held)
+        # ── EXIT ──
+        exit_trade, position, exit_cash = _process_exit(
+            position, agent, row, ticker, day_str, days_held, verbose)
+        if exit_trade:
+            trades.append(exit_trade)
+            cash += exit_cash
+            just_exited = True
 
-            if exit_reason:
-                exit_price = row['Close']
-                shares = position['shares']
-                pnl = (exit_price - position['entry_price']) * shares
-                pnl_pct = (exit_price - position['entry_price']) / position['entry_price']
-                cash += exit_price * shares
-                trades.append({
-                    'ticker': ticker, 'agent': agent,
-                    'entry_date': position['entry_date'].strftime('%Y-%m-%d'),
-                    'exit_date': day_str,
-                    'entry_price': position['entry_price'],
-                    'exit_price': exit_price, 'shares': shares,
-                    'pnl': pnl, 'pnl_pct': pnl_pct,
-                    'exit_reason': exit_reason, 'status': 'CLOSED'
-                })
-                if verbose:
-                    print(f"    [{day_str}] EXIT {ticker} @ ${exit_price:.2f} "
-                          f"({pnl_pct*100:+.1f}%) [{exit_reason}]")
-                position = None
+        # ── ENTRY ──
+        new_pos, entry_cash, verdict, trades_delta = _process_entry(
+            position, just_exited, trades_today_count, agent, row, ticker,
+            day_str, past, max_pos, stop_pct, holding, strategy, call_log,
+            cash, ALLOC, verbose)
+        if new_pos:
+            position = new_pos
+            cash += entry_cash
+            trades_today_count += trades_delta
+        if verdict:
+            judge_verdicts.append(verdict)
 
-        # ── CHECK ENTRY ──
-        if position is None and trades_today_count < 2:
-            # BRIAN FIX #1: use row-level rolling values, NOT ticker_info (which leaked)
-            # Build a ticker_info from the CURRENT ROW only — no future data
-            row_info = {'low_52': row.get('Low52', row['Close']),
-                        'high_52': row.get('High52', row['Close'])}
+        # ── ROCKY TUNING ──
+        past, new_history, bi_weekly_counter = _process_rocky_tuning(
+            i, agent, trades, past, strategy, call_log, bi_weekly_counter,
+            past_history, verbose)
+        past_history.extend(new_history)
 
-            if agent == 'alpha':
-                should_enter = alpha_should_enter(row, position)
-            else:
-                should_enter = beta_should_enter(row, position, row_info)
-
-            if should_enter:
-                # Determine position size
-                if agent == 'alpha':
-                    size_pct = 8 if should_enter == 'SECONDARY' else max_pos
-                else:
-                    size_pct = max_pos
-
-                # BRIAN FIX #2: Real LLM Judge call
-                approved, judge_score, judge_notes, usage = judge_evaluate_llm(
-                    agent_name=agent, ticker=ticker, entry_price=row['Close'],
-                    row=row, past_scores=past,
-                    position_size_pct=size_pct, stop_pct=stop_pct,
-                    holding=holding, strategy=strategy, call_log=call_log
-                )
-
-                judge_verdicts.append({
-                    'date': day_str, 'ticker': ticker, 'agent': agent,
-                    'approved': approved, 'score': judge_score,
-                    'notes': '; '.join(judge_notes[-3:])  # keep concise
-                })
-
-                if verbose:
-                    status = "APPROVED" if approved else "REJECTED"
-                    print(f"    [{day_str}] JUDGE {status} {ticker} "
-                          f"(score {judge_score}/13)")
-
-                if approved:
-                    entry_price = row['Close']
-                    shares = min(cash / entry_price, ALLOC * size_pct / 100 / entry_price)
-                    shares = round(shares, 1)
-                    if shares > 0:
-                        cost = entry_price * shares
-                        cash -= cost
-                        position = {
-                            'entry_price': entry_price, 'shares': shares,
-                            'entry_date': date, 'entry_row': row
-                        }
-                        trades_today_count += 1
-                        if verbose:
-                            print(f"    [{day_str}] ENTER {ticker} @ ${entry_price:.2f} "
-                                  f"({shares} shares, {size_pct}% size)")
-
-        # ── BI-WEEKLY ROCKY TUNING (LLM) ──
-        if i > 0 and i % 10 == 0:
-            bi_weekly_counter += 1
-            new_past, info, usage = rocky_tune_llm(
-                agent_name=agent, trades=trades, past_scores=past,
-                week_num=bi_weekly_counter, strategy=strategy, call_log=call_log
-            )
-            if info.get('adjustments'):
-                past_history.append({
-                    'cycle': bi_weekly_counter,
-                    'scores': new_past.copy(),
-                    'note': info.get('note', ''),
-                    'adjustments': info.get('adjustments', {}),
-                    'cascade': info.get('cascade', '')
-                })
-                past = new_past
-                if verbose:
-                    for trait, adj in info['adjustments'].items():
-                        print(f"    ROCKY: {trait} {adj['old']}→{adj['new']}")
-
-    # Close remaining position at last price
-    if position:
-        last_row = df.iloc[-1]
-        exit_price = last_row['Close']
-        pnl = (exit_price - position['entry_price']) * position['shares']
-        pnl_pct = (exit_price - position['entry_price']) / position['entry_price']
-        cash += exit_price * position['shares']
-        trades.append({
-            'ticker': ticker, 'agent': agent,
-            'entry_date': position['entry_date'].strftime('%Y-%m-%d'),
-            'exit_date': df.index[-1].strftime('%Y-%m-%d'),
-            'entry_price': position['entry_price'],
-            'exit_price': exit_price, 'shares': position['shares'],
-            'pnl': pnl, 'pnl_pct': pnl_pct,
-            'exit_reason': 'END_OF_PERIOD', 'status': 'CLOSED'
-        })
+    # ── CLOSE REMAINING POSITION ──
+    final_cash, final_trade = _close_final_position(position, ticker, agent, df, ALLOC, trades)
+    if final_trade:
+        trades.append(final_trade)
+        cash += final_cash
 
     final_pnl = cash - ALLOC
     return {
@@ -261,12 +347,12 @@ def main():
     end = args[2] if len(args) > 2 else "2026-07-21"
 
     print(f"{'═' * 60}")
-    print(f"  BACKTEST v2 — LLM-in-the-loop (deepseek-r1:70b local)")
-    print(f"  Rolling window: no target leakage")
+    print("  BACKTEST v2 — LLM-in-the-loop (deepseek-r1:70b local)")
+    print("  Rolling window: no target leakage")
     print(f"{'═' * 60}")
     print(f"  Ticker: {ticker}")
     print(f"  Window: {start} → {end}")
-    print(f"  Model:  deepseek-r1:32b (Ollama, free)")
+    print("  Model:  deepseek-r1:32b (Ollama, free)")
     print()
 
     reset_token_log()
@@ -303,15 +389,15 @@ def main():
     total_tokens = sum(t.get('total_tokens', 0) for t in tokens)
     total_calls = len(tokens)
     print(f"{'─' * 60}")
-    print(f"LLM COST SUMMARY")
+    print("LLM COST SUMMARY")
     print(f"  Total calls: {total_calls}")
     print(f"  Total tokens: {total_tokens:,}")
-    print(f"  Cost: $0.00 (local model)")
+    print("  Cost: $0.00 (local model)")
 
     # Save
     os.makedirs(OUT_DIR, exist_ok=True)
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-    out_file = os.path.join(OUT_DIR, f"backtest_v2_{ticker}_{timestamp}.json")
+    out_file = safe_filename(f"backtest_v2_{ticker}_{timestamp}.json", OUT_DIR)
     with open(out_file, 'w') as f:
         json.dump({
             'ticker': ticker, 'start': start, 'end': end,

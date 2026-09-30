@@ -1,0 +1,84 @@
+# PAST Framework - Custom Semgrep Architecture Rules
+#
+# These rules enforce architectural patterns discovered during live trading (Aug 6-24).
+# They run on every PR alongside Bandit (security) and CodeQL (vulnerability scanning).
+#
+# Run locally: semgrep --config .semgrep.yml
+# Run in CI:   semgrep scan --config .semgrep.yml --json
+
+rules:
+  # Rule 1: No bare except pass in production scripts (health checks exempt)
+  - id: past-no-bare-except-pass
+    message: "Bare except pass swallows errors silently. Use except Exception as e and log it."
+    languages: [python]
+    severity: WARNING
+    patterns:
+      - pattern: |
+          except:
+            pass
+    paths:
+      exclude:
+        - "**/trading_arena_premarket_health.py"
+        - "**/trading_arena_premarket_check.sh"
+
+  # Rule 2: Claude binary must use full path
+  - id: past-claude-binary-full-path
+    message: "Claude Code binary must be called with full path /Users/johntytko/.local/bin/claude"
+    languages: [python]
+    severity: WARNING
+    patterns:
+      - pattern: subprocess.run(["claude", ...], ...)
+    paths:
+      include:
+        - "**/*.py"
+
+  # Rule 3: No hardcoded allocation value in dashboard scripts
+  - id: past-no-hardcoded-allocation
+    message: "Do not hardcode allocation values - compute live portfolio value from cash and positions"
+    languages: [python]
+    severity: ERROR
+    patterns:
+      - pattern-either:
+          - pattern: '"$2,500.00"'
+          - pattern: '"$2,500"'
+          - pattern: '"2500.00"'
+          - pattern: '"2,500.00"'
+          - pattern: '"2,500"'
+          - pattern: '$X = 2500'
+          - pattern: '$X = 2500.00'
+    paths:
+      include:
+        - "**/send_dashboard_email.py"
+        - "**/generate_dashboard.py"
+        - "**/orchestrator.py"
+
+  # Rule 4: Z.AI timeout must be >= 300 seconds (must not be below 300)
+  - id: past-zai-stale-timeout-minimum
+    message: "Z.AI CLAUDE_TIMEOUT must be >= 300 (GLM-5.2 cold-start takes 90-120s, low values kill it)"
+    languages: [python]
+    severity: ERROR
+    patterns:
+      - pattern: CLAUDE_TIMEOUT = $N
+      - metavariable-comparison:
+          metavariable: $N
+          comparison: str($N).isdigit() and int($N) < 300
+    paths:
+      include:
+        - "**/trading_arena_premarket_health.py"
+
+  # Rule 5: No hardcoded $2,500 in any string in agent scripts
+  - id: past-no-hardcoded-2500
+    message: "Replace hardcoded $2,500 with computed live portfolio value"
+    languages: [python]
+    severity: WARNING
+    patterns:
+      - pattern-either:
+          - pattern: '"$2,500"'
+          - pattern: '"$2,500.00"'
+          - pattern: '"2,500"'
+          - pattern: '"2500"'
+          - pattern: '"2500.00"'
+          - pattern: '"2,500.00"'
+    paths:
+      include:
+        - "**/*.py"
