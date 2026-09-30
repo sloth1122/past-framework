@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
 """Simulation runner, Judge checklist, Rocky PAST tuning."""
-import json, os, sys, datetime, math
+import os, sys, math
 sys.path.insert(0, os.path.dirname(__file__))
 from backtest_engine import (
-    ALLOC, prepare_data, calc_rsi,
-    alpha_should_enter, alpha_should_exit,
+    ALLOC, alpha_should_enter, alpha_should_exit,
     beta_should_enter, beta_should_exit
 )
 

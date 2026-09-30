@@ -6,8 +6,7 @@ Replaces the hardcoded stub judge_evaluate from backtest_sim.py.
 Brian's fix #2: "Build the LLM call into the test to simulate how the LLM
 would have reacted (accepted/rejected the trade)."
 """
-import json, subprocess, sys, os, time
-from pathlib import Path
+import json, subprocess, os, time
 
 OLLAMA_URL = os.getenv("OLLAMA_URL", "http://localhost:11434")
 JUDGE_MODEL = os.getenv("JUDGE_MODEL", "deepseek-r1:32b")

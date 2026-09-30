@@ -5,12 +5,10 @@ Runs simulated trades for Alpha + Beta across historical data,
 applies Judge 13-point checklist, runs Rocky bi-weekly PAST tuning.
 Outputs: P&L, trade log, PAST evolution, go/no-go recommendation.
 """
-import json, os, sys, datetime
+import os, sys
 sys.path.insert(0, os.path.dirname(__file__))
 
 # We'll use the bt-venv python: /Users/johntytko/trading-arena/bt-venv/bin/python3
-import yfinance as yf
-import pandas as pd
 import numpy as np
 
 # ─── CONFIG ───

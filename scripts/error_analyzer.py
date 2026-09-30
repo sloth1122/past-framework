@@ -27,7 +27,7 @@ import datetime
 
 # Add the scripts directory to path for arena_logger
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from arena_logger import get_error_summary, query_events, init_db
+from arena_logger import get_error_summary, query_events
 
 def _diagnose_timeout(source, msg):
     """Diagnose timeout-related errors."""

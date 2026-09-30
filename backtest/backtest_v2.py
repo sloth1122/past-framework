@@ -47,7 +47,7 @@ def safe_filename(name, base_dir):
     return safe_path(full, base_dir)
 
 from backtest_engine import (
-    ALLOC, calc_rsi, prepare_data,
+    ALLOC, prepare_data,
     alpha_should_enter, alpha_should_exit,
     beta_should_enter, beta_should_exit
 )
@@ -57,7 +57,6 @@ from llm_judge import (
 )
 import yfinance as yf
 import pandas as pd
-import numpy as np
 
 OUT_DIR = "/Users/johntytko/trading-arena/state/backtests"
 

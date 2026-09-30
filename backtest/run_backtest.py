@@ -1,16 +1,13 @@
 #!/usr/bin/env python3
 """Run the full backtest across multiple stocks and generate HTML report."""
-import json, os, sys, datetime
+import json, os, sys
 sys.path.insert(0, os.path.dirname(__file__))
 from backtest_engine import (
-    ALLOC, prepare_data, calc_rsi,
-    alpha_should_enter, alpha_should_exit,
-    beta_should_enter, beta_should_exit
+    prepare_data
 )
-from backtest_sim import run_simulation, rocky_tune
+from backtest_sim import run_simulation
 
 import yfinance as yf
-import pandas as pd
 
 # ─── CONFIG ───
 TICKERS = {
@@ -126,5 +123,5 @@ if __name__ == '__main__':
     print(f'\nGO/NO-GO: {"GO" if recommendation["go"] else "NO-GO"}')
     for r in recommendation['reasons']:
         print(f'  - {r}')
-    print(f'\nResults saved to state/backtests/backtest_results.json')
-    print(f'Run: /Users/johntytko/trading-arena/bt-venv/bin/python3 scripts/generate_backtest_report.py for HTML report')
+    print('\nResults saved to state/backtests/backtest_results.json')
+    print('Run: /Users/johntytko/trading-arena/bt-venv/bin/python3 scripts/generate_backtest_report.py for HTML report')
