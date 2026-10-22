@@ -5,6 +5,23 @@ Format based on [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [v0.5.0] — 2026-10-22 — Arena v5: One Agent, Core + Event Bets
+
+### Summary
+Eleven weeks of live trading (Aug 3 → Oct 21) returned −5.4% vs SPY +2.0%: 11 closed trades, 1 winner, 7 exits by stop-loss. Agent Alpha placed no trade in its last 29+ sessions. Consistent with FINSABER (arXiv 2505.07078: LLM traders too cautious in bull markets, too aggressive in bear markets, no significant alpha), StockBench (arXiv 2510.02209) and Agent Market Arena (arXiv 2510.11695: architecture > model), v5 changes the structure, not the model.
+
+### Changed
+- **Agent Alpha retired** (skill deprecated; cron paused). **Agent Beta is the sole agent** on the whole account.
+- **Beta v5.0.0 mandate:** 10% mechanical CORE in QQQ gated by the 200-day SMA; 90% EVENT BETS (max 3, dated catalyst ≤ 30 trading days, ≤ $1,500 and ≤ $150 dollar risk per bet, stop = 2×ATR(14) within 5–20%, earnings allowed only with gap-risk sizing).
+- **Judge:** Beta-only audit; enforces v5 sizing; rejects options until enabled.
+- **Scoreboard:** Beta vs QQQ from the v5 baseline ($4,678.46 / QQQ $706.68, 2026-10-22). 90-day review ~2027-01-20.
+- **Models:** all agents on Claude Opus 5.5 (high effort); GLM-5.2 / Z.AI and Nous fallbacks removed.
+- **PAST vector (Beta, user directive):** Position concentration 4→6, Hold Duration 7→5, Entry Patience 6→5.
+
+See `docs/ARENA_V5_SINGLE_AGENT.md`.
+
+---
+
 ## [v0.4.0] — 2026-08-24 — Live Trading Lessons (Aug 18-24): Risk, Reliability, Regime
 
 ### Summary

@@ -1,6 +1,6 @@
 ---
 name: trading-arena-alpha
-description: "Agent Alpha: Renaissance Medallion style — pure statistical, pattern recognition, mean reversion. The Jim Simons approach applied to Robinhood Agentic Trading."
+description: "[DEPRECATED 2026-10-22] Agent Alpha: Renaissance Medallion style — pure statistical, pattern recognition, mean reversion. The Jim Simons approach applied to Robinhood Agentic Trading."
 version: 2.0.0
 author: Trading Arena
 platforms: [macos]
@@ -8,6 +8,9 @@ metadata:
   hermes:
     tags: [trading, robinhood, investment, alpha, renaissance, statistical]
 ---
+
+> ## ⛔ DEPRECATED — retired 2026-10-22 (Arena v5)
+> 77 sessions, 3 trades, 0 winners, −$19.35; 29+ consecutive sessions with zero submissions (the oversold-AND-rising-20d gate never fired). Capital merged into Agent Beta. Kept for the research record. See `docs/ARENA_V5_SINGLE_AGENT.md`.
 
 # Agent Alpha: Renaissance Medallion (Jim Simons Style)
 
