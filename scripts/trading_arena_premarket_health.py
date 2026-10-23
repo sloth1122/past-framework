@@ -158,7 +158,7 @@ def test_robinhood_mcp():
     """Quick Robinhood MCP test via claude -p (read-only account check)."""
     try:
         cmd = ("Use the robinhood-trading MCP to get_account overview for the account "
-               "with nickname 'Agentic' ending in 8877. Report just the buying power. "
+               "with nickname 'Agentic' ending in XXXX. Report just the buying power. "
                "If MCP is not available, reply: MCP_UNAVAILABLE")
         result = subprocess.run(
             [CLAUDE_BIN, "-p", cmd,
@@ -179,7 +179,7 @@ def test_robinhood_mcp():
             return  # MCP is working
         # Ambiguous response — flag as warning
         alert("WARNING: Robinhood MCP test returned unclear response. "
-              "MCP may be partially down. Verify manually: `claude -p 'get account 8877'`")
+              "MCP may be partially down. Verify manually: `claude -p 'get account XXXX'`")
     except subprocess.TimeoutExpired:
         alert("CRITICAL: Robinhood MCP test timed out (120s). "
               "MCP server may be hung. Trades cannot execute.")

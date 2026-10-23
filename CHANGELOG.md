@@ -20,6 +20,10 @@ Eleven weeks of live trading (Aug 3 → Oct 21) returned −5.4% vs SPY +2.0%: 1
 
 - **v5.1 (2026-10-23):** $5,000 added (equity $9,692.16); account converted to limited margin (no borrowing); sizing re-expressed as % of equity (bet ≤ 30%, risk ≤ 3%, core ≈10%); scoreboard baseline $9,676.71 / QQQ $704.59.
 
+- **v5.1 decision discipline (2026-10-23):** decision ledger (every buy/hold/pass vs QQQ, 5d/20d, first-close entry) with auto lessons; Polymarket odds; 3-vote unanimous Judge (fail-closed); required real-news bear case; stop-slippage tracking. Adapted from TauricResearch/TradingAgents (Apache-2.0).
+- **Options enabled for Beta (2026-10-23):** buy calls/puts + debit verticals; `options_guard.py` (21/21 tests); max loss 3% equity; $1,500/month premium cap.
+- **Agent Charlie (2026-10-23):** non-trading options strategist (ApexVol blueprint adapted to a debit-only account); proposals → Beta → Rocky coach consult (`rocky_consult.py`) → 3 Judges. `option_payoff.py` (payoff/greeks/xlsx), `charlie_vol_snapshot.py` (VIX regime, HV30, IV history).
+
 See `docs/ARENA_V5_SINGLE_AGENT.md`.
 
 ---

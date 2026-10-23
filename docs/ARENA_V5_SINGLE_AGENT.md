@@ -81,3 +81,19 @@ Two failure modes:
 ## 7. Rollback
 
 `hermes cron resume bdfac2a2e8e5`, restore the `*.bak-v5-202610221134` files, and revert the Gate-1 constants.
+
+## v5.1 decision discipline (Oct 23 2026) — adopted from the TradingAgents review
+
+Source: TauricResearch/TradingAgents v0.7.0 (Apache-2.0) and replications (Koviazin et al., IC-AIF 2026; "The Alpha Illusion", arXiv 2605.16895). Taken: scoring/lesson loop, prediction-market inputs. Skipped: multi-analyst debate, 5-tier ratings, quick/deep model split.
+
+| Rule | Mechanism | File |
+|---|---|---|
+| Score every decision (buy/hold/pass/sell/core) vs QQQ at 5 and 20 trading days; entry = first close after the decision | `scripts/decision_ledger.py score`, 6:50 MT no-LLM cron | `state/decisions/decisions.jsonl`, `lessons.md` |
+| Lessons fed into the next session | Beta cron Step 1 reads `lessons.md` | — |
+| Prediction-market odds as event-bet input | `scripts/polymarket_odds.py` (public Gamma API, open markets, ≥$10K volume) | `state/research/prediction_markets.md` |
+| 3-vote unanimous Judge | `scripts/judge_vote.py` — 3 parallel independent Judges, fail-closed | `state/judge_votes/` |
+| Required real-news bear case | Beta template field; Judge rejects generic "AI bubble" | Beta + Judge SKILL |
+| Slippage + honest backtests | `decision_ledger.py slip`; backtests = next-open fills, costs, bootstrap range | `state/decisions/slippage.jsonl` |
+| Options enabled (buy calls/puts, debit verticals) | `scripts/options_guard.py` (17/17 tests), 3/3 Judge, review shows debit | `state/options_premium.jsonl` |
+
+First scorecard (backfilled Aug 6–Oct 16): buys beat QQQ at 20 days 4 of 12, avg −5.8 pts. Tests: judge_vote mixed vote (2/3 → REJECTED), fail-closed, live 3-Judge run (3/3, 94 s). Bet size confirmed by John: ≤ 30% of equity (~$2,900), risk ≤ 3% (~$290).
