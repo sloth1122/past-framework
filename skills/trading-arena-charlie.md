@@ -37,7 +37,7 @@ Source: John's ApexVol blueprint (Spitznagel, Yass, Diggle, Sosnoff, Ruffer). Ke
 
 **Ruffer (discipline) — behavior.** Zero outcome bias (a +EV loss was still a good decision; your proposals are scored automatically in `state/decisions/lessons.md`). No martingale: never propose doubling a losing option. Respect liquidity: open interest ≥ 500 on each leg and bid-ask ≤ 10% of mid, else skip.
 
-**Scrapped from the blueprint (and why):** short strangles / iron condors / cash-secured puts / credit spreads / theta targets (account is debit-only by rule); calendars, backratios (guard blocks); VIX-call or tail-hedge sleeve (on a $9.7K account with a 10% QQQ core, the bleed costs more than it protects — the goal is beating QQQ); dealer GEX / vanna / charm (no reliable data feed — never invent these numbers; write "n/a").
+**Scrapped from the blueprint (and why):** short strangles / iron condors / cash-secured puts / credit spreads / theta targets (account is debit-only by rule); calendars, backratios (guard blocks); VIX-call or tail-hedge sleeve (on a $9.7K account with a 10% QQQ core, the bleed costs more than it protects — the goal is beating QQQ); dealer GEX / vanna / charm (no reliable data feed — never invent these numbers; write "n/a"); dispersion trades (index vs single-stock vol needs short legs). Theta-bleed tolerance (Pillar V) only matters for a hedge sleeve, which we don't run.
 
 ## 3. Regime engine (run first, every day)
 `python3 scripts/charlie_vol_snapshot.py` → VIX, VIX9D, VIX3M, regime:
@@ -46,7 +46,9 @@ Source: John's ApexVol blueprint (Spitznagel, Yass, Diggle, Sosnoff, Ruffer). Ke
 | R1 Complacent | VIX < 14, contango | Single long calls/puts or wide debit spreads (convexity is cheap) |
 | R2 Normal | VIX 14–20, VIX/VIX3M < 0.97 | Directional debit spreads around dated catalysts |
 | R3 Elevated / flat curve | VIX 20–30 or VIX/VIX3M 0.97–1.05 | NARROW debit spreads only; no single long options |
-| R4 Crisis | VIX ≥ 30 or VIX/VIX3M ≥ 1.05 | Stand down on new premium (say so cheerfully) |
+| R4 Crisis | VIX ≥ 30 or VIX/VIX3M ≥ 1.05 | Stand down on new premium (say so cheerfully). **Spitznagel redeploy:** once VIX has peaked and VIX/VIX3M drops back below 1.0, flag 1–2 quality names that fell hardest as STOCK ideas for Beta (you hand over the idea; Beta's normal rules apply) |
+
+**Portfolio checks in every proposal (blueprint §5, adapted):** (a) **beta-weighted delta** of all open options + the new one, in SPY-share terms; (b) **S&P −5% tomorrow** P/L for the whole options book; (c) **IV +50% overnight** P/L — the book must never be able to lose more than 10% of equity in any scenario (with debit-only trades the hard ceiling is the sum of debits paid: 3 bets × 3% = 9%); (d) **no new entries with < 7 days to expiry** (gamma week).
 
 ## 4. Two playbooks
 **A. Event options (default).** Dated catalyst (earnings, FDA, investor day, macro print) within 30 trading days; expiry **7–60 days after** the catalyst. Compare breakeven move with the options-implied move (straddle ÷ price). Propose only if your thesis needs LESS than the implied move to break even, or you have a specific reason the move will be larger. Use `state/research/prediction_markets.md` for macro events. Guard: `"setup": "event"` + `catalyst_date`.
