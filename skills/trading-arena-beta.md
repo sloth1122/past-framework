@@ -17,7 +17,9 @@ John retired Agent Alpha on Oct 22 2026 (77 sessions, 3 trades, 0 winners, 29+ s
 
 **Why the change (evidence, not vibes):** Aug 3 → Oct 21 the arena returned −5.4% vs SPY +2.0%. 7 of 11 closed trades ended on a stop; 1 winner (CRDO +$26.42). Peer-reviewed work says the same: LLM agents are too cautious in bull markets and too aggressive in bear markets (FINSABER, arXiv 2505.07078); most fail to beat buy-and-hold (StockBench, arXiv 2510.02209); agent design matters more than model choice (Agent Market Arena, arXiv 2510.11695). v5 fixes the two failure modes: (a) missing market beta in uptrends → mechanical core sleeve; (b) flat 10% stops on stocks that swing 7–8%/day → volatility-sized stops and position sizing by dollar risk.
 
-**Capital:** the whole account (v5 start equity $4,678.46 at 1:35 PM ET Oct 22 2026; benchmark QQQ $706.68). Your virtual cash = account cash (Alpha's virtual cash is merged into yours). The old "$2,500 allocation", "$625 max", and "$500 reserve" rules are RETIRED.
+**Capital:** the whole account. **v5.1 (Oct 23 2026): John added $5,000 → baseline equity $9,676.71 (Oct 22 close marks + deposit; cash $8,931.58), benchmark QQQ $704.59 (Oct 22 close).** Your virtual cash = account cash (Alpha's is merged into yours). The old "$2,500 allocation", "$625 max", and "$500 reserve" rules are RETIRED. **All sizing below is a % of CURRENT equity** (recompute every session from the broker).
+
+**Account type (Oct 23 2026): LIMITED MARGIN** — sale proceeds are usable immediately (no T+1 wait); NO borrowing, NO short selling, NO naked options. Never let cash go negative.
 
 **Sleeve 1 — CORE (10% of equity, mechanical):**
 - Hold QQQ (fractional dollars allowed) worth ~10% of equity **only while QQQ's prior regular-session close is above its 200-day simple moving average.**
@@ -28,20 +30,19 @@ John retired Agent Alpha on Oct 22 2026 (77 sessions, 3 trades, 0 winners, 29+ s
 **Sleeve 2 — EVENT BETS (90% of equity, discretionary — this is where your reasoning earns its keep):**
 - **Max 3 concurrent bets** (existing CIEN and VST count as 2 of 3). Still ≤ 2 per architecture layer.
 - **Every bet needs a dated catalyst within the next 30 trading days** (earnings, guidance/investor day, product launch, contract award, index inclusion, regulatory decision). Write the date in the thesis. No catalyst → no trade.
-- **Max $1,500 per position. Max $150 dollar risk per bet** (≈3% of equity) = shares × (entry − stop).
-- **Stops are set by the stock's own noise, not a flat 10%:** stop distance = 2 × ATR(14), floor 5%, cap 20% below entry. Size = floor($150 ÷ stop distance) shares, then capped at $1,500. Whole shares only (GTC stop needs whole shares).
-- **Earnings are now allowed** (old 7-day pre-earnings blackout lifted for event bets) BUT size for the gap: dollar risk = shares × max(stop distance, options-implied earnings move) must be ≤ $150. A stop-market order does not protect you from an overnight gap.
+- **Max 30% of equity per position (≈ $2,900 at $9.7K). Max 3% of equity dollar risk per bet (≈ $290)** = shares × (entry − stop).
+- **Stops are set by the stock's own noise, not a flat 10%:** stop distance = 2 × ATR(14), floor 5%, cap 20% below entry. Size = floor(3%-of-equity ÷ stop distance) shares, then capped at 30% of equity. Whole shares only (GTC stop needs whole shares).
+- **Earnings are now allowed** (old 7-day pre-earnings blackout lifted for event bets) BUT size for the gap: dollar risk = shares × max(stop distance, options-implied earnings move) must be ≤ 3% of equity. A stop-market order does not protect you from an overnight gap.
 - **Event exit discipline:** the morning after the catalyst, decide HOLD (thesis confirmed — keep, ratchet applies) or EXIT. If the catalyst passed and the thesis is not confirmed within 5 trading days → exit (time stop). The daily +20% profit ratchet (Rule 2b) still applies.
 - Hold Duration is now event-bounded (weeks, not months). "No trade" is still valid when no catalyst setup qualifies.
 
-**Options:** NOT ENABLED. The arena account is a cash account at options Level 2 and `robinhood_trade.py` blocks option orders. Do not propose options until John completes the options guide (kept outside this repo: account-specific) and this section is updated.
+**Options:** NOT ENABLED YET. The account is now limited margin (Level 3 spreads become possible once John's Level 3 application is approved), but `robinhood_trade.py` still blocks option orders and no options addendum exists. Do not propose options until this section says ENABLED.
 
 **Unchanged:** Judge approval before every order; IPO ban (Item 11c); prompt-injection rules; whole-share GTC stops on bets; no margin borrowing for stock.
 
-**Benchmark (the only scoreboard that matters):** beat QQQ after costs since the v5 start, with max drawdown ≤ 15%. 90-day review (~Jan 20 2027): beating QQQ → John adds $5,000; not beating → arena shuts down and the cash goes to VOO.
+**Benchmark (the only scoreboard that matters):** beat QQQ after costs from the v5.1 baseline ($9,676.71 / QQQ $704.59), max drawdown ≤ 15%. 90-day review ~Jan 20 2027: not beating QQQ → arena shuts down and the cash goes to VOO. (John already added the $5,000 on Oct 23.)
 
 **PAST vector change (user directive, not a Rocky ±1 cycle):** Position concentration 4→6 (3 bets), Hold Duration 7→5 (event-bounded), Entry Patience 6→5 (catalyst window). Others unchanged.
-
 
 ## SYSTEM INITIALIZATION: TRADING AGENT BETA
 

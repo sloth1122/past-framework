@@ -8,9 +8,11 @@
 2. **Agent Beta is the only trading agent** and manages the whole arena account (Alpha's cash is merged into Beta).
 3. **New mandate: 10% CORE + 90% EVENT BETS**, with the Judge kept as the risk gate.
 4. **Scoreboard changes from "Alpha vs Beta" to "Beta vs QQQ"** since the v5 start.
-5. **Options are not enabled yet** (see `OPTIONS_MARGIN_GUIDE.md`).
+5. **Options are not enabled yet.** Since Oct 23 the account is limited margin, so Level 3 spreads are possible after approval (see `OPTIONS_MARGIN_GUIDE.md`).
 
-**v5 baseline (Robinhood, 2026-10-22 1:35 PM ET):** equity **$4,678.46**, cash $3,931.58, CIEN 1 @ $328.50 (stop $319.50), VST 3 @ $139.46 (stop $128.25). Benchmark **QQQ $706.68** (200-day SMA $676.49).
+**v5.1 update (Oct 23 2026):** John added **$5,000** → **$9,692.16** total, cash $8,931.58; account converted to **limited margin** (no borrowing). Scoreboard baseline **$9,676.71 / QQQ $704.59** (Oct 22 close + deposit). Sizing re-expressed as % of equity: bet ≤ 30%, risk ≤ 3%, core ≈10%. Gate-1 max_position_value $2,900 (risk $290), self-test 19/19.
+
+**Original v5 baseline (Robinhood, 2026-10-22 1:35 PM ET):** equity **$4,678.46**, cash $3,931.58, CIEN 1 @ $328.50 (stop $319.50), VST 3 @ $139.46 (stop $128.25). Benchmark **QQQ $706.68** (200-day SMA $676.49).
 
 ## 2. Why — the arena's own record (Aug 3 → Oct 21, 2026)
 
@@ -45,9 +47,9 @@ Two failure modes:
 **EVENT BETS — 90% of equity, Beta's judgment**
 - Max **3** concurrent bets (CIEN + VST count as 2); ≤ 2 per architecture layer.
 - Each bet needs a **dated catalyst within 30 trading days** (earnings, guidance, product, contract, index, regulatory).
-- **≤ $1,500 per position; ≤ $150 dollar risk per bet** (≈3% of equity).
-- **Stop = entry − 2×ATR(14)**, floor 5%, cap 20%; shares = floor($150 ÷ stop distance), capped at $1,500; whole shares.
-- Earnings inside the hold are allowed only if shares × max(stop distance, options-implied move) ≤ $150 (stop-market orders don't protect against gaps).
+- **≤ 30% of equity per position; ≤ 3% of equity dollar risk per bet** (v5: $1,500 / $150 at $4.7K; v5.1: ≈ $2,900 / $290 at $9.7K).
+- **Stop = entry − 2×ATR(14)**, floor 5%, cap 20%; shares = floor(3%-of-equity ÷ stop distance), capped at 30% of equity; whole shares.
+- Earnings inside the hold are allowed only if shares × max(stop distance, options-implied move) ≤ 3% of equity (stop-market orders don't protect against gaps).
 - Morning after the catalyst: HOLD (confirmed) or EXIT; 5-trading-day time stop if unconfirmed. Daily +20% profit ratchet unchanged.
 
 **Judge** enforces all of the above, recomputes ATR/filters independently, and rejects options until enabled.
@@ -58,7 +60,7 @@ Two failure modes:
 
 ## 5. Success test and exit
 
-- **90-day review ≈ 2027-01-20.** Beta beats QQQ (after costs) since the v5 start with max drawdown ≤ 15% → John adds $5,000. Otherwise → arena shut down, cash to VOO.
+- **90-day review ≈ 2027-01-20.** Beta beats QQQ (after costs) from the v5.1 baseline with max drawdown ≤ 15% → continue. Otherwise → arena shut down, cash to VOO. (John added the planned $5,000 up front on Oct 23.)
 - **Cost context:** Nous ($100/mo) and Z.AI are cancelled; everything runs on Claude Opus 5.5 under Claude Max ($200/mo), which John keeps regardless. At $5K–$10K the arena cannot pay for Claude Max from returns (it would need +48%/+24% a year); its value is as a live research lab for PAST.
 
 ## 6. What changed where (with backups `*.bak-v5-202610221134`)

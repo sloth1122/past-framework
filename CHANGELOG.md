@@ -18,6 +18,8 @@ Eleven weeks of live trading (Aug 3 → Oct 21) returned −5.4% vs SPY +2.0%: 1
 - **Models:** all agents on Claude Opus 5.5 (high effort); GLM-5.2 / Z.AI and Nous fallbacks removed.
 - **PAST vector (Beta, user directive):** Position concentration 4→6, Hold Duration 7→5, Entry Patience 6→5.
 
+- **v5.1 (2026-10-23):** $5,000 added (equity $9,692.16); account converted to limited margin (no borrowing); sizing re-expressed as % of equity (bet ≤ 30%, risk ≤ 3%, core ≈10%); scoreboard baseline $9,676.71 / QQQ $704.59.
+
 See `docs/ARENA_V5_SINGLE_AGENT.md`.
 
 ---
