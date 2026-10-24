@@ -19,7 +19,10 @@ CLAUDE = "/Users/johntytko/.local/bin/claude"
 # Judges are read-only: remove every broker tool that can change the account
 # (harness-enforced; verified Oct 24 2026 that --disallowedTools holds even with
 # --dangerously-skip-permissions).
-BROKER_WRITE_TOOLS = ",".join(f"mcp__claude_ai_Robinhood_trading__{t}" for t in (
+# both Robinhood MCP registrations: the claude.ai connector AND the local
+# "robinhood-trading" server scoped to /Users/johntytko (loaded when cwd = ~).
+BROKER_WRITE_TOOLS = ",".join(f"{srv}{t}" for srv in (
+    "mcp__claude_ai_Robinhood_trading__", "mcp__robinhood-trading__") for t in (
     "place_equity_order", "place_option_order", "place_crypto_order",
     "cancel_equity_order", "cancel_option_order", "cancel_crypto_order",
     "exercise_option", "cancel_option_exercise"))

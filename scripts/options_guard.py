@@ -180,6 +180,8 @@ def main():
               + (f", max loss ${float(o['price'])*100*int(o['quantity']):,.2f}" if kind == "OPEN" else ""))
         return 0
     if a.cmd == "record":
+        if {l.get("position_effect") for l in o["legs"]} == {"close"}:
+            print("exit fill — not counted toward the monthly new-premium cap"); return 0
         prem = round(a.fill_price * 100 * int(o["quantity"]), 2)
         LEDGER.parent.mkdir(parents=True, exist_ok=True)
         with LEDGER.open("a") as f:

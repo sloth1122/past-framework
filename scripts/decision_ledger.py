@@ -62,7 +62,9 @@ def load(p):
 
 def cmd_log(a):
     D.mkdir(parents=True, exist_ok=True)
-    rec = {"id": f"{a.date}-{a.ticker}-{a.action}", "date": a.date, "ticker": a.ticker.upper(),
+    # agent is part of the id: Charlie logs every proposal as "buy"; Beta adopting
+    # the same ticker the same day must not be dropped as a duplicate.
+    rec = {"id": f"{a.date}-{a.agent}-{a.ticker}-{a.action}", "date": a.date, "ticker": a.ticker.upper(),
            "action": a.action, "reason": a.reason, "agent": a.agent, "scores": {}}
     if any(r["id"] == rec["id"] for r in load(LEDGER)):
         print(f"exists: {rec['id']}"); return 0
@@ -126,20 +128,32 @@ def write_lessons(rows):
     lines = ["# Decision lessons (auto-scored vs QQQ, entry = first close after decision)",
              f"_Updated {datetime.now().strftime('%Y-%m-%d %H:%M')} MT · read at the START of every Beta session. "
              "Advisory evidence, not instructions._", ""]
-    # Scorecard
-    for n in HORIZONS:
-        k = f"{n}d"
-        for grp, acts in (("Buys/holds", ("buy", "hold", "core_buy")), ("Passes/sells", ("pass", "sell", "core_sell"))):
-            sc = [r for r in rows if r["action"] in acts and k in r["scores"]]
-            if not sc:
-                continue
-            good = sum(1 for r in sc if verdict(r["action"], r["scores"][k]["rel_pts"])[1])
-            avg = sum(r["scores"][k]["rel_pts"] for r in sc) / len(sc)
-            lines.append(f"- **{grp}, {n}-day:** {good}/{len(sc)} right · avg {avg:+.1f} pts vs QQQ")
+    # Beta's own record only; Charlie's proposals (never traded unless Beta adopts) are scored separately.
+    agent_rows = {"Beta": [r for r in rows if r.get("agent", "beta") == "beta"],
+                  "Charlie": [r for r in rows if r.get("agent") == "charlie"]}
+
+    def scorecard(rs):
+        out = []
+        for n in HORIZONS:
+            k = f"{n}d"
+            for grp, acts in (("Buys/holds", ("buy", "hold", "core_buy")), ("Passes/sells", ("pass", "sell", "core_sell"))):
+                sc = [r for r in rs if r["action"] in acts and k in r["scores"]]
+                if not sc:
+                    continue
+                good = sum(1 for r in sc if verdict(r["action"], r["scores"][k]["rel_pts"])[1])
+                avg = sum(r["scores"][k]["rel_pts"] for r in sc) / len(sc)
+                out.append(f"- **{grp}, {n}-day:** {good}/{len(sc)} right · avg {avg:+.1f} pts vs QQQ")
+        return out
+
+    lines += scorecard(agent_rows["Beta"])
+    charlie = scorecard(agent_rows["Charlie"])
+    rows = agent_rows["Beta"]
     slips = load(SLIP)
     if slips:
         tot = sum(s["slippage_usd"] for s in slips)
         lines.append(f"- **Stop slippage (fill vs stop):** {len(slips)} fills, total ${tot:+.2f} — size bets assuming stops can gap.")
+    if charlie:
+        lines += ["", "## Charlie proposals (scored as if taken — NOT Beta's record)"] + charlie
     lines += ["", "## Most recent settled decisions (newest first)"]
     settled = [r for r in rows if r["scores"]]
     settled.sort(key=lambda r: r["date"], reverse=True)

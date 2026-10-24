@@ -16,13 +16,16 @@ from datetime import datetime
 CLAUDE = "/Users/johntytko/.local/bin/claude"
 # Rocky only advises: remove every broker tool that can change the account
 # (harness-enforced; holds even with --dangerously-skip-permissions).
-BROKER_WRITE_TOOLS = ",".join(f"mcp__claude_ai_Robinhood_trading__{t}" for t in (
+# both Robinhood MCP registrations: the claude.ai connector AND the local
+# "robinhood-trading" server scoped to /Users/johntytko (loaded when cwd = ~).
+BROKER_WRITE_TOOLS = ",".join(f"{srv}{t}" for srv in (
+    "mcp__claude_ai_Robinhood_trading__", "mcp__robinhood-trading__") for t in (
     "place_equity_order", "place_option_order", "place_crypto_order",
     "cancel_equity_order", "cancel_option_order", "cancel_crypto_order",
     "exercise_option", "cancel_option_exercise"))
 PROMPT = """You are Rocky, the arena coach (load skill trading-arena-rocky). This is a PRE-TRADE COACH CONSULT, not your weekly review.
 Read Charlie's options proposal at {p}{t}, Beta's scorecard at /Users/johntytko/trading-arena/state/decisions/lessons.md, and Beta's open positions in /Users/johntytko/trading-arena/state/agent_beta/state.md.
-Coach on: (1) does this repeat a pattern the scorecard shows losing (e.g., buying into macro-driven selloffs, chasing a prior stop-out)? (2) is the max loss / position count sane for a ~$9.7K account already holding CIEN, VST and the QQQ core? (3) is Charlie's enthusiasm backed by the numbers (EV, breakeven vs implied move, liquidity)? (4) one concrete adjustment if any (strike, width, size, expiry, wait for X).
+Coach on: (1) does this repeat a pattern the scorecard shows losing (e.g., buying into macro-driven selloffs, chasing a prior stop-out)? (2) is the max loss / position count sane given current equity and the open positions in state.md (read them; do not assume)? (3) is Charlie's enthusiasm backed by the numbers (EV, breakeven vs implied move, liquidity)? (4) one concrete adjustment if any (strike, width, size, expiry, wait for X).
 Do NOT place trades and do NOT edit any file. Under 200 words. End with exactly one line:
 COACH | <TICKER> | GO or ADJUST or PASS | <one-sentence reason or adjustment>"""
 RE = re.compile(r"^COACH\s*\|\s*([A-Z.\-]+)\s*\|\s*(GO|ADJUST|PASS)\s*\|\s*(.*)$", re.M)
