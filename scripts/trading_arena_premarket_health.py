@@ -19,8 +19,17 @@ import os
 import sys
 import json
 import datetime
-import glob
 
+from arena_account import arena_account_last4
+
+# Health probe is read-only: remove every broker tool that can change the account.
+# both Robinhood MCP registrations: the claude.ai connector AND the local
+# "robinhood-trading" server scoped to /Users/johntytko (loaded when cwd = ~).
+BROKER_WRITE_TOOLS = ",".join(f"{srv}{t}" for srv in (
+    "mcp__claude_ai_Robinhood_trading__", "mcp__robinhood-trading__") for t in (
+    "place_equity_order", "place_option_order", "place_crypto_order",
+    "cancel_equity_order", "cancel_option_order", "cancel_crypto_order",
+    "exercise_option", "cancel_option_exercise"))
 # ── Paths ──
 CLAUDE_BIN = "/Users/johntytko/.local/bin/claude"
 CREDENTIALS_PATH = os.path.expanduser("~/.claude/.credentials.json")
@@ -92,9 +101,9 @@ def check_claude_oauth_and_connectivity():
                   f"and auto-refresh FAILED. Judge gate + Robinhood MCP are DOWN. "
                   f"Run `claude auth login` NOW.")
         else:
-            alert(f"CRITICAL: Claude Code connectivity test FAILED. "
-                  f"Judge gate + Robinhood MCP are DOWN. "
-                  f"Run `claude auth login` or check Claude installation.")
+            alert("CRITICAL: Claude Code connectivity test FAILED. "
+                  "Judge gate + Robinhood MCP are DOWN. "
+                  "Run `claude auth login` or check Claude installation.")
     except Exception as e:
         alert(f"ERROR reading Claude credentials: {e}")
 
@@ -156,13 +165,20 @@ def test_ollama():
 
 def test_robinhood_mcp():
     """Quick Robinhood MCP test via claude -p (read-only account check)."""
+    last4 = arena_account_last4()
+    if not last4:
+        alert("WARNING: arena account not configured (set ARENA_ACCOUNT_LAST4 or "
+              "state/arena_account_last4) — Robinhood MCP probe skipped.")
+        return
     try:
         cmd = ("Use the robinhood-trading MCP to get_account overview for the account "
-               "with nickname 'Agentic' ending in 8877. Report just the buying power. "
+               f"ending in {last4} (nickname 'MCP'). Report just the buying power. "
+               "Do NOT place, cancel, or modify any order. "
                "If MCP is not available, reply: MCP_UNAVAILABLE")
         result = subprocess.run(
             [CLAUDE_BIN, "-p", cmd,
-             "--max-turns", "10", "--dangerously-skip-permissions"],
+             "--max-turns", "10", "--dangerously-skip-permissions",
+             "--disallowedTools", BROKER_WRITE_TOOLS],
             capture_output=True, text=True, timeout=180
         )
         if result.returncode != 0:
@@ -179,7 +195,7 @@ def test_robinhood_mcp():
             return  # MCP is working
         # Ambiguous response — flag as warning
         alert("WARNING: Robinhood MCP test returned unclear response. "
-              "MCP may be partially down. Verify manually: `claude -p 'get account 8877'`")
+              "MCP may be partially down. Verify manually with a read-only `claude -p` account check.")
     except subprocess.TimeoutExpired:
         alert("CRITICAL: Robinhood MCP test timed out (120s). "
               "MCP server may be hung. Trades cannot execute.")
@@ -213,15 +229,15 @@ def update_model_status():
     try:
         now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M MT")
         with open(MODEL_STATUS, 'w') as f:
-            f.write(f"# Model Status — Trading Arena\n\n")
+            f.write("# Model Status — Trading Arena\n\n")
             f.write(f"> Auto-updated by pre-market health check: {now}\n")
-            f.write(f"> All models operational (verified by health check).\n\n")
-            f.write(f"## Current Status: ALL OPERATIONAL\n\n")
-            f.write(f"| Model | Provider | Status |\n")
-            f.write(f"|---|---|---|\n")
-            f.write(f"| GLM-5.2 | Z.AI (cloud) | ✅ Active |\n")
-            f.write(f"| Deepseek R1 70B | Ollama (local) | ✅ Fallback |\n")
-            f.write(f"| Claude Fable 5 | Claude Code | ✅ Judge gate |\n")
+            f.write("> All models operational (verified by health check).\n\n")
+            f.write("## Current Status: ALL OPERATIONAL\n\n")
+            f.write("| Model | Provider | Status |\n")
+            f.write("|---|---|---|\n")
+            f.write("| GLM-5.2 | Z.AI (cloud) | ✅ Active |\n")
+            f.write("| Deepseek R1 70B | Ollama (local) | ✅ Fallback |\n")
+            f.write("| Claude Fable 5 | Claude Code | ✅ Judge gate |\n")
     except Exception:
         pass  # Non-critical — don't fail the health check
 
