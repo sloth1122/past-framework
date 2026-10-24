@@ -167,7 +167,7 @@ def money2(x):
 
 def to_xlsx(pos, a, path):
     from openpyxl import Workbook
-    from openpyxl.styles import Font, PatternFill, Alignment
+    from openpyxl.styles import Font, PatternFill
     wb = Workbook()
     hdr = Font(bold=True, color="FFFFFF"); fill = PatternFill("solid", fgColor="0B0F14")
     def head(ws, row):

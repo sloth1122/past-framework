@@ -14,6 +14,12 @@ import argparse, re, subprocess, sys
 from datetime import datetime
 
 CLAUDE = "/Users/johntytko/.local/bin/claude"
+# Rocky only advises: remove every broker tool that can change the account
+# (harness-enforced; holds even with --dangerously-skip-permissions).
+BROKER_WRITE_TOOLS = ",".join(f"mcp__claude_ai_Robinhood_trading__{t}" for t in (
+    "place_equity_order", "place_option_order", "place_crypto_order",
+    "cancel_equity_order", "cancel_option_order", "cancel_crypto_order",
+    "exercise_option", "cancel_option_exercise"))
 PROMPT = """You are Rocky, the arena coach (load skill trading-arena-rocky). This is a PRE-TRADE COACH CONSULT, not your weekly review.
 Read Charlie's options proposal at {p}{t}, Beta's scorecard at /Users/johntytko/trading-arena/state/decisions/lessons.md, and Beta's open positions in /Users/johntytko/trading-arena/state/agent_beta/state.md.
 Coach on: (1) does this repeat a pattern the scorecard shows losing (e.g., buying into macro-driven selloffs, chasing a prior stop-out)? (2) is the max loss / position count sane for a ~$9.7K account already holding CIEN, VST and the QQQ core? (3) is Charlie's enthusiasm backed by the numbers (EV, breakeven vs implied move, liquidity)? (4) one concrete adjustment if any (strike, width, size, expiry, wait for X).
@@ -29,7 +35,7 @@ def main():
     ap.add_argument("--judge-cmd", default="")   # testing hook
     a = ap.parse_args()
     prompt = PROMPT.format(p=a.proposal, t=f" (ticker {a.ticker})" if a.ticker else "")
-    cmd = a.judge_cmd.split() + [prompt] if a.judge_cmd else [CLAUDE, "-p", prompt, "--max-turns", "15", "--dangerously-skip-permissions"]
+    cmd = a.judge_cmd.split() + [prompt] if a.judge_cmd else [CLAUDE, "-p", prompt, "--max-turns", "15", "--dangerously-skip-permissions", "--disallowedTools", BROKER_WRITE_TOOLS]
     try:
         out = subprocess.run(cmd, capture_output=True, text=True, timeout=290, cwd="/Users/johntytko/trading-arena").stdout
     except subprocess.TimeoutExpired:

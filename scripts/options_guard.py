@@ -23,9 +23,12 @@ order.json:
 
 Rules (opening orders): buy-only single leg OR a 2-leg DEBIT vertical (same type,
 same expiry; call: long strike < short strike; put: long strike > short strike);
+ratio_quantity 1 on every leg (no ratio spreads/backspreads);
 limit orders only; max loss (= debit x 100 x qty) <= 3% of equity; monthly new
 premium <= $1,500; <= 5 contracts; expiry 7..60 calendar days after the catalyst
-and <= 90 days out; <= 3 open event bets incl. this one; no SPCX; account XXXX only.
+and <= 90 days out; <= 3 open event bets incl. this one; no SPCX; arena account
+only (last 4 from env ARENA_ACCOUNT_LAST4 or untracked state/arena_account_last4 —
+unset = every order BLOCKs).
 Closing orders (position_effect "close" on every leg) always pass the structure
 check — exiting risk is never blocked.
 """
@@ -33,8 +36,9 @@ import argparse, json, sys
 from datetime import date
 from pathlib import Path
 
+from arena_account import arena_account_last4
+
 LEDGER = Path("/Users/johntytko/trading-arena/state/options_premium.jsonl")
-ACCOUNT = "XXXX"
 MONTHLY_CAP = 1500.0
 RISK_PCT = 0.03
 MAX_CONTRACTS = 5
@@ -60,8 +64,11 @@ def check(o, today=None):
     today = today or date.today()
     errs = []
     legs = o.get("legs") or []
-    if str(o.get("account")) != ACCOUNT:
-        errs.append(f"account must be {ACCOUNT}")
+    account = arena_account_last4()
+    if not account:   # fail closed: an unverifiable account never passes
+        errs.append("arena account not configured (set ARENA_ACCOUNT_LAST4 or state/arena_account_last4)")
+    elif str(o.get("account")) != account:
+        errs.append("account must be the arena account")
     if str(o.get("ticker", "")).upper() in BLOCKLIST:
         errs.append("ticker is blocklisted")
     if o.get("type", "limit") != "limit":
@@ -85,6 +92,13 @@ def check(o, today=None):
             errs.append("option_type must be call/put")
         if l.get("side") not in ("buy", "sell"):
             errs.append("side must be buy/sell")
+        # Robinhood legs accept ratio_quantity; anything but 1 is a ratio/backspread
+        # (a 1x2 leaves a naked short leg and breaks the debit = max-loss math).
+        try:
+            if float(l.get("ratio_quantity", 1)) != 1:
+                errs.append("ratio_quantity must be 1 on every leg (no ratio spreads/backspreads)")
+        except (TypeError, ValueError):
+            errs.append("ratio_quantity must be 1 on every leg (no ratio spreads/backspreads)")
     if errs:
         return errs
     if len(legs) == 1:

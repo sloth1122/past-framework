@@ -31,7 +31,7 @@ def closes(sym):
     req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
     for attempt in range(3):
         try:
-            with urllib.request.urlopen(req, timeout=20) as r:
+            with urllib.request.urlopen(req, timeout=20) as r:  # noqa: S310 — fixed https:// host
                 res = json.load(r)["chart"]["result"][0]
             break
         except Exception:
@@ -95,6 +95,7 @@ def verdict(action, rel):
 
 
 def cmd_score(a):
+    D.mkdir(parents=True, exist_ok=True)   # fresh state dir: no FileNotFoundError on the 6:50 cron
     rows = load(LEDGER)
     errors = []
     for r in rows:

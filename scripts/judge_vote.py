@@ -16,6 +16,13 @@ from datetime import datetime
 from pathlib import Path
 
 CLAUDE = "/Users/johntytko/.local/bin/claude"
+# Judges are read-only: remove every broker tool that can change the account
+# (harness-enforced; verified Oct 24 2026 that --disallowedTools holds even with
+# --dangerously-skip-permissions).
+BROKER_WRITE_TOOLS = ",".join(f"mcp__claude_ai_Robinhood_trading__{t}" for t in (
+    "place_equity_order", "place_option_order", "place_crypto_order",
+    "cancel_equity_order", "cancel_option_order", "cancel_crypto_order",
+    "exercise_option", "cancel_option_exercise"))
 QUEUE = "/Users/johntytko/trading-arena/state/thesis_queue.md"
 VOTES_DIR = Path("/Users/johntytko/trading-arena/state/judge_votes")
 
@@ -30,7 +37,8 @@ VOTE_RE = re.compile(r"^VOTE\s*\|\s*([A-Z.\-]+)\s*\|\s*(APPROVED|REJECTED)\s*\|\
 def run_vote(n, total, queue, judge_cmd, cwd):
     prompt = PROMPT.format(n=n, total=total, queue=queue)
     cmd = judge_cmd.split() + [prompt] if judge_cmd else \
-        [CLAUDE, "-p", prompt, "--max-turns", "25", "--dangerously-skip-permissions"]
+        [CLAUDE, "-p", prompt, "--max-turns", "25", "--dangerously-skip-permissions",
+         "--disallowedTools", BROKER_WRITE_TOOLS]
     try:
         r = subprocess.run(cmd, capture_output=True, text=True, timeout=540, cwd=cwd)
         out = r.stdout

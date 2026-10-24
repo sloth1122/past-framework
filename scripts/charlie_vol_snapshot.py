@@ -12,7 +12,7 @@ Regime (ARENA adaptation of the ApexVol blueprint, long-premium/debit-only accou
   R4 Crisis      VIX ≥ 30 or VIX/VIX3M ≥ 1.05 (backwardation) → stand down on new premium
 """
 import argparse, json, math, sys, time, urllib.request
-from datetime import date, datetime, timezone
+from datetime import date, datetime
 from pathlib import Path
 
 ST = Path("/Users/johntytko/trading-arena/state/agent_charlie")
@@ -25,7 +25,7 @@ def chart(sym, rng="3mo"):
     req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
     for i in range(3):
         try:
-            with urllib.request.urlopen(req, timeout=20) as r:
+            with urllib.request.urlopen(req, timeout=20) as r:  # noqa: S310 — fixed https:// host
                 res = json.load(r)["chart"]["result"][0]
             closes = [c for c in res["indicators"]["quote"][0]["close"] if c]
             return closes, res["meta"].get("regularMarketPrice")

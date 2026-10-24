@@ -10,6 +10,7 @@ Usage: polymarket_odds.py [--topics "fed decision,recession 2026"] [--out PATH]
 """
 import argparse, json, sys, urllib.parse, urllib.request
 from datetime import datetime, timezone
+from pathlib import Path
 
 GAMMA = "https://gamma-api.polymarket.com/public-search"
 TOPICS = [
@@ -22,8 +23,8 @@ OUT = "/Users/johntytko/trading-arena/state/research/prediction_markets.md"
 
 def fetch(topic):
     url = GAMMA + "?" + urllib.parse.urlencode({"q": topic, "limit_per_type": 8})
-    req = urllib.request.Request(url, headers={"User-Agent": "trading-arena/1.0"})
-    with urllib.request.urlopen(req, timeout=20) as r:
+    req = urllib.request.Request(url, headers={"User-Agent": "trading-arena/1.0"})  # noqa: S310 — fixed https:// host
+    with urllib.request.urlopen(req, timeout=20) as r:  # noqa: S310 — fixed https:// host
         return json.load(r)
 
 
@@ -71,7 +72,7 @@ def main():
         if not rows:
             continue
         lines.append(f"\n### {t}")
-        for title, q, odds, vol, end in rows[:5]:
+        for _title, q, odds, vol, end in rows[:5]:
             seen.add(q)
             yes = odds.get("Yes")
             odds_s = f"**Yes {yes*100:.1f}%**" if yes is not None else ", ".join(f"{k} {v*100:.1f}%" for k, v in odds.items())
@@ -83,7 +84,9 @@ def main():
     body += lines or ["", "_No open markets matched today._"]
     if errors:
         body += ["", "Fetch errors: " + "; ".join(errors)]
-    open(a.out, "w").write("\n".join(body) + "\n")
+    out = Path(a.out)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text("\n".join(body) + "\n")
     if errors and not lines:
         print("polymarket_odds: all fetches failed — " + "; ".join(errors))  # only output on total failure
         return 1
