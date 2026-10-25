@@ -52,10 +52,38 @@ def regime(vix, vix3m):
     return "R1 Complacent", "Convexity is cheap: single long calls/puts or wide debit spreads."
 
 
+def vix_lines(fetch=None):
+    """VIX / VIX9D / VIX3M lines. Each index is fetched on its own so one missing series
+    (Yahoo often returns no VIX3M/VIX9D quote) never discards the others. Only a missing
+    spot VIX makes the regime UNKNOWN; a missing VIX3M means the curve shape is unknown and
+    the regime is read from the VIX level with the curve assumed flat (conservative)."""
+    fetch = fetch or chart
+    got, errs = {}, {}
+    for sym in ("^VIX", "^VIX9D", "^VIX3M"):
+        try:
+            got[sym] = fetch(sym)[1]
+        except Exception as e:  # noqa: BLE001 — reported in the snapshot
+            got[sym], errs[sym] = None, e
+    vix, v9, v3 = got["^VIX"], got["^VIX9D"], got["^VIX3M"]
+    fmt = lambda x: "n/a" if x is None else f"{x:.2f}"
+    if vix is None:
+        why = errs.get("^VIX", "no quote returned")
+        return [f"- VIX (spot) unavailable from Yahoo ({why}) → regime UNKNOWN; no new single long options today."]
+    if v3:
+        ratio = vix / v3
+        shape = "contango" if ratio < 0.97 else ("flat" if ratio < 1.05 else "BACKWARDATION")
+        curve = f"VIX3M {v3:.2f} (ratio {ratio:.2f}) → term structure **{shape}**"
+    else:
+        curve = "VIX3M n/a → term structure unknown (curve assumed flat, conservative)"
+    rg, play = regime(vix, v3)
+    return [f"- **VIX {vix:.2f}** · VIX9D {fmt(v9)} · {curve}", f"- **Regime: {rg}** — {play}"]
+
+
 def iv_rank(tk, iv_now):
     if not IVH.exists():
         return None, 0
-    obs = [json.loads(l)["iv"] for l in IVH.read_text().splitlines() if l.strip() and json.loads(l)["ticker"] == tk]
+    rows = [json.loads(l) for l in IVH.read_text().splitlines() if l.strip()]
+    obs = [r["iv"] for r in rows if r["ticker"] == tk]
     if len(obs) < 60:
         return None, len(obs)
     lo, hi = min(obs), max(obs)
@@ -76,14 +104,7 @@ def main():
         print(f"logged {tk} IV {iv:.3f} ({n} obs; IV rank {'n/a — building history' if rk is None else f'{rk*100:.0f}%'})")
         return 0
     lines = [f"# Charlie vol snapshot — {datetime.now().strftime('%Y-%m-%d %H:%M')} MT (Yahoo daily closes; options IV comes from Robinhood)"]
-    try:
-        vix = chart("^VIX")[1]; v9 = chart("^VIX9D")[1]; v3 = chart("^VIX3M")[1]
-        rg, play = regime(vix, v3)
-        shape = "contango" if v3 and vix / v3 < 0.97 else ("flat" if vix / v3 < 1.05 else "BACKWARDATION")
-        lines += [f"- **VIX {vix:.2f}** · VIX9D {v9:.2f} · VIX3M {v3:.2f} (ratio {vix/v3:.2f}) → term structure **{shape}**",
-                  f"- **Regime: {rg}** — {play}"]
-    except Exception as e:
-        lines.append(f"- VIX fetch failed ({e}) → treat regime as UNKNOWN; no new single long options today.")
+    lines += vix_lines()
     lines += ["", "| Ticker | Last | HV30 | HV10 |", "|---|---|---|---|"]
     for tk in [t.strip().upper() for t in a.tickers.split(",") if t.strip()]:
         try:

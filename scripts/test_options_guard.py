@@ -62,12 +62,12 @@ print(("✓" if ok else "✗"), "monthly $1,500 cap")
 # unconfigured account fails closed (no env var, no state file)
 import arena_account
 from pathlib import Path
-saved_env, saved_file = os.environ.pop("ARENA_ACCOUNT_LAST4"), arena_account.STATE_FILE
-arena_account.STATE_FILE = Path("/nonexistent/arena_account_last4")
+saved_env, saved_file, saved_fb = os.environ.pop("ARENA_ACCOUNT_LAST4"), arena_account.STATE_FILE, arena_account.FALLBACK_FILE
+arena_account.STATE_FILE = arena_account.FALLBACK_FILE = Path("/nonexistent/arena_account_last4")
 g.month_used = lambda today=None: 0.0
 errs = g.check({**base, "legs": [call(250, "buy")]}, today=T)
 ok = any("not configured" in e for e in errs); fails += not ok
 print(("✓" if ok else "✗"), "unconfigured account BLOCKs")
-os.environ["ARENA_ACCOUNT_LAST4"], arena_account.STATE_FILE = saved_env, saved_file
+os.environ["ARENA_ACCOUNT_LAST4"], arena_account.STATE_FILE, arena_account.FALLBACK_FILE = saved_env, saved_file, saved_fb
 print(f"\n{len(cases)+2-fails}/{len(cases)+2} passed")
 sys.exit(1 if fails else 0)

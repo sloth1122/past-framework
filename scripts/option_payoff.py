@@ -92,7 +92,8 @@ def analyze(pos):
     vals = [expiry_pl(pos, x) for x in pts]
     slope_hi = expiry_pl(pos, hi * 2) - vals[-1]
     max_profit = math.inf if slope_hi > 1e-9 else max(vals)
-    max_loss = min(vals)
+    # a falling far tail (e.g. a naked short call) has no floor: report it as unlimited
+    max_loss = -math.inf if slope_hi < -1e-9 else min(vals)
     bes = []
     for (x0, y0), (x1, y1) in zip(zip(pts, vals), zip(pts[1:], vals[1:])):
         if (y0 < 0 <= y1) or (y0 > 0 >= y1):
@@ -105,6 +106,11 @@ def analyze(pos):
     def p_below(x):
         if x <= 0:
             return 0.0
+        if T <= 0 or iv <= 0:
+            # expiry day (or zero vol): the price is known, so P(S_T < x) is 1 or 0.
+            # The option is NOT worthless — it settles at intrinsic value — only the
+            # lognormal formula is undefined (it divides by iv * sqrt(T) = 0).
+            return 1.0 if S < x else 0.0
         return N((math.log(x / S) - (r - iv * iv / 2) * T) / (iv * math.sqrt(T)))
     edges = [0.0] + sorted(set(bes)) + [math.inf]
     pop = 0.0
@@ -137,7 +143,7 @@ def analyze(pos):
 
 
 def money(x):
-    return "unlimited" if x == math.inf else f"{'+' if x >= 0 else '−'}${abs(x):,.0f}"
+    return "unlimited" if math.isinf(x) else f"{'+' if x >= 0 else '−'}${abs(x):,.0f}"
 
 
 def legs_text(pos):
@@ -180,7 +186,7 @@ def to_xlsx(pos, a, path):
             ("Spot", S := pos["spot"]), ("As of", pos.get("as_of", "")), ("Days to expiry", a["dte"]),
             ("Cost / max loss ($)", round(a["debit"], 2)),
             ("Max profit ($)", "unlimited" if a["max_profit"] == math.inf else round(a["max_profit"], 2)),
-            ("Max loss ($)", round(a["max_loss"], 2)),
+            ("Max loss ($)", "unlimited" if math.isinf(a["max_loss"]) else round(a["max_loss"], 2)),
             ("Breakeven(s)", ", ".join(f"{b:.2f}" for b in a["breakevens"])),
             ("Probability of profit (model)", round(a["pop"], 4)),
             ("Delta (shares-equiv)", round(a["greeks"]["delta"], 2)), ("Gamma", round(a["greeks"]["gamma"], 3)),
