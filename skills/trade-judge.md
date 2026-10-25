@@ -161,7 +161,7 @@ For each, you independently verify — do NOT trust the agent's numbers:
 
 1. **Valuation sanity**: Pull P/E yourself. Compare to sector average. Is the stock genuinely undervalued or cheap for a reason?
 2. **Technical consistency**: Pull RSI + MACD yourself. Do the indicators tell a coherent story? Any contradictions?
-3. **Position sizing**: Pull portfolio yourself. Is the position within limits? (Alpha: max $375/15% of $2,500, Beta: max $625/25% of $2,500 per trading-arena-beta/SKILL.md — shared account, $2,500 allocation each)
+3. **Position sizing**: Pull portfolio yourself. Is the position within limits? **Use the ARENA v5 block at the top: position ≤ 30% of current equity, dollar risk ≤ 3% of current equity.** *(Superseded pre-v5 limits, do not apply: Alpha $375/15%, Beta $625/25% of a $2,500 allocation.)*
 4. **Sector concentration**: Pull positions yourself. Would this exceed 40% sector concentration?
 5. **Catalyst verification**: Pull earnings calendar yourself. Does the catalyst actually exist? Is it already priced in?
 6. **Risk/reward**: Calculate YOURSELF from current price. Is R/R ≥ 2:1? (Or ≥ 1.5:1 for high-conviction with strong technical confirmation)
@@ -192,7 +192,7 @@ Each agent has a PAST Index — a quantified personality profile (Likert 1-7) th
 - Sector specialization 1/7 → Sector-agnostic
 
 **Beta's PAST Index (read from skill file — trading-arena-beta/SKILL.md is the sole source of truth; values below synced Oct 14 2026):**
-- Risk tolerance 5/7 → Max position 25% ($625), stop 10%, max 5 positions
+- Risk tolerance 5/7 → sizing per the ARENA v5 block (≤ 30% equity per bet, ≤ 3% equity risk, 2×ATR stop 5–20%, max 3 event bets + core). *(Superseded: 25%/$625, 10% stop, 5 positions.)*
 - Conviction 6/7 → Exits on thesis breaks only, not price (10% hard stop still binds)
 - Technical focus 2/7 → Thesis-driven, not RSI
 - Sector specialization 7/7 → AI infrastructure only
@@ -266,7 +266,7 @@ If the thesis is an options trade, run these ADDITIONAL checks:
 **c. Max Loss Verification**
 - For long puts/calls: max loss = full premium paid. Does the agent have the capital?
   - Alpha: max premium $500 (20% of $2,500)
-  - Beta: max premium $250 (10% of $2,500) for long puts
+  - Beta: max loss per options bet ≤ 3% of current equity and ≤ $1,500 new premium per month (ARENA v5 options checklist). *(Superseded: $250 / 10% of $2,500.)*
 - For cash-secured puts: max loss = (strike - premium) × 100 × contracts. Is the collateral within the agent's $2,500 allocation?
   - Both agents: max collateral $500 (strike × 100 must be ≤ $500, meaning strike ≤ $5/share OR use cheaper underlyings)
   - **Red flag**: collateral exceeds $500 for cash-secured puts

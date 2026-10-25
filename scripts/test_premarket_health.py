@@ -44,6 +44,27 @@ def test_chat_default_must_be_opus():
     assert any(m.startswith("chat =") for m in r["mismatches"]), r
 
 
+def test_missing_pyyaml_is_a_tooling_warning_not_a_policy_breach():
+    saved = sys.modules.get("yaml")
+    sys.modules["yaml"] = None          # makes `import yaml` raise ImportError
+    try:
+        r = audit([{"id": "a", "name": "Beta", **GOOD}])
+    finally:
+        if saved is not None:
+            sys.modules["yaml"] = saved
+        else:
+            sys.modules.pop("yaml", None)
+    assert not r["mismatches"], r                       # the fallback reader still verifies the pins
+    assert r["chat"] == ("claude-opus-5-5", "anthropic", "high"), r
+    assert not any("not on Claude Opus" in a for a in h.alerts), h.alerts
+
+
+def test_unreadable_config_is_reported_as_unverified():
+    r = audit([], cfg="::: not yaml :::\n\t- [")
+    assert not r["mismatches"] and r["errors"], r
+    assert any("could not verify" in a for a in h.alerts) and not any("not on Claude Opus" in a for a in h.alerts), h.alerts
+
+
 def test_model_status_never_lists_retired_models_as_operational():
     r = audit([{"id": "a", "name": "Beta", **GOOD}])
     md = h.render_model_status(r, "now")

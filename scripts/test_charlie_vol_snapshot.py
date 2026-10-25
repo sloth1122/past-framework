@@ -25,6 +25,11 @@ def test_vix3m_missing_keeps_vix_and_says_so():
     assert "VIX 16.00" in out and "VIX3M n/a" in out and "term structure unknown" in out, out
 
 
+def test_vix3m_missing_low_vix_reads_level_not_forced_r3():
+    out = "\n".join(c.vix_lines(fetcher({"^VIX": 12.0, "^VIX9D": 11.5, "^VIX3M": None})))
+    assert "R1" in out and "curve unknown" in out, out
+
+
 def test_vix9d_error_is_not_fatal():
     out = "\n".join(c.vix_lines(fetcher({"^VIX": 25.0, "^VIX9D": TimeoutError("t/o"), "^VIX3M": 24.0})))
     assert "VIX9D n/a" in out and "R3" in out, out

@@ -29,6 +29,7 @@ elif act == "conflict": print(v("approve") + "\n" + v("reject"))
 elif act == "garbage": print("VOTE | AMD | APPROVED | old format")
 elif act == "wrongid": print(json.dumps({"run_id": "someone-else", "vote": "approve", "reason": "r"}))
 elif act == "sleep": time.sleep(3)
+elif act == "rcfail": print(v("approve")); sys.exit(1)
 '''
 
 
@@ -112,6 +113,19 @@ def test_timeout_rejects():
     p, calls, _, _ = run(["--ticker", "MSFT", "--instrument", "stock"], plan={"r1": ["sleep", "sleep"]})
     assert p.returncode == 2 and "timeout" in p.stdout, p.stdout
     assert calls.count("claude-opus-5-5 r1") == 2
+
+
+def test_nonzero_exit_vote_is_invalid():
+    """A claude process that crashes after printing a valid-looking vote must not count."""
+    p, calls, _, _ = run(["--ticker", "MSFT", "--instrument", "stock"], plan={"r1": ["rcfail", "rcfail"]})
+    assert p.returncode == 2 and "exited 1" in p.stdout, p.stdout
+    assert calls.count("claude-opus-5-5 r1") == 2
+
+
+def test_compact_option_notation_forces_high_tier():
+    q = "## THESIS SUBMISSION — Beta — AMD (PENDING)\nBuy 1 AMD 250C 11/20\n"
+    _, calls, t, _ = run(["--ticker", "AMD", "--instrument", "stock"], queue=q)
+    assert t[-1]["tier"] == "high" and len(calls) == 3, (t, calls)
 
 
 def test_shadow_is_logged_and_non_voting():

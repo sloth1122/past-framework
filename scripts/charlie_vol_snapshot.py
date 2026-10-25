@@ -42,10 +42,11 @@ def hv(closes, n=30):
 
 
 def regime(vix, vix3m):
-    ratio = vix / vix3m if vix3m else 1.0
-    if vix >= 30 or ratio >= 1.05:
+    """vix3m None (no quote) → classify on the VIX level alone; vix_lines labels the curve unknown."""
+    ratio = vix / vix3m if vix3m else None
+    if vix >= 30 or (ratio is not None and ratio >= 1.05):
         return "R4 Crisis/backwardation", "Stand down on new premium until VIX/VIX3M < 1.0; stock entries only via Beta."
-    if vix >= 20 or ratio >= 0.97:
+    if vix >= 20 or (ratio is not None and ratio >= 0.97):
         return "R3 Elevated/flat curve", "Narrow debit spreads only (sold leg harvests rich IV); avoid single long options."
     if vix >= 14:
         return "R2 Normal", "Directional debit spreads around dated catalysts."
@@ -56,7 +57,7 @@ def vix_lines(fetch=None):
     """VIX / VIX9D / VIX3M lines. Each index is fetched on its own so one missing series
     (Yahoo often returns no VIX3M/VIX9D quote) never discards the others. Only a missing
     spot VIX makes the regime UNKNOWN; a missing VIX3M means the curve shape is unknown and
-    the regime is read from the VIX level with the curve assumed flat (conservative)."""
+    the regime is read from the VIX level alone, labelled as such."""
     fetch = fetch or chart
     got, errs = {}, {}
     for sym in ("^VIX", "^VIX9D", "^VIX3M"):
@@ -74,8 +75,10 @@ def vix_lines(fetch=None):
         shape = "contango" if ratio < 0.97 else ("flat" if ratio < 1.05 else "BACKWARDATION")
         curve = f"VIX3M {v3:.2f} (ratio {ratio:.2f}) → term structure **{shape}**"
     else:
-        curve = "VIX3M n/a → term structure unknown (curve assumed flat, conservative)"
+        curve = "VIX3M n/a → term structure unknown"
     rg, play = regime(vix, v3)
+    if not v3:
+        rg += " (from the VIX level only — curve unknown; treat a borderline call as one regime higher)"
     return [f"- **VIX {vix:.2f}** · VIX9D {fmt(v9)} · {curve}", f"- **Regime: {rg}** — {play}"]
 
 

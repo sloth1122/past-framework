@@ -41,9 +41,9 @@ def main():
     cmd = a.judge_cmd.split() + [prompt] if a.judge_cmd else [CLAUDE, "-p", prompt, "--max-turns", "15", "--dangerously-skip-permissions", "--disallowedTools", BROKER_WRITE_TOOLS]
     try:
         out = subprocess.run(cmd, capture_output=True, text=True, timeout=290, cwd="/Users/johntytko/trading-arena").stdout
-    except subprocess.TimeoutExpired:
+    except Exception:  # noqa: BLE001 — timeout, missing binary, any OSError → fail closed below
         out = ""
-    m = RE.findall(out)
+    m = RE.findall(out or "")
     stamp = datetime.now().strftime("%Y-%m-%d %H:%M")
     if m:
         t, v, why = m[-1]

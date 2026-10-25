@@ -62,6 +62,7 @@ def load(p):
 
 def cmd_log(a):
     D.mkdir(parents=True, exist_ok=True)
+    a.agent = a.agent.strip().lower()   # scorecards filter on "beta"/"charlie"
     # agent is part of the id: Charlie logs every proposal as "buy"; Beta adopting
     # the same ticker the same day must not be dropped as a duplicate.
     rec = {"id": f"{a.date}-{a.agent}-{a.ticker}-{a.action}", "date": a.date, "ticker": a.ticker.upper(),

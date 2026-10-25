@@ -124,10 +124,41 @@ def test_claude_connectivity():
         return False
 
 
+def read_hermes_config(path):
+    """Top-level sections of ~/.hermes/config.yaml. PyYAML when available; otherwise a
+    minimal reader for `section:` / `  key: value` lines — enough for model/agent/delegation."""
+    with open(path) as f:
+        text = f.read()
+    try:
+        import yaml
+    except ImportError:
+        yaml = None
+    if yaml is not None:
+        c = yaml.safe_load(text)
+        if not isinstance(c, dict) or not isinstance(c.get("model"), dict):
+            raise ValueError("no 'model:' section")
+        return c
+    out, sec = {}, None
+    for line in text.splitlines():
+        if not line.strip() or line.lstrip().startswith("#"):
+            continue
+        if not line[0].isspace() and line.rstrip().endswith(":"):
+            sec = line.strip()[:-1]
+            out[sec] = {}
+        elif sec and line.startswith("  ") and not line.startswith("   ") and ":" in line:
+            k, _, v = line.strip().partition(":")
+            out[sec][k.strip()] = v.strip().strip("'\"") or None
+    if not isinstance(out.get("model"), dict) or not out["model"]:
+        raise ValueError("no 'model:' section")
+    return out
+
+
 def check_model_pins(jobs_path=HERMES_JOBS, config_path=HERMES_CONFIG):
     """Every Hermes chat, subagent and agent cron must run Claude Opus 5.5, high effort.
-    Returns {"crons_ok", "crons_total", "chat", "subagents", "mismatches"} for model_status.md."""
-    res = {"crons_ok": 0, "crons_total": 0, "chat": None, "subagents": None, "mismatches": []}
+    Policy breaches ("mismatches") and tooling failures ("errors") are reported separately,
+    so an unreadable file is never presented as a model-policy violation.
+    Returns {"crons_ok", "crons_total", "chat", "subagents", "mismatches", "errors"}."""
+    res = {"crons_ok": 0, "crons_total": 0, "chat": None, "subagents": None, "mismatches": [], "errors": []}
     try:
         with open(jobs_path) as f:
             d = json.load(f)
@@ -142,11 +173,9 @@ def check_model_pins(jobs_path=HERMES_JOBS, config_path=HERMES_CONFIG):
             else:
                 res["mismatches"].append(f"cron '{j.get('name', j.get('id'))}' = {'/'.join(map(str, got))}")
     except Exception as e:
-        res["mismatches"].append(f"could not read {jobs_path}: {e}")
+        res["errors"].append(f"could not read {jobs_path}: {e}")
     try:
-        import yaml
-        with open(config_path) as f:
-            c = yaml.safe_load(f) or {}
+        c = read_hermes_config(config_path)
         m, agent, dele = c.get("model") or {}, c.get("agent") or {}, c.get("delegation") or {}
         res["chat"] = (m.get("default"), m.get("provider"), agent.get("reasoning_effort"))
         # subagents inherit the chat model unless delegation pins its own
@@ -156,7 +185,9 @@ def check_model_pins(jobs_path=HERMES_JOBS, config_path=HERMES_CONFIG):
             if res[name] != REQUIRED:
                 res["mismatches"].append(f"{name} = {'/'.join(map(str, res[name]))}")
     except Exception as e:
-        res["mismatches"].append(f"could not read {config_path}: {e}")
+        res["errors"].append(f"could not read {config_path}: {e} (python {sys.executable})")
+    if res["errors"]:
+        alert("WARNING: could not verify model pins — " + "; ".join(res["errors"]))
     if res["mismatches"]:
         alert("WARNING: not on Claude Opus 5.5 high (claude-opus-5-5/anthropic/high): "
               + "; ".join(res["mismatches"]) + ". Fix: `hermes cron edit <id> --model claude-opus-5-5 "
@@ -252,7 +283,7 @@ def check_state_files():
 
 
 def render_model_status(pins, now):
-    ok = not pins["mismatches"]
+    ok = not pins["mismatches"] and not pins.get("errors")
     fmt = lambda t: "/".join(map(str, t)) if t else "unknown"
     return "\n".join([
         "# Model Status — Trading Arena",
@@ -262,17 +293,17 @@ def render_model_status(pins, now):
         f"{pins['crons_ok']}/{pins['crons_total']} agent crons on Claude Opus 5.5 high; "
         f"chat {fmt(pins['chat'])}; subagents {fmt(pins['subagents'])}.",
         "",
-        f"## Current status: {'ALL ON POLICY' if ok else 'MISMATCH'}",
+        f"## Current status: {'ALL ON POLICY' if ok else ('MISMATCH' if pins['mismatches'] else 'UNVERIFIED')}",
         "",
         "| Role | Model | Effort | Status |",
         "|---|---|---|---|",
         "| Every Hermes chat, subagent and agent cron (Beta, Charlie, Rocky, research, reviews) "
         f"| Claude Opus 5.5 (`claude-opus-5-5`, Anthropic) | high | {'✅' if ok else '⚠️'} policy since Oct 19 2026 |",
         f"| Judge — HIGH-RISK tier (every option trade; crypto/leverage; stock above size threshold) "
-        f"| Claude Fable 5.1 (`{JUDGE_HIGH}`) — 3 independent runs, unanimous | high | ✅ since Oct 24 2026 |",
-        f"| Judge — ROUTINE tier (all other stock trades) | Claude Opus 5.5 (`{JUDGE_ROUTINE}`) — 1 run | high | ✅ |",
+        f"| Claude Fable 5.1 (`{JUDGE_HIGH}`) — 3 independent runs, unanimous | high | configured Oct 24 2026; availability is checked by judge_vote.py before every high-risk trade (failover below) |",
+        f"| Judge — ROUTINE tier (all other stock trades) | Claude Opus 5.5 (`{JUDGE_ROUTINE}`) — 1 run | high | configured |",
         "| Judge failover (Fable 5.1 unavailable) | Claude Opus 5.5 — 3 runs, unanimous, logged \"failover\" | high | standby |",
-        "| Judge shadow test (10% of high-risk trades, non-voting) | Claude Opus 5.5 | high | ✅ logging |",
+        "| Judge shadow test (10% of high-risk trades, non-voting) | Claude Opus 5.5 | high | configured (logs to state/judge_votes/shadow.jsonl) |",
         "| GLM-5.2 / 5.3 (Z.AI) | — | — | ⛔ retired Oct 19 2026 (subscription cancelled) |",
         "| Deepseek R1 / local Ollama models | — | — | ⛔ retired Oct 11 2026 |",
         "",

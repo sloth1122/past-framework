@@ -60,7 +60,8 @@ End your reply with EXACTLY ONE line of JSON and nothing after it:
 PREFLIGHT = "Preflight availability check. Reply with exactly: OK"
 
 JSON_RE = re.compile(r"\{[^{}]*\}")
-OPTION_TERMS = re.compile(r"\b(calls?|puts?)\b[\s\S]*\b(strike|expir\w*|spread|debit|contracts?)\b", re.I)
+OPTION_TERMS = re.compile(r"\b(calls?|puts?)\b[\s\S]*\b(strike|expir\w*|spread|debit|contracts?)\b"
+                          r"|\b\d+(\.\d+)?[CP]\b", re.I)   # prose, or compact notation like "250C"
 
 
 def load_jsonl(p):
@@ -118,10 +119,12 @@ def model_available(model, judge_cmd, cwd):
     return rc == 0 and "OK" in out
 
 
-def parse_vote(out, run_id):
+def parse_vote(out, run_id, rc=0):
     """(vote, reason, None) for a valid vote, else (None, None, why_invalid)."""
     if out == "TIMEOUT":
         return None, None, "timeout"
+    if rc != 0:   # a crashed run's output is not trusted, even if it printed a vote
+        return None, None, f"claude exited {rc}"
     objs = []
     for m in JSON_RE.finditer(out or ""):
         try:
@@ -147,9 +150,9 @@ def judge_run(run_id, label, model, a, stamp):
     prompt = PROMPT.format(ticker=a.ticker, queue=a.queue, label=label, run_id=run_id)
     vote = reason = why = None
     for attempt in (1, 2):
-        _, out = call(model, prompt, a.judge_cmd, a.cwd, a.run_timeout)
+        rc, out = call(model, prompt, a.judge_cmd, a.cwd, a.run_timeout)
         (a.votes_dir / f"{run_id}_a{attempt}.md").write_text(out or "")
-        vote, reason, why = parse_vote(out, run_id)
+        vote, reason, why = parse_vote(out, run_id, 0 if rc is None else rc)
         append_jsonl(a.votes_dir / "votes.jsonl", {"ts": stamp, "ticker": a.ticker, "run_id": run_id, "model": model,
                                                     "attempt": attempt, "vote": vote, "reason": reason, "invalid": why})
         if why is None:
