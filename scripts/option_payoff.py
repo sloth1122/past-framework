@@ -185,7 +185,7 @@ def to_xlsx(pos, a, path):
     rows = [("Ticker", pos["ticker"]), ("Structure", legs_text(pos)), ("Contracts", pos["quantity"]),
             ("Spot", S := pos["spot"]), ("As of", pos.get("as_of", "")), ("Days to expiry", a["dte"]),
             ("Cost / max loss ($)", round(a["debit"], 2)),
-            ("Max profit ($)", "unlimited" if a["max_profit"] == math.inf else round(a["max_profit"], 2)),
+            ("Max profit ($)", "unlimited" if math.isinf(a["max_profit"]) else round(a["max_profit"], 2)),
             ("Max loss ($)", "unlimited" if math.isinf(a["max_loss"]) else round(a["max_loss"], 2)),
             ("Breakeven(s)", ", ".join(f"{b:.2f}" for b in a["breakevens"])),
             ("Probability of profit (model)", round(a["pop"], 4)),

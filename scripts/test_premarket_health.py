@@ -40,7 +40,7 @@ def test_paused_and_script_only_jobs_are_out_of_scope():
 
 
 def test_chat_default_must_be_opus():
-    r = audit([], cfg=CFG.replace("claude-opus-5-5", "glm-5.3"))
+    r = audit([{"id": "a", "name": "Beta", **GOOD}], cfg=CFG.replace("claude-opus-5-5", "glm-5.3"))
     assert any(m.startswith("chat =") for m in r["mismatches"]), r
 
 
@@ -60,7 +60,7 @@ def test_missing_pyyaml_is_a_tooling_warning_not_a_policy_breach():
 
 
 def test_unreadable_config_is_reported_as_unverified():
-    r = audit([], cfg="::: not yaml :::\n\t- [")
+    r = audit([{"id": "a", "name": "Beta", **GOOD}], cfg="::: not yaml :::\n\t- [")
     assert not r["mismatches"] and r["errors"], r
     assert any("could not verify" in a for a in h.alerts) and not any("not on Claude Opus" in a for a in h.alerts), h.alerts
 
@@ -72,6 +72,17 @@ def test_model_status_never_lists_retired_models_as_operational():
     for line in md.splitlines():
         if "GLM" in line or "Deepseek" in line:
             assert "retired" in line and "✅" not in line, line
+
+
+def test_zero_active_crons_is_unverified_not_on_policy():
+    r = audit([])
+    assert r["errors"] and "ALL ON POLICY" not in h.render_model_status(r, "now"), r
+
+
+def test_judge_models_come_from_judge_vote():
+    import judge_vote
+    assert h.JUDGE_HIGH == judge_vote.FABLE and h.JUDGE_ROUTINE == judge_vote.ROUTINE_MODEL
+    assert h.SHARED_IMPORT_ERROR is None and "place_option_order" in h.BROKER_WRITE_TOOLS
 
 
 if __name__ == "__main__":

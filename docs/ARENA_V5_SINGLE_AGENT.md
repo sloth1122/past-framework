@@ -123,3 +123,29 @@ First scorecard (backfilled Aug 6–Oct 16): buys beat QQQ at 20 days 4 of 12, a
 - `charlie_vol_snapshot.py`: VIX, VIX9D and VIX3M are fetched separately. A missing VIX3M or VIX9D quote no longer discards the VIX level as "VIX fetch failed". Only a missing spot VIX makes the regime UNKNOWN.
 - Health check: no longer requires Alpha's frozen state file to be fresh (that would have raised a false alarm every morning from Oct 24).
 - Repo and live (`~/trading-arena/scripts`) copies of the arena scripts are now identical files. The account last-4 comes from `ARENA_ACCOUNT_LAST4` or the untracked `state/arena_account_last4`.
+
+### v5.2 review round (Oct 24 2026) — standards, spec and architecture reviews
+
+- **One read-only broker path:** new `scripts/broker_read.py` holds the only copy of the broker deny-list. Charlie's quote pulls, the Daily Judge Audit's position check and Beta's own position pull used to run Claude with order-placing tools available, enforced only by the words "read-only". They now go through `broker_read.py`, and so do the Judge, Rocky and the health probe. A live test confirmed that `place_equity_order` does not exist in that session. Only Beta's order step, after a Judge APPROVED verdict, keeps write access.
+- **Judge (spec gaps closed):**
+  - `--time-sensitive`: a timeout rejects at once, with no re-run.
+  - If Fable stops responding mid-run, the failed run's re-run uses Opus and is logged `failover`.
+  - The shadow run starts in parallel, so it never delays an order.
+  - A shadow skipped during failover is recorded as skipped.
+  - `split` now counts "2 approve + 1 invalid".
+  - The split rate is also shown for Fable-only trades.
+  - Milestones are announced once ("MILESTONE — REPORT TO JOHN"), and Beta copies them into its Telegram report.
+  - A stock order without `--notional`, a malformed config, or any internal error produces a logged REJECTED verdict.
+  - Option terms in the thesis escalate the tier even without a PENDING tag.
+  - 24 tests.
+- **Health check:**
+  - Judge model names come from `judge_vote.py` (no second copy), and the shadow rate from the Judge config.
+  - 0 active agent crons is UNVERIFIED, not "on policy".
+  - Missing shared modules raise a CRITICAL alert instead of a silent fallback.
+  - 10 tests, which pass with and without PyYAML.
+- **Rocky:** any error, not only a timeout, fails closed to PASS.
+- **`robinhood_trade.py`:** stopped calling the arena account a "CASH account". It is limited margin and never borrows.
+- **Open decisions:**
+  - stock size threshold (issue #8);
+  - research-paper PDF redaction (issue #7);
+  - the architecture candidates in the Oct 24 review (one order object shared by the options guard and the broker; one deploy path; one arena settings file).

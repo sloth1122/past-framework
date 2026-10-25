@@ -24,21 +24,26 @@ import sys
 import json
 import datetime
 
-try:  # account last-4 lives outside the public repo (env or untracked state file)
+# Shared arena modules (account last-4, broker deny-list, Judge model routing) live next to
+# this script in the repo and in ~/trading-arena/scripts in the live deployment. Importing
+# them keeps ONE source of truth; if they are missing the check alerts instead of guessing.
+sys.path[:0] = [os.path.dirname(os.path.abspath(__file__)), "/Users/johntytko/trading-arena/scripts"]
+try:
     from arena_account import arena_account_last4
-except ImportError:  # deployed without the helper → probe reports "not configured"
-    def arena_account_last4():
-        return os.environ.get("ARENA_ACCOUNT_LAST4", "").strip()
+    from broker_read import BROKER_WRITE_TOOLS
+    import judge_vote as _jv
+    JUDGE_HIGH, JUDGE_ROUTINE, JUDGE_SHADOW_DEFAULT = _jv.FABLE, _jv.ROUTINE_MODEL, _jv.DEFAULT_SHADOW_RATE
+    JUDGE_CONFIG = str(_jv.CONFIG)
+    SHARED_IMPORT_ERROR = None
+except Exception as _e:  # noqa: BLE001 — reported as an alert in main()
+    SHARED_IMPORT_ERROR = f"{type(_e).__name__}: {_e}"
+    arena_account_last4 = lambda: ""  # noqa: E731 — probe then reports "not configured"
+    BROKER_WRITE_TOOLS = None
+    JUDGE_HIGH = JUDGE_ROUTINE = "unknown (judge_vote.py not importable)"
+    JUDGE_SHADOW_DEFAULT, JUDGE_CONFIG = 0.10, ""
 
 # ── Paths ──
 CLAUDE_BIN = "/Users/johntytko/.local/bin/claude"
-# Health probe is read-only: remove every broker tool that can change the account,
-# under both Robinhood MCP registrations (claude.ai connector + local server).
-BROKER_WRITE_TOOLS = ",".join(f"{srv}{t}" for srv in (
-    "mcp__claude_ai_Robinhood_trading__", "mcp__robinhood-trading__") for t in (
-    "place_equity_order", "place_option_order", "place_crypto_order",
-    "cancel_equity_order", "cancel_option_order", "cancel_crypto_order",
-    "exercise_option", "cancel_option_exercise"))
 CREDENTIALS_PATH = os.path.expanduser("~/.claude/.credentials.json")
 HERMES_JOBS = os.path.expanduser("~/.hermes/cron/jobs.json")
 HERMES_CONFIG = os.path.expanduser("~/.hermes/config.yaml")
@@ -50,8 +55,7 @@ MODEL_STATUS = f"{STATE_DIR}/model_status.md"
 
 # ── Model policy (John, Oct 19 + Oct 24 2026) ──
 REQUIRED = ("claude-opus-5-5", "anthropic", "high")   # every chat, subagent and agent cron
-JUDGE_HIGH = "claude-fable-5-1"                         # high-risk tier, effort high, 3 runs
-JUDGE_ROUTINE = "claude-opus-5-5"                       # routine tier, effort high, 1 run
+# Judge models come from judge_vote.py (imported above) — not restated here.
 
 # ── Thresholds ──
 TOKEN_WARN_HOURS = 4       # alert if <4h left on Claude OAuth
@@ -172,6 +176,8 @@ def check_model_pins(jobs_path=HERMES_JOBS, config_path=HERMES_CONFIG):
                 res["crons_ok"] += 1
             else:
                 res["mismatches"].append(f"cron '{j.get('name', j.get('id'))}' = {'/'.join(map(str, got))}")
+        if res["crons_total"] == 0:
+            res["errors"].append("no active agent crons found (is Beta's cron paused?)")
     except Exception as e:
         res["errors"].append(f"could not read {jobs_path}: {e}")
     try:
@@ -198,7 +204,7 @@ def check_model_pins(jobs_path=HERMES_JOBS, config_path=HERMES_CONFIG):
 def test_robinhood_mcp():
     """Quick Robinhood MCP test via claude -p (read-only account check)."""
     last4 = arena_account_last4()
-    if not last4:
+    if not last4 or BROKER_WRITE_TOOLS is None:
         alert("WARNING: arena account not configured (set ARENA_ACCOUNT_LAST4 or "
               "state/arena_account_last4) — Robinhood MCP probe skipped.")
         return
@@ -282,6 +288,14 @@ def check_state_files():
                   f"outdated data.")
 
 
+def shadow_rate():
+    try:
+        with open(JUDGE_CONFIG) as f:
+            return float(json.load(f).get("shadow_rate", JUDGE_SHADOW_DEFAULT))
+    except Exception:
+        return JUDGE_SHADOW_DEFAULT
+
+
 def render_model_status(pins, now):
     ok = not pins["mismatches"] and not pins.get("errors")
     fmt = lambda t: "/".join(map(str, t)) if t else "unknown"
@@ -303,7 +317,7 @@ def render_model_status(pins, now):
         f"| Claude Fable 5.1 (`{JUDGE_HIGH}`) — 3 independent runs, unanimous | high | configured Oct 24 2026; availability is checked by judge_vote.py before every high-risk trade (failover below) |",
         f"| Judge — ROUTINE tier (all other stock trades) | Claude Opus 5.5 (`{JUDGE_ROUTINE}`) — 1 run | high | configured |",
         "| Judge failover (Fable 5.1 unavailable) | Claude Opus 5.5 — 3 runs, unanimous, logged \"failover\" | high | standby |",
-        "| Judge shadow test (10% of high-risk trades, non-voting) | Claude Opus 5.5 | high | configured (logs to state/judge_votes/shadow.jsonl) |",
+        f"| Judge shadow test ({shadow_rate():.0%} of high-risk trades, non-voting) | Claude Opus 5.5 | high | configured (logs to state/judge_votes/shadow.jsonl) |",
         "| GLM-5.2 / 5.3 (Z.AI) | — | — | ⛔ retired Oct 19 2026 (subscription cancelled) |",
         "| Deepseek R1 / local Ollama models | — | — | ⛔ retired Oct 11 2026 |",
         "",
@@ -330,6 +344,9 @@ def main():
     except Exception:
         pass
 
+    if SHARED_IMPORT_ERROR:
+        alert("CRITICAL: shared arena modules not importable (" + SHARED_IMPORT_ERROR + "). "
+              "Deploy arena_account.py, broker_read.py and judge_vote.py to ~/trading-arena/scripts.")
     check_claude_oauth_and_connectivity()   # 1. OAuth token + Claude connectivity
     pins = check_model_pins()               # 2. every chat/subagent/agent cron on Opus 5.5 high
     test_robinhood_mcp()                    # 3. Robinhood MCP end-to-end (read-only)
