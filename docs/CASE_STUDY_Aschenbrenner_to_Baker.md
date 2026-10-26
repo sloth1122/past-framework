@@ -28,9 +28,11 @@ This is exactly what the PAST framework did programmatically on July 30: removed
 
 ## What PAST Identified Before the Collapse
 
-The PAST research paper (v2, Section 7.2 — Limitations), written on July 29, 2026 — **one day before the liquidation** — explicitly warned:
+The PAST research paper's Limitations section (now §9.2 of v2.4; §7.2 in the July draft), written on July 29, 2026 — **one day before the liquidation** — explicitly warned:
 
-> "Beta's +$754 was dominated by a single +$880 MU trade. In a different market regime, Beta's 27% win rate with 10% stops could produce consecutive losses without a compensating win."
+> "Beta's [return] was dominated by a single MU trade. In a different market regime, Beta's [low] win rate with 10% stops could produce consecutive losses without a compensating win."
+
+*(The specific dollar and win-rate figures in the original sentence — +$754, +$880, 27% — came from the v1 harness and have been retracted; see the Backtest Comparison section below and CHANGELOG v0.5.0. The qualitative warning stands and the v3 backtest confirms it: every closed Beta trade was a stop-loss.)*
 
 The paper also noted:
 - **Regime dependence** — the Aschenbrenner thesis (AI infrastructure) works in a bull market, fails in a downturn
@@ -67,39 +69,33 @@ On July 30, 2026 — the same day Aschenbrenner was liquidated — Agent Beta's 
 
 ## Backtest Comparison
 
-### Aschenbrenner Beta (Jan 1 - Jul 21, 2026)
+> **Retraction notice (September 2026).** The two comparison tables that originally appeared here (Aschenbrenner +$754.41 / Baker +$573.93) were produced by the v1 harness, which simulated each ticker as an independent $2,500 book and summed the results. Those figures are withdrawn. The tables below are from the v3 portfolio-level harness (`backtest/backtest_v3.py`, shared $2,500 pool, rolling indicators, 1-day stop cooldown, IPO ban on). Source: `docs/BACKTEST_V3_RESULTS.md`.
 
-| Metric | Value |
-|---|---|
-| Total P&L | +$754.41 (+30.2%) |
-| Trades | 11 |
-| Win rate | 27% |
-| Best trade | MU +$880 (+35.2%) |
-| Worst trade | SPCX -$103.38 (IPO buy, -10% stop) |
+### Both profiles on identical data (Jan 1 – Jul 21, 2026)
 
-### Baker Beta (Jan 1 - Jul 21, 2026)
-
-| Metric | Value |
-|---|---|
-| Total P&L | +$573.93 (+23.0%) |
-| Trades | 16 |
-| Win rate | 19% |
-| Best trade | MU +$1,100 (+44.0%) — Baker's 25% position captured more upside |
-| Worst trade | OKLO -$368.43 (more entries = more exposure) |
+| Metric | Beta — Aschenbrenner $[6,7,5,7]$ | Beta — Baker $[5,6,3,6]$ |
+|---|---|---|
+| Final equity (from $2,500) | $2,358.18 | $2,867.64 |
+| Return | −5.67% | +14.71% |
+| Realized / unrealized | −$186.19 / +$44.36 | −$547.97 / +$915.60 |
+| Closed trades (all stop-outs) | 3 | 10 |
+| Open at end | 2 | 5 |
+| Max drawdown | −9.4% | −30.7% |
+| Judge approvals / signals | 5 / 37 | 80 / 105 |
+| Return if MU re-entry is one session later (paper §7.6) | −6.51% | −8.46% |
 
 ### The Key Insight
 
-Aschenbrenner Beta returned **more** (+$754 vs +$574) in the bull market (Jan-Jun 2026). But the backtest ended July 21 — **9 days before the liquidation**. If extended through July 30:
+On this window Baker's headline return is higher, but for a reason that has nothing to do with the profile: one MU position, re-entered the session after a stop, carried +$506 of unrealized gain. Shift that re-entry by a single session and Baker is −8.5%, worse than Aschenbrenner. Aschenbrenner lost less not because its thesis was better but because it barely traded — the Judge blocked 25 of its signals on the SPCX IPO ban and 7 on its own NVDA restriction, so it sat mostly in cash. Baker's pullback-entry rule and unrestricted universe kept it fully deployed and produced a 30.7% drawdown.
 
-- **Aschenbrenner Beta** would have been wiped out. His top 5 holdings (BE, SNDK, CRWV, IREN, CORZ = 76%) dropped 35-55%. With 4x leverage, a 25% decline = 100% equity loss. Even without leverage (our system), 5 × 10% stops = -$1,250, turning +$754 into **-$496**.
-- **Baker Beta** would have survived. Diversified across 6 architecture layers (not concentrated in 5 power/data-center stocks), owns NVDA (down less), 10% hard stops, no leverage.
+The backtest ended July 21 — nine days before the liquidation. The swap to Baker was not made on backtest return. It was made because Aschenbrenner's real-world profile (4× leverage, 76% in five names) had just been shown to be ruinous, and the Likert vector encoding those traits — Risk 6, Conviction 7, Concentration 6 — was the closest analogue in the arena. A return-only comparison of the two profiles on this window is not stable enough to point anywhere.
 
 ### The PAST Lesson
 
 **In a bull market, concentration + conviction wins. In a crash, diversification + risk management survives.** PAST's value is not predicting which regime will occur — it's ensuring the agent's personality is suited to survive both.
 
 The swap from Aschenbrenner to Baker is the PAST framework in action:
-1. **Identify** that the current personality profile has unacceptable tail risk (paper Section 7.2)
+1. **Identify** that the current personality profile has unacceptable tail risk (paper §9.2)
 2. **Research** alternative personalities (Druckenmiller, Tepper, Tudor Jones, Baker)
 3. **Evaluate** which profile best fits the system's constraints (no leverage, 10% stop, diversified)
 4. **Swap** the personality vector ($\mathbf{P}$) — adjust 6 Likert scores
@@ -112,7 +108,7 @@ No weights were updated. No models were retrained. The agent's behavior changed 
 
 The Aschenbrenner liquidation provides a **real-world counterfactual** for the PAST paper's claims:
 
-- **PAST identified the risk** (Section 7.2, written July 29) before the collapse (July 30)
+- **PAST identified the risk** (paper limitations section, written July 29) before the collapse (July 30)
 - **PAST offered the solution** (diversified, no-leverage personality) before the collapse
 - **The real-world outcome validated the prediction** (concentration + leverage = ruin)
 

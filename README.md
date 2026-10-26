@@ -36,20 +36,22 @@ The Trading Arena implements PAST with four agents:
 
 ## Backtest Results
 
-Jan 1 — Jul 21, 2026 | 6 tickers | $5,000 proforma
+Jan 1 — Jul 21, 2026 | 6 tickers | portfolio-level, shared $2,500 per agent
 
-> ⚠️ **Integrity update (v0.2.0):** The results below were produced by the original harness (v0.1.0), which had two issues identified by code review (see [CHANGELOG](CHANGELOG.md#v020---2026-08-01---backtest-integrity-update)): (1) target leakage from full-dataset 52-week min/max, and (2) a stub Judge that auto-passed 5 of 13 checks. The corrected harness (`backtest_v2.py`) uses strict rolling windows and a real LLM Judge. Updated return figures will be published once the corrected backtest completes across all tickers.
+> **v0.5.0 integrity update:** earlier READMEs and paper drafts reported +11.7% / +15.3%. Those numbers came from the v1 harness, which simulated each ticker as an independent $2,500 book and summed the results (plus look-ahead 52-week extremes and a stub Judge). They are retracted. The figures below are from `backtest/backtest_v3.py` — one shared cash pool per agent, strictly rolling indicators, a deterministic Judge that scores only checks that can actually fail, re-entry eligible the session after a stop. Raw JSON in `examples/backtest_v3/`; full tables in [docs/BACKTEST_V3_RESULTS.md](docs/BACKTEST_V3_RESULTS.md); defect history in [CHANGELOG v0.5.0](CHANGELOG.md).
 
-| Agent | P&L | Trades | Win Rate |
-|-------|-----|-------|----------|
-| Alpha | +$8.86 | 17 | 35% |
-| Beta | +$573.93 | 16 | 19% |
-| **Combined** | **+$582.79** | **28** | **32%** |
-| **Return** | **+11.7%** | | |
+| Agent | Final equity | Return | Closed trades | Max drawdown |
+|-------|-----|-------|-------|-------|
+| Alpha $[3,2,2,3]$ | $2,563.84 | +2.55% | 22 long, 3–5 session holds (41% win) | −2.9% |
+| Beta — Baker $[5,6,3,6]$ (live profile) | $2,867.64 | +14.71% | 10 (all stops) | −30.7% |
+| Beta — Aschenbrenner $[6,7,5,7]$ | $2,358.18 | −5.67% | 3 (all stops) | −9.4% |
+| **Alpha + Beta (Baker)** | **$5,431.48** | **+8.63%** | | |
+
+**Do not read the +8.6% as outperformance.** Beta's gain is one unrealized MU position entered the session after a stop-loss; if that re-entry is one session later the combined book is −3.0% (paper §7.6). What the backtest shows robustly is the PAST mechanism working: two personality vectors produced a 10× difference in drawdown and completely different trade cadence on identical price data, and the coach loop moved scores within its ±1 trust region in response to observed losses.
 
 ## Case Study: Aschenbrenner → Baker (July 30, 2026)
 
-The PAST framework identified the risk of Aschenbrenner's leveraged, concentrated profile in the research paper (Section 7.2, written July 29) — **one day before** his $45B fund was liquidated by margin call on July 30. That same day, Agent Beta's personality was swapped from Aschenbrenner to Gavin Baker (Atreides Management, Sharpe 2.46), who survived the same crash with a -3.5% drawdown.
+The PAST framework identified the risk of Aschenbrenner's leveraged, concentrated profile in the research paper (limitations section, written July 29) — **one day before** his $45B fund was liquidated by margin call on July 30. That same day, Agent Beta's personality was swapped from Aschenbrenner to Gavin Baker (Atreides Management, Sharpe 2.46), who survived the same crash with a -3.5% drawdown.
 
 The next day (July 31), the Financial Times reported that Aschenbrenner himself vowed to "fight another day" and committed to **no longer using leverage** — exactly what PAST had already done programmatically by changing 6 Likert scores.
 
@@ -59,10 +61,10 @@ The next day (July 31), the Financial Times reported that Aschenbrenner himself 
 
 ## Quick Start
 
-### Option A — Corrected backtest (v0.2.0, recommended)
+### Option A — Reproduce the paper's results (v3, recommended)
 
-Uses strict rolling windows (no target leakage) and a real LLM Judge via
-local Ollama (free, no API keys needed).
+Portfolio-level, shared capital, rolling indicators, deterministic Judge. No
+API keys or LLM required — runs in about a minute.
 
 ```bash
 # Clone
@@ -74,10 +76,30 @@ python3 -m venv venv
 source venv/bin/activate
 pip install -r backtest/requirements.txt
 
-# Install Ollama (https://ollama.com) and pull the Judge model
-ollama pull deepseek-r1:32b
+# Base case (every number in the paper's §7 and this README)
+python backtest/backtest_v3.py
 
-# Run the corrected backtest (single ticker)
+# Sensitivities reported in paper §7.6
+python backtest/backtest_v3.py --cooldown 1
+python backtest/backtest_v3.py --cooldown 5
+python backtest/backtest_v3.py --cooldown -1      # v1 same-bar artifact
+python backtest/backtest_v3.py --no-ipo-ban
+
+# Regenerate docs/BACKTEST_V3_RESULTS.md from the JSON
+python backtest/report_v3.py "~/trading-arena/state/backtests/backtest_v3_ipoban_cd0_*.json"
+```
+
+Output JSON is written to `~/trading-arena/state/backtests/` (override with
+the `OUT_DIR` environment variable); the runs used for the paper are committed under
+`examples/backtest_v3/`.
+
+### Option A′ — LLM-in-the-loop single-ticker run (v0.2.0)
+
+Uses a real LLM Judge via local Ollama; single ticker only, not used for the
+published results.
+
+```bash
+ollama pull deepseek-r1:32b
 python backtest/backtest_v2.py OKLO 2025-08-01 2026-07-21
 ```
 
@@ -100,16 +122,21 @@ python backtest/generate_backtest_report.py
 past-framework/
 ├── docs/
 │   ├── PAST_Research_Paper_v2.md   ← Full research paper
-│   └── PAST_Research_Paper_v2.pdf  ← PDF version
+│   ├── PAST_Research_Paper_v2.4.pdf ← PDF version (v2.4, September 2026)
+│   ├── PAST_Research_Paper_v2.3_RETRACTED.pdf ← superseded; return figures withdrawn
+│   └── BACKTEST_V3_RESULTS.md      ← generated backtest tables
 ├── backtest/
 │   ├── backtest_engine.py          ← Agent rules, indicators (RSI, MA)
 │   ├── backtest_sim.py             ← [v0.1.0] Simulation, stub Judge, Rocky tuning
-│   ├── backtest_v2.py              ← [v0.2.0] Corrected runner (rolling window, LLM Judge)
+│   ├── backtest_v3.py              ← [v0.5.0] Portfolio-level harness — source of all published figures
+│   ├── report_v3.py                ← [v0.5.0] JSON → docs/BACKTEST_V3_RESULTS.md
+│   ├── backtest_v2.py              ← [v0.2.0] Single-ticker runner (rolling window, LLM Judge)
 │   ├── llm_judge.py                ← [v0.2.0] LLM Judge + Rocky via local Ollama
 │   ├── run_backtest.py             ← [v0.1.0] Original runner + go/no-go
 │   ├── generate_backtest_report.py ← HTML report generator
 │   └── requirements.txt
 ├── examples/
+│   ├── backtest_v3/                ← Raw JSON for every run cited in the paper
 │   ├── spacex_simulation.html      ← SpaceX IPO case study
 │   └── backtest_report.html        ← Backtest results dashboard
 ├── CHANGELOG.md                    ← Version history + reviewer notes

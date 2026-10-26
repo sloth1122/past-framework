@@ -1,13 +1,13 @@
 # Tuning the Persona, Not the Weights: The PAST Framework for Personality-Adaptive Multi-Agent Trading Systems
 
 **Author:** John Tytko — Creator and Author
-**Date:** August 2026
-**Version:** 2.3
+**Date:** September 2026
+**Version:** 2.4
 **License:** MIT
 
 ## Abstract
 
-Traditional alignment methodologies for Large Language Models (LLMs) rely heavily on parameter fine-tuning (e.g., LoRA, RLHF), which introduces prohibitive computational overhead and compromises the foundational generalization capabilities of the base model. To address this, we introduce the **Personality-Adaptive Score Tuning (PAST)** framework, a novel, weight-free orchestration layer for Multi-Agent Systems. Instead of altering neural network weights, PAST quantifies desired behavioral personas using a multi-dimensional Likert scale (1–7). These numerical personality profiles directly cascade into dynamic, prompt-level execution rules and scoring functions. A supervisory "Coach" agent evaluates operational KPIs on a bi-weekly cycle, iteratively tuning the Likert scores within a trust region to alleviate system bottlenecks and optimize performance. Operational agents autonomously exploit historical runtime logs to refine their behaviors *in-context* without backpropagation. We implement PAST in a four-agent trading system (two competing traders, an independent judge, and a coach) and evaluate it across 6 tickers over 6.5 months using historical price data. The system achieves +15.3% cumulative returns (+$763.27 on $5,000), with agents producing differentiated behavior on identical instruments — exactly as their personality scores predict. Live trading began August 6, 2026 with $5,000 real capital on Robinhood. The first three weeks of production operation (through August 24) stress-tested the framework through a sector-wide AI infrastructure drawdown, three broker-side stop-loss executions, and two infrastructure failure modes — with zero PAST drift, a 100% Judge gate approval rate, and full risk-control enforcement. Our framework decouples agent behavioral alignment from model training, offering a highly resource-efficient, explainable, and fully reversible architecture for steerable AI systems.
+Traditional alignment methodologies for Large Language Models (LLMs) rely heavily on parameter fine-tuning (e.g., LoRA, RLHF), which introduces prohibitive computational overhead and compromises the foundational generalization capabilities of the base model. To address this, we introduce the **Personality-Adaptive Score Tuning (PAST)** framework, a novel, weight-free orchestration layer for Multi-Agent Systems. Instead of altering neural network weights, PAST quantifies desired behavioral personas using a multi-dimensional Likert scale (1–7). These numerical personality profiles directly cascade into dynamic, prompt-level execution rules and scoring functions. A supervisory "Coach" agent evaluates operational KPIs on a bi-weekly cycle, iteratively tuning the Likert scores within a trust region to alleviate system bottlenecks and optimize performance. Operational agents autonomously exploit historical runtime logs to refine their behaviors *in-context* without backpropagation. We implement PAST in a four-agent trading system (two competing traders, an independent judge, and a coach) and evaluate it in a portfolio-level backtest across 6 tickers over 6.5 months (January–July 2026) with strictly rolling indicators and a shared $2,500 capital pool per agent. The combined book returned +8.6% (Alpha +2.6%, Beta +14.7% using Beta's live profile), but we do not present this as evidence of outperformance: Beta's entire gain is one unrealized position (MU, re-entered one session after a stop-loss), Beta's maximum drawdown was −30.7%, and delaying re-entry by a single additional session turns the combined result to −3.0%. What the backtest does show, robustly across every variant we ran, is the framework's central mechanism working as specified — the two personality vectors produced sharply different behavior on identical instruments (Alpha: 22 long trades held three to five sessions, 41% win rate, 2.9% max drawdown; Beta: 10 stop-outs and 5 held positions, −30.7% max drawdown), and the coach loop adjusted scores within its trust region in response to observed losses. An earlier draft of this paper reported +15.3%; that figure came from summing six independent single-ticker simulations, each funded with the full allocation, and is retracted (Section 6.5). Live trading began August 6, 2026 with $5,000 real capital on Robinhood. The first three weeks of production operation (through August 24) stress-tested the framework through a sector-wide AI infrastructure drawdown, three broker-side stop-loss executions, and two infrastructure failure modes — with zero PAST drift, a 100% Judge gate approval rate, and full risk-control enforcement. Our framework decouples agent behavioral alignment from model training, offering a highly resource-efficient, explainable, and fully reversible architecture for steerable AI systems.
 
 ---
 
@@ -32,7 +32,7 @@ This paper makes the following contributions:
 1. **The PAST framework** — a formal, mathematical definition of personality scores as Likert vectors, their mapping to operational constraints via a rule cascade, and the coach-mediated tuning loop with trust region. Conceptualized by the author as a weight-free alternative to RLHF/DPO for multi-agent behavioral alignment.
 2. **In-Context Log Exploitation (ICLE)** — a micro-level feedback mechanism where agents learn from their own execution history at the inference boundary
 3. **A four-agent competitive trading architecture** — two traders with opposite strategies, an independent judge, and a coach — implemented on heterogeneous models (GLM-5.2, Deepseek R1, Claude Fable 5), deployed live with real capital since August 6, 2026
-4. **Empirical evaluation** — a backtest across 6 tickers and 6.5 months showing +15.3% returns with measurable behavioral diversity, demonstrating that PAST scores produce predictable, differentiated agent behavior on identical instruments, followed by live production deployment with 7 real trades in the first three weeks, three broker-side stop executions, and zero PAST drift
+4. **Empirical evaluation** — a portfolio-level backtest across 6 tickers and 6.5 months (combined +8.6%, entirely from one unrealized position and not robust to a one-session change in re-entry timing; no outperformance claimed) demonstrating that PAST scores produce predictable, differentiated agent behavior on identical instruments, followed by live production deployment with 6 real positions in the first three weeks, three broker-side stop executions, and zero PAST drift. The backtest harness, raw JSON outputs, and every table in Section 7 are reproducible from the public repository.
 
 While this paper validates PAST in the financial trading domain, the framework is domain-agnostic. The same personality tuning mechanism — quantified Likert scores, coach-mediated bi-weekly adjustment, in-context log exploitation — can be applied to any multi-agent system requiring behavioral adaptation, from AI tutors (where teaching style is tuned to student learning outcomes) to software engineering agents (where code review strictness is tuned to project KPIs).
 
@@ -71,7 +71,6 @@ Parameter-Efficient Fine-Tuning (PEFT) techniques like LoRA isolate weight updat
 ## 3. The PAST Framework
 
 ### 3.1 The Likert Personality Vector
-### 4.2 The Likert Personality Vector
 Let $P$ represent the personality profile of an agent, defined as a multi-dimensional vector in a discrete parameter space:
 
 $$P = [P_1, P_2, \dots, P_n]^T, \quad \text{where } P_i \in \{1, 2, \dots, 7\}$$
@@ -81,15 +80,18 @@ Each dimension $i$ corresponds to an explicit behavioral attribute. The framewor
 | Trait | Agent Alpha | Agent Beta | What It Controls |
 |---|---|---|---|
 | Risk Tolerance | 3/7 | 5/7 | Max position size, stop-loss width, leverage |
-| Conviction | 4/7 | 6/7 | Whether to hold through drawdowns |
+| Conviction | 2/7 | 6/7 | Whether to hold through drawdowns |
 | Impulsivity | 2/7 | 3/7 | How quickly to act on a signal |
-| Entry Patience | 6/7 | 6/7 | How long to wait for the right entry price |
+| Entry Patience | 3/7 | 6/7 | How long to wait for the right entry price |
 | Hold Duration | 3/7 | 7/7 | How long to hold once entered — thesis vs price-based exits |
-| Adaptability | 5/7 | 6/7 | How quickly to shift strategy when conditions change |
-| Sector Specialization | 2/7 | 7/7 | Domain focus (Alpha = agnostic, Beta = AI architecture only) |
-| Position Concentration | 3/7 | 4/7 | Diversification vs concentration |
+| Adaptability | 4/7 | 6/7 | How quickly to shift strategy when conditions change |
+| Technical Focus | 7/7 | 3/7 | Weight on statistical signals vs fundamental thesis |
+| Sector Specialization | 1/7 | 7/7 | Domain focus (Alpha = agnostic, Beta = AI architecture only) |
+| Position Concentration | 4/7 | 4/7 | Diversification vs concentration |
 
-**Key design decision: splitting Patience into two traits.** An early version of the framework used a single "Patience" score, but this conflated two distinct behaviors: patience to *enter* (sitting in cash waiting for the right price) and patience to *hold* (keeping a position through short-term volatility because the thesis is intact). Agent Beta (Baker) has Entry Patience=6 (waits for pullbacks) but Hold Duration=7 (holds SpaceX-style positions for months to years). Agent Alpha has Entry Patience=6 but Hold Duration=3 (exits in 3-5 days). The split captures the distinction that a single score could not.
+These are the production vectors as deployed on August 6, 2026 (`skills/trading-arena-alpha.md`, `skills/trading-arena-beta.md`). Rocky has since adjusted two scores in live operation — Alpha Entry Patience 3→4 and Beta Technical Focus 3→2, both on August 29 — which are reported in §8.3. The backtest uses the go-live vectors.
+
+**Key design decision: splitting Patience into two traits.** An early version of the framework used a single "Patience" score, but this conflated two distinct behaviors: patience to *enter* (sitting in cash waiting for the right price) and patience to *hold* (keeping a position through short-term volatility because the thesis is intact). Agent Beta (Baker) has Entry Patience=6 (waits for pullbacks) but Hold Duration=7 (holds architecture positions for months). Agent Alpha has Entry Patience=3 (trades whenever its statistical criteria are met, without waiting for a better price) and Hold Duration=3 (exits in 3–5 days). The split captures the distinction that a single score could not.
 
 | Dimension ($i$) | Attribute | Trading Rule Impact |
 |-----------------|----------|---------------------|
@@ -112,17 +114,17 @@ $$S = R \ \cup \ \bigcup_{i=1}^{n} \Phi\left(\alpha_i, T_i\right)$$
 
 Where $T_i$ represents a structured prompt matrix mapping extreme traits ($P_i=1$ vs. $P_i=7$) to clear behavioral rules, and $\Phi$ is the dynamic text compiler.
 
-**Example cascade (Trading Arena):**
-- $P_4$ (Patience) $= 6 \implies \alpha_4 = 0.83 \implies$ strict entry filter: RSI $< 35$ AND rising 50-day MA
-- $P_4$ (Patience) $= 7 \implies \alpha_4 = 1.0 \implies$ stricter filter: RSI $< 20$ AND rising 50-day MA AND bullish candle confirmation
+**Example cascade (Trading Arena, Alpha Entry Patience):**
+- $P_4 \leq 6 \implies$ standard entry filter: RSI $< 35$ AND rising 50-day MA (secondary entry at RSI 35–45, reduced size)
+- $P_4 = 7 \implies \alpha_4 = 1.0 \implies$ stricter filter: RSI $< 20$ AND rising 50-day MA AND bullish candle confirmation; secondary entry disabled
 
-A single integer change ($6 \to 7$) cascades through the rule engine to tighten the entry threshold, reducing trade frequency — exactly the behavior observed in our backtest when Rocky adjusted Alpha's Patience.
+A single integer change ($6 \to 7$) cascades through the rule engine to tighten the entry threshold and reduce trade frequency. This is the only trait with a fully specified cascade in the current implementation (see §7.4).
 
 ### 3.3 Mathematical Formulation of the Coach Review Loop
 
 Let $\mathbf{P}_t = [P_1, P_2, \dots, P_n]^T$ be the personality vector at bi-weekly interval $t$. The optimization objective of the supervisory Coach agent is to minimize the variance between target system KPIs ($K_{\text{target}}$) and observed runtime metrics ($K_{\text{observed}, t}$). At the end of each two-week window, the Coach updates each personality trait score using the following clipped transition function:
 
-$$P_{i, t+1} = \max\left(1, \min\left(7, \left\lfloor P_{i, t} + \Delta P_{i, t} \rceil\right)\right)$$
+$$P_{i, t+1} = \max\left(1, \min\left(7, \left\lfloor P_{i, t} + \Delta P_{i, t} \right\rceil\right)\right)$$
 
 Where $\lfloor \cdot \rceil$ denotes rounding to the nearest integer to maintain strict Likert boundaries. The delta adjustment is:
 
@@ -208,14 +210,14 @@ The Trading Arena deploys four agents with distinct roles, using a two-layer mod
 ### 5.2 Agent Personalities
 
 **Agent Alpha — Renaissance (Jim Simons style):**
-$$\mathbf{P}_{\text{Alpha}} = [3, 4, 2, 6]^T \quad \text{(Risk, Conviction, Impulsivity, Patience)}$$
+$$\mathbf{P}_{\text{Alpha}} = [3, 2, 2, 3]^T \quad \text{(Risk, Conviction, Impulsivity, Entry Patience)}$$
 
 Strategy: Statistical mean reversion. Buys oversold stocks with rising 50-day MAs. Holds 3-5 days. 3% stop loss. Sector-agnostic.
 
-**Agent Beta — Aschenbrenner style:**
-$$\mathbf{P}_{\text{Beta}} = [6, 7, 5, 7]^T \quad \text{(Risk, Conviction, Impulsivity, Patience)}$$
+**Agent Beta — Baker / Atreides style (live since July 30, 2026; Appendix A):**
+$$\mathbf{P}_{\text{Beta}} = [5, 6, 3, 6]^T \quad \text{(Risk, Conviction, Impulsivity, Patience)}$$
 
-Strategy: AI infrastructure thesis. Buys second-order beneficiaries (power, nuclear, neocloud). 10% stop loss. Weeks-months holds.
+Strategy: AI infrastructure thesis, architecture-first. Buys pullbacks in second-order beneficiaries (power, nuclear, neocloud, optical). 10% stop loss. Weeks-months holds. The original Aschenbrenner profile, $[6,7,5,7]$, is also reported in the backtest (§6.3) for comparison.
 
 ### 5.3 The Judge (13-Point Checklist)
 
@@ -258,16 +260,20 @@ This two-phase design prevents a significant practical problem: if the Judge rej
 
 ### 6.1 Backtest Configuration
 
+The results in Section 7 come from the v3 harness (`backtest/backtest_v3.py`), which simulates one portfolio per agent across all tickers simultaneously.
+
 | Parameter | Value |
 |-----------|-------|
-| Date range | January 1, 2026 — July 21, 2026 (6.5 months) |
+| Date range | January 1, 2026 — July 21, 2026 (137 trading days; SPCX listed June 12) |
 | Tickers | SPCX, OKLO, NVDA, APLD, CCJ, MU |
-| Allocation | $2,500 per agent ($5,000 total) |
-| Data source | Yahoo Finance (via yfinance) |
-| Indicators | RSI(14), 50-day MA, 50-day MA slope (5-day lag), 52-week high/low |
-| Judge threshold | Score ≥ 10/13 required for approval |
-| Rocky tuning cycle | Every 10 trading days (~2 weeks) |
-| Trust region | ±1 per score per cycle ($|\Delta P_{i,t}| \leq 1$) |
+| Capital | $2,500 per agent, one shared cash pool across all six tickers |
+| Data source | Yahoo Finance (via yfinance), adjusted daily closes |
+| Indicators | RSI(14), 50-day MA, 50-day MA slope (5-day lag), rolling 252-day high/low. Every value at day $D$ uses only data from $D-252$ to $D$. |
+| Fills | Daily close; no commission; no slippage |
+| Order of operations | Each day: exits first, then entries, tickers in alphabetical order (matters only when cash is binding) |
+| Stop re-entry | A ticker stopped out at session $D$ is eligible for re-entry at session $D+1$ (the live arena runs once per session; broker-side stops fire intraday). Sensitivity to this rule is reported in §7.6. |
+| Judge | Deterministic 6-item subset of the 13-point checklist; see §6.4 |
+| Rocky tuning cycle | Every 10 trading days (~2 weeks), $\lvert \Delta P_{i,t} \rvert \leq 1$ |
 
 ### 6.2 Ticker Selection
 
@@ -276,79 +282,122 @@ Tickers were selected to span different market regimes and thesis categories:
 | Ticker | Category | Why Selected |
 |--------|----------|-------------|
 | SPCX | IPO (June 2026) | Tests IPO behavior — agents should avoid or lose |
-| OKLO | AI infra (nuclear/SMR) | Core Aschenbrenner thesis — power bottleneck |
-| NVDA | AI infra (chips) | Beta's thesis-banned stock (short side only) |
+| OKLO | AI infra (nuclear/SMR) | Core power-bottleneck thesis |
+| NVDA | AI infra (chips) | Thesis-banned for the Aschenbrenner Beta profile; permitted for Baker |
 | APLD | AI infra (data centers) | Second-order beneficiary |
 | CCJ | AI infra (uranium) | Adjacent to nuclear thesis |
 | MU | Semiconductors (memory) | AI training demand — high volatility |
 
 ### 6.3 Agent Rules
 
-**Alpha (Mean Reversion):**
-- **Primary entry:** RSI < 35 AND 50-day MA rising AND price > 85% of 50-day MA
-- **Secondary entry:** RSI 35-45 AND 50-day MA rising AND price > 90% of 50-day MA (Rocky-approved, reduced 8% position size)
+**Alpha (Mean Reversion), $\mathbf{P} = [3,2,2,3]$:**
+- **Primary entry:** RSI < 35 AND 50-day MA rising AND price > 85% of 50-day MA; 15% of allocation
+- **Secondary entry:** RSI 35–45 AND 50-day MA rising AND price > 90% of 50-day MA; 8% of allocation
+- **Patience = 7 cascade:** primary entry tightens to RSI < 20 AND rising MA AND bullish close; secondary entry disabled
 - **Exit:** 3% stop loss OR RSI > 55 OR 5-day time limit
-- **Position size:** 15% of allocation (8% for secondary entries)
+- **Max concurrent positions:** 4
 
-**Beta (Thesis-Driven):**
-- **Entry:** Price within 25% of 52-week low (thesis intact)
-- **Exit:** 10% stop loss (no time limit — weeks to months)
-- **Position size:** 20% of allocation
+**Beta — two profiles are reported.** The Aschenbrenner profile is the configuration the original draft of this paper described; the Baker profile is the one that has been live since July 30, 2026 (Appendix A). Both are run so the reader can see the effect of the personality swap on identical data.
+
+| | Beta (Aschenbrenner) | Beta (Baker) |
+|---|---|---|
+| $\mathbf{P}$ (Risk, Conviction, Impulsivity, Patience) | $[6,7,5,7]$ | $[5,6,3,6]$ |
+| Entry | Price within 25% of rolling 52-week low | Within 25% of 52-week low OR ≥15% below 52-week high |
+| Position size | 20% of allocation | 25% of allocation |
+| Banned | NVDA | none |
+| Exit | 10% stop loss only; no time limit | 10% stop loss only; no time limit |
+| Max concurrent positions | 6 | 5 |
+
+### 6.4 What the Backtest Judge Can and Cannot Check
+
+The production Judge applies 13 checks. Four require data a price-only backtest does not have: earnings calendar (item 6), options budget (9), catalyst (10), and state-file honesty (11). Four more cannot fail in a rule-based harness: position size (2) always equals the configured percentage; the stop (3) is a per-agent constant; PAST bounds (4) are clamped to 1–7 by Rocky before the Judge sees them; and convergence (5) is informational in production and never rejects. Rather than auto-pass any of these — which the v1 harness did — the v3 Judge scores only the six items that can genuinely fail (1 thesis supported by data, 7 liquidity, 8 personality fit, 11b restricted list, 11c IPO ban, 13 position cap) and scales the approval threshold by the same ratio as production (10/13 → 5/6). For item 1 the Judge re-derives the entry condition from the price row rather than trusting the agent's signal. For Beta it applies the stricter of the two Beta entry definitions (within 25% of the 52-week low), so a pullback-only Baker entry can fail it; for Alpha the Judge's re-derivation uses the same RSI and moving-average conditions as the entry rule, so item 1 is an independent check for Beta only. Item 8 can fail only if Rocky moves the fit trait past its threshold, which did not happen in the committed runs. Three items are hard blocks regardless of score: the IPO ban (no entries within 90 calendar days of listing), the agent's restricted list, and the position cap. A Judge approval does not guarantee a fill: if the agent's cash pool is exhausted the entry is skipped and recorded as "approved, no cash".
+
+### 6.5 Retracted v1 Results
+
+The first public draft of this paper (v2.3, August 2026) reported +15.3% combined return (+$763.27 on $5,000). That figure is withdrawn. The v1 harness had three defects: (i) it ran each ticker as an independent simulation, each starting with the full $2,500 per agent, then summed the six results — so the "return" was measured against $5,000 while up to $15,000 per agent was deployed; (ii) the 52-week high/low used by Beta's entry rule was computed over the full dataset, including future prices; (iii) the Judge auto-passed 5 of 13 checks. The single largest contributor to the retracted figure — a +$880 MU trade reported as +35.2% — was a $2,500 position, not the 20% position the rules specify, and depended on defect (i). Defects (ii) and (iii) were disclosed in the repository CHANGELOG on August 1, 2026; defect (i) was found while preparing this revision.
 
 ---
 
 ## 7. Results
 
+All figures are from `backtest_v3_ipoban_cd0_*.json` (repository `examples/backtest_v3/`) via `backtest/report_v3.py`. The full trade-by-trade tables are in `docs/BACKTEST_V3_RESULTS.md`.
+
 ### 7.1 Overall Performance
 
-| Metric | Alpha ($\mathbf{P}=[3,4,2,6]$) | Beta ($\mathbf{P}=[6,7,5,7]$) | Combined |
-|--------|------|------|----------|
-| **Net P&L** | +$8.86 | +$754.41 | +$763.27 |
-| **Return** | +0.35% | +30.18% | +15.27% |
-| **Trades** | 17 | 11 | 28 |
-| **Win rate** | 35% | 27% | 32% |
-| **Best trade** | OKLO +$21.77 | MU +$880.35 | — |
-| **Worst trade** | CCJ -$21.17 | SPCX -$103.38 | — |
+| Metric | Alpha $[3,2,2,3]$ | Beta — Baker $[5,6,3,6]$ | Beta — Aschenbrenner $[6,7,5,7]$ |
+|--------|------|------|------|
+| Final equity (from $2,500) | $2,563.84 | $2,867.64 | $2,358.18 |
+| **Return** | **+2.55%** | **+14.71%** | **−5.67%** |
+| Realized P&L | +$39.46 | −$547.97 | −$186.19 |
+| Unrealized P&L (open at end) | +$24.37 | +$915.60 | +$44.36 |
+| Closed trades | 22 | 10 | 3 |
+| Open at end | 1 | 5 | 2 |
+| Win rate (closed) | 41% | 0% | 0% |
+| Max drawdown | −2.9% | −30.7% | −9.4% |
+| Judge approvals / signals | 23 / 23 | 80 / 105 | 5 / 37 |
+| Approved but no free cash | 0 | 65 | 0 |
+| Entries actually filled | 23 | 15 | 5 |
+
+| Combined book ($5,000) | Final equity | Return |
+|---|---|---|
+| Alpha + Beta (Baker, live profile) | $5,431.48 | **+8.63%** |
+| Alpha + Beta (Aschenbrenner) | $4,922.02 | −1.56% |
+
+Beta's only exit rule is a stop-loss, so every *closed* Beta trade is a loss by construction; Beta's gains exist only as open positions marked at the last close. Win rate is therefore not a meaningful statistic for Beta and is shown only for completeness. Baker Beta's +$915.60 unrealized is dominated by a single position: MU, entered March 31 at $337.79 — one session after being stopped out at $321.75 — and marked at $970.82 on July 21 (+$506.43). Without that one position Baker Beta's return is −5.6%.
 
 ### 7.2 Per-Ticker Results
 
-| Ticker | Alpha P&L | Beta P&L | Winner | Key Observation |
-|--------|-----------|----------|--------|-----------------|
-| SPCX | $0.00 (0 trades) | -$103.38 | Alpha | Alpha correctly avoided IPO; Beta bought at $160.95, stopped at -10% |
-| OKLO | +$21.77 | -$87.58 | Alpha | Alpha's reversion worked; Beta entered too early, stopped out |
-| NVDA | +$4.89 | +$50.37 | Beta | Both positive; Beta's thesis caught the move |
-| APLD | +$19.49 | +$86.07 | Beta | Both positive; thesis + reversion aligned |
-| CCJ | -$21.17 | -$71.43 | Alpha | Both lost; Alpha's 3% stop limited damage vs Beta's 10% |
-| MU | -$16.12 | +$880.35 | Beta | Beta's thesis held through volatility for +35.2% |
+| Ticker | Alpha realized | Beta (Baker) realized | Beta (Baker) unrealized | Observation |
+|--------|-----------|-----------|-----------|-----------------|
+| SPCX | $0.00 (0 trades) | $0.00 | — | Beta blocked by the Judge IPO ban on all 25 signals; Alpha never signalled (RSI 89 at listing) |
+| OKLO | −$11.37 (3) | −$278.55 (5) | +$0.30 | Beta stopped out five times in a downtrend; Alpha's tight stops limited damage |
+| NVDA | −$8.85 (6) | — | +$119.92 | Beta held from Feb 4; Alpha scalped six short trades |
+| APLD | +$81.11 (5) | −$66.58 (2) | +$288.95 | Alpha's best ticker (RSI exits); Beta stopped twice before its third entry ran |
+| CCJ | −$36.44 (4) | −$130.33 (2) | $0.00 | Both lost; Beta held one position four months before the stop |
+| MU | +$15.01 (4) | −$72.51 (1) | +$506.43 | Beta stopped out Mar 30 at $321.75, re-entered Mar 31 at $337.79, marked $970.82 |
 
 ### 7.3 Behavioral Diversity — The Core PAST Claim
 
-The PAST framework's central claim is that different personality vectors ($\mathbf{P}$) produce different behavior on the same instrument. The data confirms this:
+The PAST framework's central claim is that different personality vectors produce different behavior on the same instrument. The data confirms this, independent of whether the behavior was profitable:
 
-**SPCX (SpaceX IPO, June 12, 2026):**
-- **Alpha** ($P_4=6$, Patience): 0 trades. RSI was 89 on IPO day. The rule cascade from $P_4=6$ produced a strict entry filter (RSI < 35 + rising 50-day MA). Alpha correctly sat out.
-- **Beta** ($P_2=7$, Conviction): Bought at $160.95 on IPO day. The rule cascade from $P_2=7$ produced a high-conviction, act-on-thesis behavior. Stopped at $144.86 (-10%).
-- **Result:** Alpha's $P_4=6$ kept it out of the IPO euphoria. Beta's $P_2=7$ put it in immediately. Same stock, opposite behavior — exactly as the PAST vectors predicted.
+**Trade cadence.** Alpha ($P_3=2$ Impulsivity, $P_4=3$ Entry Patience, 5-session time exit) closed 22 trades with a median hold of 5 calendar days. Beta ($P_2=6$ Conviction, no time exit) closed 10 trades and was still holding 5 positions at the end of the window, one of them (NVDA) for 5.5 months.
 
-**MU (Micron, high volatility):**
-- **Alpha** ($P_3=2$, Impulsivity): 4 trades, all small. Tight 3% stops ($P_1=3$) clipped it on volatility. Net: -$16.12.
-- **Beta** ($P_1=6$, Risk; $P_2=7$, Conviction): 1 trade. Bought near 52-week low, held through volatility for +35.2%. The wide 10% stop ($P_1=6$) and high conviction ($P_2=7$) captured the full move. Net: +$880.35.
-- **Result:** Alpha's tight personality vector lost small. Beta's wide personality vector won big. The PAST scores didn't just produce different behavior — they produced predictable, measurable differences in risk-taking and hold duration.
+**Risk exposure.** Alpha's 3% stop and 15% sizing produced a maximum drawdown of 2.9%. Beta's 10% stop and 25% sizing produced a maximum drawdown of 30.7% — the book fell from $3,794.32 on June 2 to $2,628.06 on July 17 as the MU mark retreated and OKLO and CCJ were stopped out. Beta's equity path is more than ten times as volatile as Alpha's on the same six instruments.
+
+**Same ticker, opposite behavior.** On APLD, Alpha entered on February 5 at $27.84 and exited four days later on an RSI signal for +$74.99. Beta had entered the same name on January 2 at $28.11, held through Alpha's round-trip, and was stopped out March 6 at $25.14 for −$65.93. Identical price series; the personality vector, not the prompt wording, determined the outcome.
+
+**The personality swap is visible in the data.** Aschenbrenner Beta (NVDA-banned, near-low entry only) generated 37 signals and had 32 rejected — 25 by the IPO ban on SPCX and 7 by the NVDA ban — leaving it largely in cash and producing a shallower drawdown (−9.4%) than Baker Beta (−30.7%), whose pullback entry rule and unrestricted universe kept it fully deployed through the Q1 correction. Baker Beta was so fully deployed that 65 of its 80 Judge approvals could not be filled for lack of cash — it was at or near its five-position cap of 25% each for most of the window.
 
 ### 7.4 PAST Score Evolution
 
-Rocky's bi-weekly tuning adjusted scores based on performance, demonstrating the coach review loop ($\Delta P_{i,t}$):
+| Agent | Trait | Cycle | $P_{i,t} \to P_{i,t+1}$ | Trigger | Cascade |
+|-------|-------|-------|-----------|---------|---------|
+| Alpha | Entry Patience | 6 (Mar 31) | 3 → 4 | Three closed trades in the period, all losses (CCJ stop Mar 20, MU stop Mar 26, CCJ time-exit Mar 30) | Recorded; §3.2 defines a cascade only at $P_4 = 7$, so the entry filter did not change |
+| Beta (Baker) | Impulsivity | 3 (Feb 17) | 3 → 4 | One stop exit in period (OKLO) | Recorded; no cascade defined for Impulsivity |
+| Beta (Baker) | Impulsivity | 5 (Mar 17) | 4 → 5 | One stop exit in period (APLD) | Recorded |
+| Beta (Baker) | Impulsivity | 6 (Mar 31) | 5 → 6 | Four stop exits in period (OKLO, APLD, MU, OKLO) | Recorded |
+| Beta (Baker) | Impulsivity | 11 (Jun 11) | 6 → 7 | One stop exit in period (CCJ) | Recorded |
+| Beta (Aschenbrenner) | Impulsivity | 12, 13 | 5 → 6 → 7 | One OKLO stop in each period | Recorded |
 
-| Agent | Score | $P_{i,t}$ | $P_{i,t+1}$ | $\Delta P$ | Reason |
-|-------|-------|-----------|-------------|------------|--------|
-| Alpha | Patience ($P_4$) | 6 | 7 | +1 | Low win rate → tighten entry criteria |
-| Beta | Impulsivity ($P_3$) | 5 | 6 | +1 | Stop loss hit on SPCX → increase scrutiny |
+Each adjustment responds only to trades closed since the previous review — Rocky sees a two-week window, not cumulative history — and every move is inside the ±1 trust region. Cycle 4 (Mar 3) produced no Beta adjustment because no position closed in that fortnight, and the four stops of late March produced exactly one +1 step at cycle 6, which is the behavior the trust-region design intends.
 
-Alpha's $P_4$ increase from 6→7 was Rocky's response to CCJ and MU losses. The effect: $\alpha_4$ increased from 0.83 to 1.0, tightening the entry filter from RSI < 35 to RSI < 20 + bullish confirmation. This is the PAST loop in action — the coach observed losses ($K_{\text{observed}} < K_{\text{target}}$) and shifted the personality vector ($\Delta P_{4,t} = +1$) to reduce risk, all without touching model weights.
+This also exposes an honest limitation of the current implementation: the coach loop operates as designed — it observes losses and moves scores — but only one trait (Alpha Entry Patience at 7) has a rule cascade specified in §3.2. Alpha's 3→4 and all of Beta's Impulsivity increments were logged and would be visible to the agent through ICLE (§4), but changed no mechanical rule during the backtest. Until every trait has a defined cascade, the coach's effect on performance cannot be measured; specifying cascades for every trait is the first item of future work (§9.4).
 
 ### 7.5 Judge Performance
 
-The Judge's 13-point checklist approved 100% of trades that met entry criteria. No trade was rejected. This indicates the entry rules are well-calibrated — agents only propose trades that pass the checklist. The Judge's IPO ban (Item 11c) would have blocked Beta's SPCX trade in production — the backtest was run before this rule was added.
+The Judge rejected 25 of 105 Baker-Beta signals and 32 of 37 Aschenbrenner-Beta signals. Every rejection was a hard block — the IPO ban on SPCX (25 signals per Beta profile across SPCX's 26 trading days), the NVDA restricted list (Aschenbrenner, 7), or the five-position cap (Baker, 8). No entry that passed the hard blocks was rejected on score. Alpha's 23 signals were all approved and filled. The IPO ban was decisive for SPCX: with the ban disabled, Aschenbrenner Beta buys SPCX on its listing day, is stopped out twice (−$67.61, −$60.05), and finishes the window at −10.8% instead of −5.7%; Baker Beta gains marginally (+15.2% vs +14.7%) because it had free cash on only a few of SPCX's signal days.
+
+### 7.6 Sensitivity
+
+| Variant | Alpha | Beta (Baker) | Beta (Aschenbrenner) | Alpha + Baker |
+|---|---|---|---|---|
+| **Base** (re-entry eligible next session, IPO ban on) | +2.55% | +14.71% | −5.67% | **+8.63%** |
+| Re-entry blocked for one further session | +2.47% | −8.46% | −6.51% | −2.99% |
+| Re-entry blocked for five further sessions | +0.56% | −7.16% | −4.59% | −3.30% |
+| IPO ban off | +2.55% | +15.22% | −10.78% | +8.89% |
+| Same-bar re-entry (v1 artifact) | +3.70% | +19.15% | −4.16% | +11.42% |
+
+The re-entry rows are the finding of this section. Baker Beta was stopped out of MU at the March 30 close ($321.75). Under the base rule it re-entered at the March 31 close ($337.79) and that position was marked at $970.82 on July 21 — +$506 unrealized, more than half of Beta's total gain. If re-entry is deferred by one more session, the next qualifying MU entry is June 10 at $891.74 and Beta's return goes from +14.7% to −8.5%. The v1 same-bar artifact — re-buying at the identical $321.75 close, which the live system cannot execute — is the mechanism behind the retracted +15.3% headline. **Beta's reported return is therefore not a property of the personality vector; it is a property of a single ticker's timing within a one-session window.** The behavioral findings in §7.3 — cadence, drawdown, differentiation — are the same in every row.
 
 ---
 
@@ -369,7 +418,7 @@ Following backtest validation, the Trading Arena went live with **$5,000 real ca
 
 ### 8.2 Live Trading Record (Aug 6 - Aug 24, 2026)
 
-The system executed **7 real trades** across 2 agents in the first 13 trading days of operation:
+The system opened **6 real positions** (1 Alpha, 5 Beta) and closed 4 of them in the first 13 trading days of operation:
 
 | Date | Agent | Ticker | Entry | Stop | Size | Status | Thesis |
 |------|-------|--------|-------|------|------|--------|--------|
@@ -377,10 +426,10 @@ The system executed **7 real trades** across 2 agents in the first 13 trading da
 | Aug 7 | Beta | CIEN | $413.96 | -10% ($372.56) | 1 sh | **STOPPED Aug 24 @ $372.89 (-9.9%)** | Optical networking (AI data bottleneck) |
 | Aug 10 | Alpha | CVS | $95.70 | -3% ($92.83) | 3 sh | SOLD (Aug 14 time-exit, -$3.15) | Mean reversion (RSI 33, rising 50d MA) |
 | Aug 10 | Beta | VST | $142.50 | -10% ($128.25) | 3 sh | HOLDING (-4.2%) | Energy infrastructure (Helix JV, Meta nuclear PPAs) |
-| Aug 14 | Beta | CRWV | $105.48 | -10% ($94.93) | 5 sh | **STOPPED Aug 19 @ $94.16 (-10.8%)** | Neocloud / Data Center (Q2 rev +112%, $104B backlog) |
+| Aug 14 | Beta | CRWV | $105.48 | -10% ($94.93) | 5 sh | **STOPPED Aug 19 @ $94.16 (-10.7%)** | Neocloud / Data Center (Q2 rev +112%, $104B backlog) |
 | Aug 17 | Beta | CCJ | $99.00 | -10% ($89.10) | 3 sh | HOLDING (+3.4%) | Uranium fuel for AI nuclear power |
 
-**Account P&L (as of Aug 24 close):** -$181.90 (-3.64%). Cash: $4,143.31. Two positions held (VST, CCJ).
+**Account P&L (as of Aug 24 close):** -$140.17 (-2.80%). Cash: $4,143.31. Two positions held (VST, CCJ).
 
 **Realized P&L (closed trades):**
 - CVS (Alpha): -$3.15 (time exit, day 5)
@@ -396,15 +445,15 @@ The system executed **7 real trades** across 2 agents in the first 13 trading da
 
 **Behavioral observations:**
 
-1. **Agent separation working.** Alpha (Renaissance, mean reversion, RSI-driven) executed 1 trade in 3 weeks — correctly patient, waiting for qualifying setups. Beta (Baker, architecture-first AI) executed 6 trades, all thesis-driven AI infrastructure names. Zero convergence (both agents in same ticker).
+1. **Agent separation working.** Alpha (Renaissance, mean reversion, RSI-driven) executed 1 trade in 3 weeks — correctly patient, waiting for qualifying setups. Beta (Baker, architecture-first AI) executed 5 trades, all thesis-driven AI infrastructure names. Zero convergence (both agents in same ticker).
 
-2. **Judge gate effectiveness.** 100% pre-trade approval rate. All 6 trades met the 13-point checklist before execution. No post-trade rejections requiring forced exits.
+2. **Judge gate effectiveness.** 100% pre-trade approval rate. All 6 entries met the 13-point checklist before execution. No post-trade rejections requiring forced exits.
 
-3. **PAST drift check.** Alpha's CVS trade (Entry Patience 6/7, Hold Duration 3/7) matched profile: waited 15 sessions for RSI < 35, exited after 4 days on the mechanical time exit. Beta's 6 trades (Entry Patience 6/7, Hold Duration 7/7) all entered on thesis, none exited voluntarily — stops only. Drift = 0.
+3. **PAST drift check.** Alpha's CVS trade (Entry Patience 3/7, Hold Duration 3/7) matched profile: took the first setup that met all entry criteria after 15 sessions without one, exited after 4 days on the mechanical time exit. Beta's 5 trades (Entry Patience 6/7, Hold Duration 7/7) all entered on thesis, none exited voluntarily — stops only. Drift = 0.
 
 4. **Stop discipline under stress.** The Aug 18-24 week stress-tested the stop system: CRWV and ALAB stops triggered Aug 19 (broker-side, automatic), CIEN's stop triggered Aug 24 at the open. Three stops, zero violations, zero manual intervention. Critically, on Aug 18 the CRWV stop was violated by 2.4% because no agent session ran (Z.AI API timeout) — the stop existed only in the agent's state file. This exposed the structural weakness of agent-side stops and motivated the move to broker-side GTC orders (see 8.3).
 
-5. **Market regime stress test.** Aug 5-14 saw a 35-47% AI infrastructure selloff, followed by a relief bounce (Aug 11-17, SMH +14%) that itself reversed Aug 18-24. Beta's entries came during the drawdown per Baker's "buy architecture bottlenecks when oversold" thesis (Entry Patience 6/7); the subsequent reversal stopped out 3 of 6 positions at the mechanical 10% line. Alpha stayed out entirely (RSI > 35 on most names during the bounce phase). Both behaviors match their profiles.
+5. **Market regime stress test.** Aug 5-14 saw a 35-47% AI infrastructure selloff, followed by a relief bounce (Aug 11-17, SMH +14%) that itself reversed Aug 18-24. Beta's entries came during the drawdown per Baker's "buy architecture bottlenecks when oversold" thesis (Entry Patience 6/7); the subsequent reversal stopped out 3 of 5 positions at the mechanical 10% line. Alpha stayed out entirely (RSI > 35 on most names during the bounce phase). Both behaviors match their profiles.
 
 ### 8.3 Operational Learnings
 
@@ -414,11 +463,13 @@ The system executed **7 real trades** across 2 agents in the first 13 trading da
 
 **Model architecture clarification (v0.3.1-v0.3.3).** Documentation updates established the two-layer architecture: GLM-5.2 (Z.AI cloud) is the **execution layer** for all agents (cron sessions, tooling, MCP, order placement), while Deepseek R1 70B (local Ollama) is Beta's **reasoning brain** (architecture-first thesis analysis). Alpha uses GLM-5.2 for both execution and reasoning (statistical only, no deep model needed). This architecture demonstrates that PAST works across heterogeneous model configurations (cloud + local, statistical + deliberative).
 
-**Broker-side stop-loss requirement (v0.4.0).** The original design placed stop-losses in agent state files — an agent session had to run, read prices, and manually place the sell order. On Aug 18, no agent session ran (Z.AI API timeout) and CRWV bled 2.4% past its $94.93 hard stop with no execution. The fix: GTC stop-market orders placed directly on Robinhood, executing at the broker level with zero dependency on agent availability. Verified Aug 19: ALAB sold at $281.72 (-10.0%) and CRWV at $94.16 (-10.8%) — both automatically, no agent present. CRWV subsequently fell to $88.92 (-15.6%), confirming the stop saved ~$26 of additional downside. **Lesson: risk controls for unattended autonomous systems must live at the broker, not the agent.** The 10% rule is correct; its execution mechanism was wrong.
+**Broker-side stop-loss requirement (v0.4.0).** The original design placed stop-losses in agent state files — an agent session had to run, read prices, and manually place the sell order. On Aug 18, no agent session ran (Z.AI API timeout) and CRWV bled 2.4% past its $94.93 hard stop with no execution. The fix: GTC stop-market orders placed directly on Robinhood, executing at the broker level with zero dependency on agent availability. Verified Aug 19: ALAB sold at $281.72 (-10.0%) and CRWV at $94.16 (-10.7%) — both automatically, no agent present. CRWV subsequently fell to $88.92 (-15.6%), confirming the stop saved ~$26 of additional downside. **Lesson: risk controls for unattended autonomous systems must live at the broker, not the agent.** The 10% rule is correct; its execution mechanism was wrong.
 
 **API stale-call detector misconfiguration (v0.4.0).** GLM-5.2 cron sessions failed 4 of 5 trading days (Aug 12, 13, 17, 18) with a 90-second stale-call timeout. Root cause: GLM-5.2 cold-start latency on first API call of a fresh session is 90-120 seconds — exactly at the detector's default threshold. The detector killed sessions before Z.AI ever responded. Fix: raised stale timeout to 300s and added a 6:45 AM pre-warm call. After the fix: zero timeouts across 3 consecutive trading days. **Lesson: multi-agent systems using cloud LLM APIs must account for cold-start latency in timeout configuration.** Defaults tuned for interactive sessions are too aggressive for batch/cron workloads.
 
-**Regime detection gap (v0.4.0).** Beta entered 6 positions during the Aug 6-17 window that included a relief bounce; the AI infrastructure sector then rolled over Aug 18-24 and stopped out 3 positions. The agents had technical signals (RSI, 13F filings, pullback depth) but no sector momentum or sentiment layer to detect that the entire sector was in a downtrend. Fix: a 6:30 AM pre-trade signal scan (sector momentum, market breadth, sentiment) outputs a GO/NO-GO signal before agents decide to trade. **Lesson: personality-driven agents generate theses but do not inherently detect market regime.** A regime layer — separate from agent personalities — is needed to prevent counter-trend entries during sector-wide drawdowns.
+**Regime detection gap (v0.4.0).** Beta entered 5 positions during the Aug 6-17 window that included a relief bounce; the AI infrastructure sector then rolled over Aug 18-24 and stopped out 3 positions. The agents had technical signals (RSI, 13F filings, pullback depth) but no sector momentum or sentiment layer to detect that the entire sector was in a downtrend. Fix: a 6:30 AM pre-trade signal scan (sector momentum, market breadth, sentiment) outputs a GO/NO-GO signal before agents decide to trade. **Lesson: personality-driven agents generate theses but do not inherently detect market regime.** A regime layer — separate from agent personalities — is needed to prevent counter-trend entries during sector-wide drawdowns.
+
+**First live PAST adjustments (Rocky review, August 29).** After the paper's August 24 cutoff, Rocky's bi-weekly review made the first two score changes of the live deployment, both within the ±1 trust region. **Alpha Entry Patience 3→4:** twelve consecutive no-trade sessions, each backed by a progressively wider scan (39→42 tickers, options-viability analysis, macro impact review), were judged to be disciplined waiting rather than paralysis, and the trait was raised to reflect it. **Beta Technical Focus 3→2:** after a second 13F misstatement in one cycle (AVGO cited as a core Atreides holding; the filing showed the position had been reduced), Rocky lowered Beta's Technical Focus, reasoning that unreliable 13F verification was "a Technical focus deficiency." We report this adjustment as made, but we do not endorse its direction. In Beta's skill file, Technical Focus governs the weight placed on RSI confirmation relative to the fundamental thesis (3/7: "RSI as secondary confirmation"; the +1 cascade: "may use RSI as primary entry signal"). A failure of *fundamental* research therefore argues for raising the trait — leaning more on the statistical check that did not fail — not lowering it, which shifts weight toward the process that just failed twice. The LLM coach conflated "technical" in the sense of research diligence with the trait's defined sense of technical-analysis weighting. This is the first observed instance of a coach adjustment whose direction contradicts the trait's own cascade definition, and it is a finding rather than an embarrassment: the framework's trust region limited the damage to one Likert step, the adjustment is fully logged and reversible, and the episode shows that trait names must be defined tightly enough that the coach cannot mis-map a failure mode onto them. Both August 29 changes are recorded in Rocky's review notes with their triggers, and the Judge audits subsequent trades against the updated vectors. The live `state/` directory — agent state files, Rocky notes, Judge decision log — contains real brokerage account data and is not part of the public repository; the live-deployment figures in this section are therefore self-reported by the author and, unlike the backtest in §7, cannot be independently regenerated from the repository.
 
 ---
 
@@ -428,7 +479,7 @@ The system executed **7 real trades** across 2 agents in the first 13 trading da
 
 **Behavioral diversity is emergent and measurable.** The same stock produces different behavior from different agents — not because the prompts differ, but because the personality vectors cascade into different trading rules. This is the core contribution: personality as a tunable parameter.
 
-**The coaching loop creates adaptation without retraining.** Rocky's bi-weekly adjustments evolved Alpha's behavior from a 0-trade regime (too strict) to a 17-trade regime (secondary entry path), then tightened $P_4$ when losses accumulated. This adaptation happened by changing a single integer ($P_4: 6 \to 7$), not by rewriting prompts or fine-tuning models. No GPU. No backpropagation. No checkpoint rollback.
+**The coaching loop operates without retraining.** In the backtest, Rocky raised Beta's Impulsivity one notch in each of the four review periods that contained a stop-loss exit ($P_3: 3 \to 7$ over four months) and raised Alpha's Entry Patience after a fortnight of three straight losses ($P_4: 3 \to 4$), each move inside the ±1 trust region and each logged with its trigger. In production the same loop split the Patience trait (§8.3) and, on August 29, raised Alpha's Entry Patience 3→4 after twelve consecutive well-documented no-trade sessions. (The same review also lowered Beta's Technical Focus 3→2 in response to a research-quality failure — an adjustment we report but argue in §8.3 pointed the wrong way, and which the ±1 trust region contained.) The adjustments are integers in a file, not weights in a model. No GPU. No backpropagation. No checkpoint rollback. Whether a given adjustment *helps* is a separate question the backtest cannot yet answer — see §7.4 and §9.2.
 
 **File-based memory provides full auditability.** Every trade, every Judge verdict, every PAST adjustment is logged in markdown. The trust region ($|\Delta P| \leq 1$) ensures changes are gradual and reviewable. This is critical for a system handling real capital.
 
@@ -436,13 +487,17 @@ The system executed **7 real trades** across 2 agents in the first 13 trading da
 
 ### 9.2 Limitations
 
-**Small sample size.** 28 backtest trades across 6 tickers is insufficient for statistical significance. The +15.3% return could be partially attributed to the AI capex bull market of H1 2026.
+**No evidence of outperformance.** The portfolio-level backtest returned +8.6% combined over 6.5 months, but §7.6 shows the sign of that result depends on whether one ticker is re-entered one session earlier or later. 32 closed trades across 6 tickers is far too few for statistical significance in either direction, and Beta's gain is a single unrealized position. The paper's empirical claim is therefore limited to *behavioral differentiation and coach-loop mechanics*, not returns.
 
-**Live drawdown regime.** The live account is down -3.6% in its first three weeks, with 3 of 6 Beta positions stopped out. This is consistent with entering during a sector drawdown but demonstrates the regime dependence of thesis-driven entry: the same personalities that produced +15.3% in a trending backtest produced losses when the sector rolled over. The regime detection layer (added v0.4.0) addresses the entry-timing side; the jury remains out on whether the underlying theses recover before the remaining stops trigger.
+**Incomplete rule cascades.** Only Alpha's Patience trait has a fully specified mapping from score to rule (§3.2). Rocky's other adjustments during the backtest were recorded but mechanically inert. Until every trait has a defined cascade, the coach loop's effect on performance cannot be measured.
+
+**Backtest simplifications.** Fills at daily close with no commission or slippage; stops are evaluated against the daily close only, so a stop can fill well past its nominal level (Baker Beta's first OKLO exit was −12.3% against a 10% stop) — the live system's broker-side stop orders would typically fill closer to the level; holding periods counted in trading sessions; a deterministic Judge that scores 6 of 13 checklist items; rule-based Rocky rather than the LLM coach used in production. Results are highly sensitive to the stop re-entry rule (§7.6).
+
+**Live drawdown regime.** The live account was down −2.8% at the August 24 cutoff, with 3 of 5 Beta positions stopped out. This is consistent with the backtest, where Beta's thesis-driven entries produced a −30.7% drawdown: the Baker profile buys pullbacks, and in a sustained downtrend that means buying repeatedly into stops. The regime detection layer (added v0.4.0) addresses the entry-timing side; the jury remains out on whether the underlying theses recover before the remaining stops trigger.
 
 **Self-evaluation in simulation mode.** Without Claude Code OAuth, the Judge ran as self-evaluation (same LLM evaluating its own theses). Production uses a separate model (Fable 5).
 
-**Regime dependence.** Beta's +$754 was dominated by a single +$880 MU trade. In a different market regime, Beta's 27% win rate with 10% stops could produce consecutive losses without a compensating win.
+**Regime dependence.** Beta's strategy has no time exit and no profit-taking rule; its only exit is a 10% stop. Every closed Beta trade in the backtest was therefore a loss, and all of Beta's gains were open positions at the cutoff. The strategy's return is entirely a function of whether the thesis names trend upward for long enough after entry — a regime bet, not a personality effect.
 
 ### 9.3 Comparison with Existing Frameworks
 
@@ -456,7 +511,7 @@ The system executed **7 real trades** across 2 agents in the first 13 trading da
 | **Independent Judge** | Yes (separate LLM) | Risk Manager (same LLM) | Portfolio Manager | Unknown |
 | **Local fallback** | Deepseek R1 70B (Ollama) | None | None | None |
 | **Real trading** | Yes (Robinhood, $5K) | Backtest only | Simulation only | Yes (Robinhood) |
-| **Backtest return** | +15.3% (6.5 months) | +24.9% annualized | Not published | Not published |
+| **Backtest return** | +8.6% (6.5 months, portfolio-level; not robust — see §7.6) | +24.9% annualized | Not published | Not published |
 
 **PAST's unique contribution:** No other framework tunes agent personality based on observed performance. TradingAgents and AI Hedge Fund use static roles/personas. PAST makes personality a dynamic, coach-tuned parameter with a trust region for stability, supplemented by ICLE for micro-level self-correction.
 
@@ -479,9 +534,9 @@ The system executed **7 real trades** across 2 agents in the first 13 trading da
 
 We presented **Personality-Adaptive Score Tuning (PAST)**, a novel, weight-free alignment framework for multi-agent LLM systems. By quantifying agent personas into discrete 1–7 Likert vectors, PAST cleanly decouples runtime behavioral steerability from parameter-level model training. The combination of a macro-level, bi-weekly **Coach review loop** (with trust region) and a micro-level **In-Context Log Exploitation (ICLE)** pipeline yields system performance that rivals parameter-tuned frameworks while introducing zero compute overhead at the training layer.
 
-In a trading system backtest across 6 tickers and 6.5 months, the framework produced +15.3% returns with measurable behavioral diversity — agents with different PAST vectors made different decisions on the same instrument, exactly as their profiles predicted. The coaching loop adapted personality scores bi-weekly based on performance, creating a closed-loop learning system without weight fine-tuning.
+In a portfolio-level backtest across 6 tickers and 6.5 months, the combined book returned +8.6%, but we make no performance claim from it: the result rests on one unrealized position and reverses sign if that position is entered one session later. What the backtest establishes is measurable behavioral diversity: agents with different PAST vectors made different decisions on the same instrument, exactly as their profiles predicted, with a 10× difference in maximum drawdown between the two personalities that holds in every variant we ran. The coaching loop adjusted personality scores bi-weekly within its trust region in response to observed results. Whether those adjustments improve returns is not yet established, because only one trait currently has a fully specified rule cascade.
 
-Live deployment with $5,000 real capital (August 2026) moved the framework beyond simulation and into its first genuine stress test. In the first three weeks, the system executed 7 trades across 2 agents, weathered a sector-wide AI infrastructure drawdown, and enforced its risk controls without human intervention: three positions stopped out at the mechanical 10% line (broker-side, automatic), one exited on a time rule, and zero PAST drift was detected across all agents. The period also surfaced three production lessons now folded back into the framework — broker-side risk enforcement, API cold-start-aware timeout configuration, and a regime detection layer — each discovered by live operation, not simulation. The account's negative P&L over the window (-3.6%) is itself informative: the personality-consistent behavior (buying thesis names during drawdown, holding to stops) is precisely what the PAST vectors specified, and the drawdown regime — not personality drift — explains the losses.
+Live deployment with $5,000 real capital (August 2026) moved the framework beyond simulation and into its first genuine stress test. In the first three weeks, the system opened 6 positions across 2 agents, weathered a sector-wide AI infrastructure drawdown, and enforced its risk controls without human intervention: three positions stopped out at the mechanical 10% line (broker-side, automatic), one exited on a time rule, and zero PAST drift was detected across all agents. The period also surfaced three production lessons now folded back into the framework — broker-side risk enforcement, API cold-start-aware timeout configuration, and a regime detection layer — each discovered by live operation, not simulation. The account's negative P&L over the window (-2.8%) is itself informative: the personality-consistent behavior (buying thesis names during drawdown, holding to stops) is precisely what the PAST vectors specified, and the drawdown regime — not personality drift — explains the losses.
 
 The key insight: **agents learn from their PAST.** Not by updating weights, but by adjusting the quantified personality that drives their rules, and by exploiting their own execution history at the inference boundary. This is contextual reinforcement learning at the instruction level — lightweight, interpretable, auditable, and achievable on consumer hardware without GPU training.
 
@@ -496,9 +551,9 @@ PAST offers engineers total system explainability, immediate behavioral reversib
 3. Fan, T. et al. (2026). "AI-Trader: 100% Fully-Automated Agent-Native Trading." GitHub: HKUDS/AI-Trader.
 4. Schulman, J. et al. (2017). "Proximal Policy Optimization Algorithms." arXiv:1707.06347. (Trust region inspiration)
 5. Rafailov, R. et al. (2023). "Direct Preference Optimization." arXiv:2305.18290.
-6. Hartley, M. et al. (2025). "Personality Traits Shape LLM Risk-Taking Behavior."
-7. Wang, Q. et al. (2025). "Risk Profiling and Modulation for Large Language Models."
-8. Zhipu AI (2026). "GLM-5.2 Technical Report." arXiv:2602.15763.
+6. Hartley, J., Hamill, C., Batra, D., Seddon, D., Okhrati, R., Khraishi, R. (2025). "How Personality Traits Shape LLM Risk-Taking Behavior." *Findings of ACL 2025*, pp. 21068–21092.
+7. Wang, Y., Li, X., Chen, G. (2025). "Risk Profiling and Modulation for LLMs." arXiv:2509.23058.
+8. GLM-5 Team, Zeng, A. et al. (2026). "GLM-5: from Vibe Coding to Agentic Engineering." arXiv:2602.15763.
 9. Torres-Leguet, J. (2025). "The Little Book of Reinforcement Learning."
 10. Grable, J. & Lytton, R. (2003). "Financial Risk Tolerance Revisited." (Likert scale inspiration)
 11. Microsoft (2024). "AutoGen: Enabling Next-Gen LLM Applications via Multi-Agent Conversation."
@@ -517,9 +572,7 @@ PAST offers engineers total system explainability, immediate behavioral reversib
 
 On July 30, 2026 — one day after this paper was written — Leopold Aschenbrenner's hedge fund (Situational Awareness LP, $45B at peak) was liquidated by margin call. His 4x-leveraged, 76%-concentrated portfolio of AI infrastructure stocks (BE, SNDK, CRWV, IREN, CORZ) declined 35-55% in July, triggering forced liquidation by Goldman Sachs, JPMorgan, and Bank of America. The entire public book was sold to Citadel in a single block trade.
 
-This event validated the paper's Section 7.2 limitation warning, written the day before:
-
-> "Beta's +$754 was dominated by a single +$880 MU trade. In a different market regime, Beta's 27% win rate with 10% stops could produce consecutive losses without a compensating win."
+The July 29 draft of this paper had flagged the concentration risk in its limitations section: "Beta's return was dominated by a single MU trade. In a different market regime, Beta's low win rate with 10% stops could produce consecutive losses without a compensating win." (The return figures that sentence referred to have since been retracted — §6.5 — but the qualitative warning stands, and the v3 backtest bears it out: every closed Beta trade was a stop-loss.)
 
 On the same day as the liquidation, Agent Beta's personality vector was swapped from Aschenbrenner to Gavin Baker (Atreides Management, $8.9B AUM, Sharpe 2.46):
 
@@ -534,6 +587,8 @@ On the same day as the liquidation, Agent Beta's personality vector was swapped 
 
 The swap was motivated by Baker's survival of the same July 2026 crash that destroyed Aschenbrenner: Baker's diversified, no-leverage, architecture-first approach produced a -3.5% drawdown vs Aschenbrenner's total wipeout.
 
-**This is the PAST framework operating in real time.** The risk was identified in the paper (Section 7.2), alternative personalities were researched, and the personality vector was updated — all without touching model weights. The agent's behavior changed because 6 integers changed.
+**This is the PAST framework operating in real time.** The risk was identified, alternative personalities were researched, and the personality vector was updated — all without touching model weights. The agent's behavior changed because 6 integers changed.
+
+**What the backtest says about the swap.** Run on identical data (§7.1), the Baker profile finished the January–July window at +14.7% versus Aschenbrenner's −5.7% — but §7.6 shows Baker's figure depends on a single MU re-entry and becomes −8.5% if that entry is one session later, while its drawdown (−30.7%) was far deeper than Aschenbrenner's (−9.4%), which sat mostly in cash because the Judge blocked its SPCX and NVDA signals. The swap was not made for backtest return; it was made because Aschenbrenner's leverage and concentration profile had just been demonstrated to be ruinous in live markets, and the Likert vector that encodes those traits (Risk 6, Conviction 7, Concentration 6) was the closest analogue in the arena. This is exactly the kind of judgment the coach layer is meant to exercise and exactly the kind that a return-only metric would have gotten wrong.
 
 A detailed case study is available in `docs/CASE_STUDY_Aschenbrenner_to_Baker.md`.

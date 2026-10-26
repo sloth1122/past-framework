@@ -1,0 +1,4171 @@
+{
+  "version": 3,
+  "start": "2026-01-01",
+  "end": "2026-07-21",
+  "tickers": [
+    "SPCX",
+    "OKLO",
+    "NVDA",
+    "APLD",
+    "CCJ",
+    "MU"
+  ],
+  "ipo_ban": true,
+  "stop_cooldown_days": -1,
+  "alloc_per_agent": 2500.0,
+  "fills": "daily close, no commission, no slippage",
+  "judge": "deterministic; scored items 1,7,8,11b,11c,13 (threshold 5/6); unscored 2,3,4,5 (cannot fail in harness), 6,9,10,11 (need non-price data)",
+  "results": {
+    "alpha": {
+      "agent": "alpha",
+      "label": "Alpha \u2014 Renaissance / mean reversion",
+      "start_capital": 2500.0,
+      "final_equity": 2592.51,
+      "total_return_pct": 3.7,
+      "realized_pnl": 68.98,
+      "unrealized_pnl": 23.52,
+      "closed_trades": 24,
+      "wins": "10",
+      "losses": "14",
+      "win_rate": 0.417,
+      "max_drawdown_pct": -2.26,
+      "judge_signals": 25,
+      "judge_approved": 25,
+      "judge_rejected": 0,
+      "approved_but_no_cash": 0,
+      "filled_entries": 25,
+      "final_past": {
+        "risk_tolerance": 3,
+        "conviction": 2,
+        "impulsivity": 2,
+        "patience": 4
+      },
+      "past_history": [
+        {
+          "cycle": 0,
+          "scores": {
+            "risk_tolerance": 3,
+            "conviction": 2,
+            "impulsivity": 2,
+            "patience": 3
+          },
+          "reasons": [
+            "initial"
+          ]
+        },
+        {
+          "cycle": 6,
+          "date": "2026-03-31",
+          "scores": {
+            "risk_tolerance": 3,
+            "conviction": 2,
+            "impulsivity": 2,
+            "patience": 4
+          },
+          "adjustments": {
+            "patience": 4
+          },
+          "reasons": [
+            "period win rate 0% low on 3 trades \u2014 Patience +1 tightens entry"
+          ]
+        }
+      ],
+      "trades": [
+        {
+          "ticker": "NVDA",
+          "entry_date": "2026-02-03",
+          "exit_date": "2026-02-04",
+          "entry_price": 180.1203,
+          "exit_price": 173.9778,
+          "shares": 1.1,
+          "cost": 198.13,
+          "pnl": -6.76,
+          "pnl_pct": -0.0341,
+          "exit_reason": "STOP_LOSS",
+          "status": "CLOSED"
+        },
+        {
+          "ticker": "APLD",
+          "entry_date": "2026-02-05",
+          "exit_date": "2026-02-09",
+          "entry_price": 27.845,
+          "exit_price": 38.26,
+          "shares": 7.2,
+          "cost": 200.48,
+          "pnl": 74.99,
+          "pnl_pct": 0.374,
+          "exit_reason": "RSI_EXIT",
+          "status": "CLOSED"
+        },
+        {
+          "ticker": "APLD",
+          "entry_date": "2026-02-19",
+          "exit_date": "2026-02-20",
+          "entry_price": 31.53,
+          "exit_price": 29.04,
+          "shares": 6.3,
+          "cost": 198.64,
+          "pnl": -15.69,
+          "pnl_pct": -0.079,
+          "exit_reason": "STOP_LOSS",
+          "status": "CLOSED"
+        },
+        {
+          "ticker": "APLD",
+          "entry_date": "2026-02-20",
+          "exit_date": "2026-02-27",
+          "entry_price": 29.04,
+          "exit_price": 27.27,
+          "shares": 6.9,
+          "cost": 200.38,
+          "pnl": -12.21,
+          "pnl_pct": -0.061,
+          "exit_reason": "STOP_LOSS",
+          "status": "CLOSED"
+        },
+        {
+          "ticker": "NVDA",
+          "entry_date": "2026-02-27",
+          "exit_date": "2026-03-06",
+          "entry_price": 176.9742,
+          "exit_price": 177.6034,
+          "shares": 1.1,
+          "cost": 194.67,
+          "pnl": 0.69,
+          "pnl_pct": 0.0036,
+          "exit_reason": "TIME_EXIT",
+          "status": "CLOSED"
+        },
+        {
+          "ticker": "MU",
+          "entry_date": "2026-03-03",
+          "exit_date": "2026-03-10",
+          "entry_price": 379.4622,
+          "exit_price": 402.8788,
+          "shares": 0.5,
+          "cost": 189.73,
+          "pnl": 11.71,
+          "pnl_pct": 0.0617,
+          "exit_reason": "TIME_EXIT",
+          "status": "CLOSED"
+        },
+        {
+          "ticker": "CCJ",
+          "entry_date": "2026-03-06",
+          "exit_date": "2026-03-13",
+          "entry_price": 109.68,
+          "exit_price": 107.92,
+          "shares": 1.8,
+          "cost": 197.42,
+          "pnl": -3.17,
+          "pnl_pct": -0.016,
+          "exit_reason": "TIME_EXIT",
+          "status": "CLOSED"
+        },
+        {
+          "ticker": "NVDA",
+          "entry_date": "2026-03-06",
+          "exit_date": "2026-03-13",
+          "entry_price": 177.6034,
+          "exit_price": 180.0402,
+          "shares": 1.1,
+          "cost": 195.36,
+          "pnl": 2.68,
+          "pnl_pct": 0.0137,
+          "exit_reason": "TIME_EXIT",
+          "status": "CLOSED"
+        },
+        {
+          "ticker": "CCJ",
+          "entry_date": "2026-03-13",
+          "exit_date": "2026-03-20",
+          "entry_price": 107.92,
+          "exit_price": 101.55,
+          "shares": 1.9,
+          "cost": 205.05,
+          "pnl": -12.1,
+          "pnl_pct": -0.059,
+          "exit_reason": "STOP_LOSS",
+          "status": "CLOSED"
+        },
+        {
+          "ticker": "MU",
+          "entry_date": "2026-03-25",
+          "exit_date": "2026-03-26",
+          "entry_price": 381.8708,
+          "exit_price": 355.2561,
+          "shares": 0.5,
+          "cost": 190.94,
+          "pnl": -13.31,
+          "pnl_pct": -0.0697,
+          "exit_reason": "STOP_LOSS",
+          "status": "CLOSED"
+        },
+        {
+          "ticker": "CCJ",
+          "entry_date": "2026-03-23",
+          "exit_date": "2026-03-30",
+          "entry_price": 105.57,
+          "exit_price": 102.84,
+          "shares": 1.9,
+          "cost": 200.58,
+          "pnl": -5.19,
+          "pnl_pct": -0.0259,
+          "exit_reason": "TIME_EXIT",
+          "status": "CLOSED"
+        },
+        {
+          "ticker": "MU",
+          "entry_date": "2026-04-01",
+          "exit_date": "2026-04-09",
+          "entry_price": 367.7934,
+          "exit_price": 421.4452,
+          "shares": 0.5,
+          "cost": 183.9,
+          "pnl": 26.83,
+          "pnl_pct": 0.1459,
+          "exit_reason": "RSI_EXIT",
+          "status": "CLOSED"
+        },
+        {
+          "ticker": "OKLO",
+          "entry_date": "2026-05-18",
+          "exit_date": "2026-05-19",
+          "entry_price": 58.56,
+          "exit_price": 55.88,
+          "shares": 3.4,
+          "cost": 199.1,
+          "pnl": -9.11,
+          "pnl_pct": -0.0458,
+          "exit_reason": "STOP_LOSS",
+          "status": "CLOSED"
+        },
+        {
+          "ticker": "OKLO",
+          "entry_date": "2026-05-19",
+          "exit_date": "2026-05-27",
+          "entry_price": 55.88,
+          "exit_price": 67.82,
+          "shares": 3.6,
+          "cost": 201.17,
+          "pnl": 42.98,
+          "pnl_pct": 0.2137,
+          "exit_reason": "TIME_EXIT",
+          "status": "CLOSED"
+        },
+        {
+          "ticker": "CCJ",
+          "entry_date": "2026-06-05",
+          "exit_date": "2026-06-10",
+          "entry_price": 103.44,
+          "exit_price": 95.03,
+          "shares": 1.9,
+          "cost": 196.54,
+          "pnl": -15.98,
+          "pnl_pct": -0.0813,
+          "exit_reason": "STOP_LOSS",
+          "status": "CLOSED"
+        },
+        {
+          "ticker": "OKLO",
+          "entry_date": "2026-06-05",
+          "exit_date": "2026-06-10",
+          "entry_price": 58.09,
+          "exit_price": 54.02,
+          "shares": 3.4,
+          "cost": 197.51,
+          "pnl": -13.84,
+          "pnl_pct": -0.0701,
+          "exit_reason": "STOP_LOSS",
+          "status": "CLOSED"
+        },
+        {
+          "ticker": "NVDA",
+          "entry_date": "2026-06-05",
+          "exit_date": "2026-06-12",
+          "entry_price": 205.1,
+          "exit_price": 205.19,
+          "shares": 1.0,
+          "cost": 205.1,
+          "pnl": 0.09,
+          "pnl_pct": 0.0004,
+          "exit_reason": "TIME_EXIT",
+          "status": "CLOSED"
+        },
+        {
+          "ticker": "APLD",
+          "entry_date": "2026-06-10",
+          "exit_date": "2026-06-15",
+          "entry_price": 38.92,
+          "exit_price": 46.47,
+          "shares": 5.1,
+          "cost": 198.49,
+          "pnl": 38.51,
+          "pnl_pct": 0.194,
+          "exit_reason": "RSI_EXIT",
+          "status": "CLOSED"
+        },
+        {
+          "ticker": "OKLO",
+          "entry_date": "2026-06-11",
+          "exit_date": "2026-06-18",
+          "entry_price": 57.86,
+          "exit_price": 61.17,
+          "shares": 3.5,
+          "cost": 202.51,
+          "pnl": 11.58,
+          "pnl_pct": 0.0572,
+          "exit_reason": "TIME_EXIT",
+          "status": "CLOSED"
+        },
+        {
+          "ticker": "NVDA",
+          "entry_date": "2026-06-23",
+          "exit_date": "2026-06-26",
+          "entry_price": 200.04,
+          "exit_price": 192.53,
+          "shares": 1.0,
+          "cost": 200.04,
+          "pnl": -7.51,
+          "pnl_pct": -0.0375,
+          "exit_reason": "STOP_LOSS",
+          "status": "CLOSED"
+        },
+        {
+          "ticker": "APLD",
+          "entry_date": "2026-06-26",
+          "exit_date": "2026-06-29",
+          "entry_price": 39.16,
+          "exit_price": 37.77,
+          "shares": 5.1,
+          "cost": 199.72,
+          "pnl": -7.09,
+          "pnl_pct": -0.0355,
+          "exit_reason": "STOP_LOSS",
+          "status": "CLOSED"
+        },
+        {
+          "ticker": "APLD",
+          "entry_date": "2026-06-29",
+          "exit_date": "2026-07-01",
+          "entry_price": 37.77,
+          "exit_price": 35.52,
+          "shares": 5.3,
+          "cost": 200.18,
+          "pnl": -11.92,
+          "pnl_pct": -0.0596,
+          "exit_reason": "STOP_LOSS",
+          "status": "CLOSED"
+        },
+        {
+          "ticker": "NVDA",
+          "entry_date": "2026-06-26",
+          "exit_date": "2026-07-06",
+          "entry_price": 192.53,
+          "exit_price": 195.55,
+          "shares": 1.0,
+          "cost": 192.53,
+          "pnl": 3.02,
+          "pnl_pct": 0.0157,
+          "exit_reason": "TIME_EXIT",
+          "status": "CLOSED"
+        },
+        {
+          "ticker": "MU",
+          "entry_date": "2026-07-15",
+          "exit_date": "2026-07-16",
+          "entry_price": 904.28,
+          "exit_price": 853.2,
+          "shares": 0.2,
+          "cost": 180.86,
+          "pnl": -10.22,
+          "pnl_pct": -0.0565,
+          "exit_reason": "STOP_LOSS",
+          "status": "CLOSED"
+        }
+      ],
+      "open_at_end": [
+        {
+          "ticker": "MU",
+          "entry_date": "2026-07-16",
+          "entry_price": 853.2,
+          "mark": 970.82,
+          "shares": 0.2,
+          "cost": 170.64,
+          "unrealized": 23.52
+        }
+      ],
+      "verdicts": [
+        {
+          "date": "2026-02-03",
+          "ticker": "NVDA",
+          "signal": "SECONDARY",
+          "approved": true,
+          "score": "6/6",
+          "notes": [
+            "\u2713 RSI 42.3, 50d MA rising",
+            "\u00b7 stop 3% (constant, unscored)",
+            "\u00b7 no convergence",
+            "\u2713 20d avg vol 166.5M >= 1M",
+            "\u2713 impulsivity <= 3 fits rule-gated statistical entry",
+            "\u2713 NVDA not on agent's banned list",
+            "\u2713 not a recent IPO",
+            "\u2713 open positions 0 < 4"
+          ],
+          "filled": true
+        },
+        {
+          "date": "2026-02-05",
+          "ticker": "APLD",
+          "signal": "SECONDARY",
+          "approved": true,
+          "score": "6/6",
+          "notes": [
+            "\u2713 RSI 40.2, 50d MA rising",
+            "\u00b7 stop 3% (constant, unscored)",
+            "\u00b7 no convergence",
+            "\u2713 20d avg vol 40.4M >= 1M",
+            "\u2713 impulsivity <= 3 fits rule-gated statistical entry",
+            "\u2713 APLD not on agent's banned list",
+            "\u2713 not a recent IPO",
+            "\u2713 open positions 0 < 4"
+          ],
+          "filled": true
+        },
+        {
+          "date": "2026-02-19",
+          "ticker": "APLD",
+          "signal": "SECONDARY",
+          "approved": true,
+          "score": "6/6",
+          "notes": [
+            "\u2713 RSI 44.9, 50d MA rising",
+            "\u00b7 stop 3% (constant, unscored)",
+            "\u00b7 no convergence",
+            "\u2713 20d avg vol 30.6M >= 1M",
+            "\u2713 impulsivity <= 3 fits rule-gated statistical entry",
+            "\u2713 APLD not on agent's banned list",
+            "\u2713 not a recent IPO",
+            "\u2713 open positions 0 < 4"
+          ],
+          "filled": true
+        },
+        {
+          "date": "2026-02-20",
+          "ticker": "APLD",
+          "signal": "SECONDARY",
+          "approved": true,
+          "score": "6/6",
+          "notes": [
+            "\u2713 RSI 40.9, 50d MA rising",
+            "\u00b7 stop 3% (constant, unscored)",
+            "\u00b7 no convergence",
+            "\u2713 20d avg vol 30.4M >= 1M",
+            "\u2713 impulsivity <= 3 fits rule-gated statistical entry",
+            "\u2713 APLD not on agent's banned list",
+            "\u2713 not a recent IPO",
+            "\u2713 open positions 0 < 4"
+          ],
+          "filled": true
+        },
+        {
+          "date": "2026-02-27",
+          "ticker": "NVDA",
+          "signal": "SECONDARY",
+          "approved": true,
+          "score": "6/6",
+          "notes": [
+            "\u2713 RSI 40.3, 50d MA rising",
+            "\u00b7 stop 3% (constant, unscored)",
+            "\u00b7 no convergence",
+            "\u2713 20d avg vol 196.2M >= 1M",
+            "\u2713 impulsivity <= 3 fits rule-gated statistical entry",
+            "\u2713 NVDA not on agent's banned list",
+            "\u2713 not a recent IPO",
+            "\u2713 open positions 0 < 4"
+          ],
+          "filled": true
+        },
+        {
+          "date": "2026-03-03",
+          "ticker": "MU",
+          "signal": "SECONDARY",
+          "approved": true,
+          "score": "6/6",
+          "notes": [
+            "\u2713 RSI 44.4, 50d MA rising",
+            "\u00b7 stop 3% (constant, unscored)",
+            "\u00b7 no convergence",
+            "\u2713 20d avg vol 35.1M >= 1M",
+            "\u2713 impulsivity <= 3 fits rule-gated statistical entry",
+            "\u2713 MU not on agent's banned list",
+            "\u2713 not a recent IPO",
+            "\u2713 open positions 1 < 4"
+          ],
+          "filled": true
+        },
+        {
+          "date": "2026-03-06",
+          "ticker": "CCJ",
+          "signal": "SECONDARY",
+          "approved": true,
+          "score": "6/6",
+          "notes": [
+            "\u2713 RSI 42.6, 50d MA rising",
+            "\u00b7 stop 3% (constant, unscored)",
+            "\u00b7 no convergence",
+            "\u2713 20d avg vol 3.8M >= 1M",
+            "\u2713 impulsivity <= 3 fits rule-gated statistical entry",
+            "\u2713 CCJ not on agent's banned list",
+            "\u2713 not a recent IPO",
+            "\u2713 open positions 1 < 4"
+          ],
+          "filled": true
+        },
+        {
+          "date": "2026-03-06",
+          "ticker": "NVDA",
+          "signal": "SECONDARY",
+          "approved": true,
+          "score": "6/6",
+          "notes": [
+            "\u2713 RSI 42.4, 50d MA rising",
+            "\u00b7 stop 3% (constant, unscored)",
+            "\u00b7 no convergence",
+            "\u2713 20d avg vol 195.8M >= 1M",
+            "\u2713 impulsivity <= 3 fits rule-gated statistical entry",
+            "\u2713 NVDA not on agent's banned list",
+            "\u2713 not a recent IPO",
+            "\u2713 open positions 2 < 4"
+          ],
+          "filled": true
+        },
+        {
+          "date": "2026-03-13",
+          "ticker": "CCJ",
+          "signal": "SECONDARY",
+          "approved": true,
+          "score": "6/6",
+          "notes": [
+            "\u2713 RSI 42.0, 50d MA rising",
+            "\u00b7 stop 3% (constant, unscored)",
+            "\u00b7 no convergence",
+            "\u2713 20d avg vol 4.0M >= 1M",
+            "\u2713 impulsivity <= 3 fits rule-gated statistical entry",
+            "\u2713 CCJ not on agent's banned list",
+            "\u2713 not a recent IPO",
+            "\u2713 open positions 0 < 4"
+          ],
+          "filled": true
+        },
+        {
+          "date": "2026-03-23",
+          "ticker": "CCJ",
+          "signal": "SECONDARY",
+          "approved": true,
+          "score": "6/6",
+          "notes": [
+            "\u2713 RSI 42.2, 50d MA rising",
+            "\u00b7 stop 3% (constant, unscored)",
+            "\u00b7 no convergence",
+            "\u2713 20d avg vol 3.9M >= 1M",
+            "\u2713 impulsivity <= 3 fits rule-gated statistical entry",
+            "\u2713 CCJ not on agent's banned list",
+            "\u2713 not a recent IPO",
+            "\u2713 open positions 0 < 4"
+          ],
+          "filled": true
+        },
+        {
+          "date": "2026-03-25",
+          "ticker": "MU",
+          "signal": "SECONDARY",
+          "approved": true,
+          "score": "6/6",
+          "notes": [
+            "\u2713 RSI 42.5, 50d MA rising",
+            "\u00b7 stop 3% (constant, unscored)",
+            "\u00b7 no convergence",
+            "\u2713 20d avg vol 42.0M >= 1M",
+            "\u2713 impulsivity <= 3 fits rule-gated statistical entry",
+            "\u2713 MU not on agent's banned list",
+            "\u2713 not a recent IPO",
+            "\u2713 open positions 1 < 4"
+          ],
+          "filled": true
+        },
+        {
+          "date": "2026-04-01",
+          "ticker": "MU",
+          "signal": "SECONDARY",
+          "approved": true,
+          "score": "6/6",
+          "notes": [
+            "\u2713 RSI 44.8, 50d MA rising",
+            "\u00b7 stop 3% (constant, unscored)",
+            "\u00b7 no convergence",
+            "\u2713 20d avg vol 49.8M >= 1M",
+            "\u2713 impulsivity <= 3 fits rule-gated statistical entry",
+            "\u2713 MU not on agent's banned list",
+            "\u2713 not a recent IPO",
+            "\u2713 open positions 0 < 4"
+          ],
+          "filled": true
+        },
+        {
+          "date": "2026-05-18",
+          "ticker": "OKLO",
+          "signal": "SECONDARY",
+          "approved": true,
+          "score": "6/6",
+          "notes": [
+            "\u2713 RSI 42.2, 50d MA rising",
+            "\u00b7 stop 3% (constant, unscored)",
+            "\u00b7 no convergence",
+            "\u2713 20d avg vol 15.8M >= 1M",
+            "\u2713 impulsivity <= 3 fits rule-gated statistical entry",
+            "\u2713 OKLO not on agent's banned list",
+            "\u2713 not a recent IPO",
+            "\u2713 open positions 0 < 4"
+          ],
+          "filled": true
+        },
+        {
+          "date": "2026-05-19",
+          "ticker": "OKLO",
+          "signal": "SECONDARY",
+          "approved": true,
+          "score": "6/6",
+          "notes": [
+            "\u2713 RSI 40.2, 50d MA rising",
+            "\u00b7 stop 3% (constant, unscored)",
+            "\u00b7 no convergence",
+            "\u2713 20d avg vol 15.7M >= 1M",
+            "\u2713 impulsivity <= 3 fits rule-gated statistical entry",
+            "\u2713 OKLO not on agent's banned list",
+            "\u2713 not a recent IPO",
+            "\u2713 open positions 0 < 4"
+          ],
+          "filled": true
+        },
+        {
+          "date": "2026-06-05",
+          "ticker": "CCJ",
+          "signal": "SECONDARY",
+          "approved": true,
+          "score": "6/6",
+          "notes": [
+            "\u2713 RSI 40.3, 50d MA rising",
+            "\u00b7 stop 3% (constant, unscored)",
+            "\u00b7 no convergence",
+            "\u2713 20d avg vol 3.1M >= 1M",
+            "\u2713 impulsivity <= 3 fits rule-gated statistical entry",
+            "\u2713 CCJ not on agent's banned list",
+            "\u2713 not a recent IPO",
+            "\u2713 open positions 0 < 4"
+          ],
+          "filled": true
+        },
+        {
+          "date": "2026-06-05",
+          "ticker": "NVDA",
+          "signal": "SECONDARY",
+          "approved": true,
+          "score": "6/6",
+          "notes": [
+            "\u2713 RSI 44.0, 50d MA rising",
+            "\u00b7 stop 3% (constant, unscored)",
+            "\u00b7 no convergence",
+            "\u2713 20d avg vol 177.8M >= 1M",
+            "\u2713 impulsivity <= 3 fits rule-gated statistical entry",
+            "\u2713 NVDA not on agent's banned list",
+            "\u2713 not a recent IPO",
+            "\u2713 open positions 1 < 4"
+          ],
+          "filled": true
+        },
+        {
+          "date": "2026-06-05",
+          "ticker": "OKLO",
+          "signal": "SECONDARY",
+          "approved": true,
+          "score": "6/6",
+          "notes": [
+            "\u2713 RSI 41.5, 50d MA rising",
+            "\u00b7 stop 3% (constant, unscored)",
+            "\u00b7 no convergence",
+            "\u2713 20d avg vol 15.6M >= 1M",
+            "\u2713 impulsivity <= 3 fits rule-gated statistical entry",
+            "\u2713 OKLO not on agent's banned list",
+            "\u2713 not a recent IPO",
+            "\u2713 open positions 2 < 4"
+          ],
+          "filled": true
+        },
+        {
+          "date": "2026-06-10",
+          "ticker": "APLD",
+          "signal": "SECONDARY",
+          "approved": true,
+          "score": "6/6",
+          "notes": [
+            "\u2713 RSI 44.8, 50d MA rising",
+            "\u00b7 stop 3% (constant, unscored)",
+            "\u00b7 no convergence",
+            "\u2713 20d avg vol 21.8M >= 1M",
+            "\u2713 impulsivity <= 3 fits rule-gated statistical entry",
+            "\u2713 APLD not on agent's banned list",
+            "\u2713 not a recent IPO",
+            "\u2713 open positions 1 < 4"
+          ],
+          "filled": true
+        },
+        {
+          "date": "2026-06-11",
+          "ticker": "OKLO",
+          "signal": "SECONDARY",
+          "approved": true,
+          "score": "6/6",
+          "notes": [
+            "\u2713 RSI 43.3, 50d MA rising",
+            "\u00b7 stop 3% (constant, unscored)",
+            "\u00b7 no convergence",
+            "\u2713 20d avg vol 14.7M >= 1M",
+            "\u2713 impulsivity <= 3 fits rule-gated statistical entry",
+            "\u2713 OKLO not on agent's banned list",
+            "\u2713 not a recent IPO",
+            "\u2713 open positions 2 < 4"
+          ],
+          "filled": true
+        },
+        {
+          "date": "2026-06-23",
+          "ticker": "NVDA",
+          "signal": "SECONDARY",
+          "approved": true,
+          "score": "6/6",
+          "notes": [
+            "\u2713 RSI 42.6, 50d MA rising",
+            "\u00b7 stop 3% (constant, unscored)",
+            "\u00b7 no convergence",
+            "\u2713 20d avg vol 170.8M >= 1M",
+            "\u2713 impulsivity <= 3 fits rule-gated statistical entry",
+            "\u2713 NVDA not on agent's banned list",
+            "\u2713 not a recent IPO",
+            "\u2713 open positions 0 < 4"
+          ],
+          "filled": true
+        },
+        {
+          "date": "2026-06-26",
+          "ticker": "APLD",
+          "signal": "SECONDARY",
+          "approved": true,
+          "score": "6/6",
+          "notes": [
+            "\u2713 RSI 42.3, 50d MA rising",
+            "\u00b7 stop 3% (constant, unscored)",
+            "\u00b7 no convergence",
+            "\u2713 20d avg vol 21.1M >= 1M",
+            "\u2713 impulsivity <= 3 fits rule-gated statistical entry",
+            "\u2713 APLD not on agent's banned list",
+            "\u2713 not a recent IPO",
+            "\u2713 open positions 0 < 4"
+          ],
+          "filled": true
+        },
+        {
+          "date": "2026-06-26",
+          "ticker": "NVDA",
+          "signal": "SECONDARY",
+          "approved": true,
+          "score": "6/6",
+          "notes": [
+            "\u2713 RSI 37.6, 50d MA rising",
+            "\u00b7 stop 3% (constant, unscored)",
+            "\u00b7 no convergence",
+            "\u2713 20d avg vol 169.9M >= 1M",
+            "\u2713 impulsivity <= 3 fits rule-gated statistical entry",
+            "\u2713 NVDA not on agent's banned list",
+            "\u2713 not a recent IPO",
+            "\u2713 open positions 1 < 4"
+          ],
+          "filled": true
+        },
+        {
+          "date": "2026-06-29",
+          "ticker": "APLD",
+          "signal": "SECONDARY",
+          "approved": true,
+          "score": "6/6",
+          "notes": [
+            "\u2713 RSI 39.9, 50d MA rising",
+            "\u00b7 stop 3% (constant, unscored)",
+            "\u00b7 no convergence",
+            "\u2713 20d avg vol 21.0M >= 1M",
+            "\u2713 impulsivity <= 3 fits rule-gated statistical entry",
+            "\u2713 APLD not on agent's banned list",
+            "\u2713 not a recent IPO",
+            "\u2713 open positions 1 < 4"
+          ],
+          "filled": true
+        },
+        {
+          "date": "2026-07-15",
+          "ticker": "MU",
+          "signal": "SECONDARY",
+          "approved": true,
+          "score": "6/6",
+          "notes": [
+            "\u2713 RSI 44.4, 50d MA rising",
+            "\u00b7 stop 3% (constant, unscored)",
+            "\u00b7 no convergence",
+            "\u2713 20d avg vol 52.5M >= 1M",
+            "\u2713 impulsivity <= 3 fits rule-gated statistical entry",
+            "\u2713 MU not on agent's banned list",
+            "\u2713 not a recent IPO",
+            "\u2713 open positions 0 < 4"
+          ],
+          "filled": true
+        },
+        {
+          "date": "2026-07-16",
+          "ticker": "MU",
+          "signal": "SECONDARY",
+          "approved": true,
+          "score": "6/6",
+          "notes": [
+            "\u2713 RSI 41.3, 50d MA rising",
+            "\u00b7 stop 3% (constant, unscored)",
+            "\u00b7 no convergence",
+            "\u2713 20d avg vol 52.5M >= 1M",
+            "\u2713 impulsivity <= 3 fits rule-gated statistical entry",
+            "\u2713 MU not on agent's banned list",
+            "\u2713 not a recent IPO",
+            "\u2713 open positions 0 < 4"
+          ],
+          "filled": true
+        }
+      ],
+      "equity_curve": [
+        [
+          "2026-01-02",
+          2500.0
+        ],
+        [
+          "2026-01-05",
+          2500.0
+        ],
+        [
+          "2026-01-06",
+          2500.0
+        ],
+        [
+          "2026-01-07",
+          2500.0
+        ],
+        [
+          "2026-01-08",
+          2500.0
+        ],
+        [
+          "2026-01-09",
+          2500.0
+        ],
+        [
+          "2026-01-12",
+          2500.0
+        ],
+        [
+          "2026-01-13",
+          2500.0
+        ],
+        [
+          "2026-01-14",
+          2500.0
+        ],
+        [
+          "2026-01-15",
+          2500.0
+        ],
+        [
+          "2026-01-16",
+          2500.0
+        ],
+        [
+          "2026-01-20",
+          2500.0
+        ],
+        [
+          "2026-01-21",
+          2500.0
+        ],
+        [
+          "2026-01-22",
+          2500.0
+        ],
+        [
+          "2026-01-23",
+          2500.0
+        ],
+        [
+          "2026-01-26",
+          2500.0
+        ],
+        [
+          "2026-01-27",
+          2500.0
+        ],
+        [
+          "2026-01-28",
+          2500.0
+        ],
+        [
+          "2026-01-29",
+          2500.0
+        ],
+        [
+          "2026-01-30",
+          2500.0
+        ],
+        [
+          "2026-02-02",
+          2500.0
+        ],
+        [
+          "2026-02-03",
+          2500.0
+        ],
+        [
+          "2026-02-04",
+          2493.24
+        ],
+        [
+          "2026-02-05",
+          2493.24
+        ],
+        [
+          "2026-02-06",
+          2544.4
+        ],
+        [
+          "2026-02-09",
+          2568.23
+        ],
+        [
+          "2026-02-10",
+          2568.23
+        ],
+        [
+          "2026-02-11",
+          2568.23
+        ],
+        [
+          "2026-02-12",
+          2568.23
+        ],
+        [
+          "2026-02-13",
+          2568.23
+        ],
+        [
+          "2026-02-17",
+          2568.23
+        ],
+        [
+          "2026-02-18",
+          2568.23
+        ],
+        [
+          "2026-02-19",
+          2568.23
+        ],
+        [
+          "2026-02-20",
+          2552.54
+        ],
+        [
+          "2026-02-23",
+          2559.17
+        ],
+        [
+          "2026-02-24",
+          2563.72
+        ],
+        [
+          "2026-02-25",
+          2552.82
+        ],
+        [
+          "2026-02-26",
+          2549.85
+        ],
+        [
+          "2026-02-27",
+          2540.33
+        ],
+        [
+          "2026-03-02",
+          2546.14
+        ],
+        [
+          "2026-03-03",
+          2543.47
+        ],
+        [
+          "2026-03-04",
+          2557.3
+        ],
+        [
+          "2026-03-05",
+          2555.77
+        ],
+        [
+          "2026-03-06",
+          2536.34
+        ],
+        [
+          "2026-03-09",
+          2562.78
+        ],
+        [
+          "2026-03-10",
+          2579.09
+        ],
+        [
+          "2026-03-11",
+          2572.04
+        ],
+        [
+          "2026-03-12",
+          2568.7
+        ],
+        [
+          "2026-03-13",
+          2552.24
+        ],
+        [
+          "2026-03-16",
+          2556.79
+        ],
+        [
+          "2026-03-17",
+          2559.08
+        ],
+        [
+          "2026-03-18",
+          2555.06
+        ],
+        [
+          "2026-03-19",
+          2549.74
+        ],
+        [
+          "2026-03-20",
+          2540.14
+        ],
+        [
+          "2026-03-23",
+          2540.14
+        ],
+        [
+          "2026-03-24",
+          2544.83
+        ],
+        [
+          "2026-03-25",
+          2546.7
+        ],
+        [
+          "2026-03-26",
+          2525.12
+        ],
+        [
+          "2026-03-27",
+          2523.7
+        ],
+        [
+          "2026-03-30",
+          2521.65
+        ],
+        [
+          "2026-03-31",
+          2521.65
+        ],
+        [
+          "2026-04-01",
+          2521.65
+        ],
+        [
+          "2026-04-02",
+          2520.84
+        ],
+        [
+          "2026-04-06",
+          2526.6
+        ],
+        [
+          "2026-04-07",
+          2526.51
+        ],
+        [
+          "2026-04-08",
+          2541.08
+        ],
+        [
+          "2026-04-09",
+          2548.47
+        ],
+        [
+          "2026-04-10",
+          2548.47
+        ],
+        [
+          "2026-04-13",
+          2548.47
+        ],
+        [
+          "2026-04-14",
+          2548.47
+        ],
+        [
+          "2026-04-15",
+          2548.47
+        ],
+        [
+          "2026-04-16",
+          2548.47
+        ],
+        [
+          "2026-04-17",
+          2548.47
+        ],
+        [
+          "2026-04-20",
+          2548.47
+        ],
+        [
+          "2026-04-21",
+          2548.47
+        ],
+        [
+          "2026-04-22",
+          2548.47
+        ],
+        [
+          "2026-04-23",
+          2548.47
+        ],
+        [
+          "2026-04-24",
+          2548.47
+        ],
+        [
+          "2026-04-27",
+          2548.47
+        ],
+        [
+          "2026-04-28",
+          2548.47
+        ],
+        [
+          "2026-04-29",
+          2548.47
+        ],
+        [
+          "2026-04-30",
+          2548.47
+        ],
+        [
+          "2026-05-01",
+          2548.47
+        ],
+        [
+          "2026-05-04",
+          2548.47
+        ],
+        [
+          "2026-05-05",
+          2548.47
+        ],
+        [
+          "2026-05-06",
+          2548.47
+        ],
+        [
+          "2026-05-07",
+          2548.47
+        ],
+        [
+          "2026-05-08",
+          2548.47
+        ],
+        [
+          "2026-05-11",
+          2548.47
+        ],
+        [
+          "2026-05-12",
+          2548.47
+        ],
+        [
+          "2026-05-13",
+          2548.47
+        ],
+        [
+          "2026-05-14",
+          2548.47
+        ],
+        [
+          "2026-05-15",
+          2548.47
+        ],
+        [
+          "2026-05-18",
+          2548.47
+        ],
+        [
+          "2026-05-19",
+          2539.36
+        ],
+        [
+          "2026-05-20",
+          2563.48
+        ],
+        [
+          "2026-05-21",
+          2572.52
+        ],
+        [
+          "2026-05-22",
+          2575.36
+        ],
+        [
+          "2026-05-26",
+          2585.51
+        ],
+        [
+          "2026-05-27",
+          2582.34
+        ],
+        [
+          "2026-05-28",
+          2582.34
+        ],
+        [
+          "2026-05-29",
+          2582.34
+        ],
+        [
+          "2026-06-01",
+          2582.34
+        ],
+        [
+          "2026-06-02",
+          2582.34
+        ],
+        [
+          "2026-06-03",
+          2582.34
+        ],
+        [
+          "2026-06-04",
+          2582.34
+        ],
+        [
+          "2026-06-05",
+          2582.34
+        ],
+        [
+          "2026-06-08",
+          2592.57
+        ],
+        [
+          "2026-06-09",
+          2577.74
+        ],
+        [
+          "2026-06-10",
+          2547.85
+        ],
+        [
+          "2026-06-11",
+          2565.3
+        ],
+        [
+          "2026-06-12",
+          2570.6
+        ],
+        [
+          "2026-06-15",
+          2601.2
+        ],
+        [
+          "2026-06-16",
+          2589.69
+        ],
+        [
+          "2026-06-17",
+          2594.48
+        ],
+        [
+          "2026-06-18",
+          2602.71
+        ],
+        [
+          "2026-06-22",
+          2602.71
+        ],
+        [
+          "2026-06-23",
+          2602.71
+        ],
+        [
+          "2026-06-24",
+          2601.67
+        ],
+        [
+          "2026-06-25",
+          2598.41
+        ],
+        [
+          "2026-06-26",
+          2595.2
+        ],
+        [
+          "2026-06-29",
+          2590.55
+        ],
+        [
+          "2026-06-30",
+          2593.18
+        ],
+        [
+          "2026-07-01",
+          2581.23
+        ],
+        [
+          "2026-07-02",
+          2578.48
+        ],
+        [
+          "2026-07-06",
+          2579.2
+        ],
+        [
+          "2026-07-07",
+          2579.2
+        ],
+        [
+          "2026-07-08",
+          2579.2
+        ],
+        [
+          "2026-07-09",
+          2579.2
+        ],
+        [
+          "2026-07-10",
+          2579.2
+        ],
+        [
+          "2026-07-13",
+          2579.2
+        ],
+        [
+          "2026-07-14",
+          2579.2
+        ],
+        [
+          "2026-07-15",
+          2579.2
+        ],
+        [
+          "2026-07-16",
+          2568.99
+        ],
+        [
+          "2026-07-17",
+          2568.14
+        ],
+        [
+          "2026-07-20",
+          2571.44
+        ],
+        [
+          "2026-07-21",
+          2592.51
+        ]
+      ]
+    },
+    "beta_aschenbrenner": {
+      "agent": "beta_aschenbrenner",
+      "label": "Beta \u2014 Aschenbrenner / AI-infra thesis (paper \u00a76.3)",
+      "start_capital": 2500.0,
+      "final_equity": 2396.01,
+      "total_return_pct": -4.16,
+      "realized_pnl": -140.67,
+      "unrealized_pnl": 36.68,
+      "closed_trades": 2,
+      "wins": "0",
+      "losses": "2",
+      "win_rate": 0.0,
+      "max_drawdown_pct": -7.85,
+      "judge_signals": 36,
+      "judge_approved": 4,
+      "judge_rejected": 32,
+      "approved_but_no_cash": 0,
+      "filled_entries": 4,
+      "final_past": {
+        "risk_tolerance": 6,
+        "conviction": 7,
+        "impulsivity": 6,
+        "patience": 7
+      },
+      "past_history": [
+        {
+          "cycle": 0,
+          "scores": {
+            "risk_tolerance": 6,
+            "conviction": 7,
+            "impulsivity": 5,
+            "patience": 7
+          },
+          "reasons": [
+            "initial"
+          ]
+        },
+        {
+          "cycle": 12,
+          "date": "2026-06-26",
+          "scores": {
+            "risk_tolerance": 6,
+            "conviction": 7,
+            "impulsivity": 6,
+            "patience": 7
+          },
+          "adjustments": {
+            "impulsivity": 6
+          },
+          "reasons": [
+            "1 max-stop exit(s) this period (OKLO) \u2014 Impulsivity +1 (recorded; no cascade defined in paper)"
+          ]
+        }
+      ],
+      "trades": [
+        {
+          "ticker": "OKLO",
+          "entry_date": "2026-06-09",
+          "exit_date": "2026-06-26",
+          "entry_price": 56.48,
+          "exit_price": 50.0,
+          "shares": 8.9,
+          "cost": 502.67,
+          "pnl": -57.67,
+          "pnl_pct": -0.1147,
+          "exit_reason": "STOP_LOSS",
+          "status": "CLOSED"
+        },
+        {
+          "ticker": "OKLO",
+          "entry_date": "2026-06-26",
+          "exit_date": "2026-07-16",
+          "entry_price": 50.0,
+          "exit_price": 41.7,
+          "shares": 10.0,
+          "cost": 500.0,
+          "pnl": -83.0,
+          "pnl_pct": -0.166,
+          "exit_reason": "STOP_LOSS",
+          "status": "CLOSED"
+        }
+      ],
+      "open_at_end": [
+        {
+          "ticker": "CCJ",
+          "entry_date": "2026-07-16",
+          "entry_price": 87.36,
+          "mark": 88.68,
+          "shares": 5.7,
+          "cost": 497.95,
+          "unrealized": 7.52
+        },
+        {
+          "ticker": "OKLO",
+          "entry_date": "2026-07-16",
+          "entry_price": 41.7,
+          "mark": 44.13,
+          "shares": 12.0,
+          "cost": 500.4,
+          "unrealized": 29.16
+        }
+      ],
+      "verdicts": [
+        {
+          "date": "2026-06-09",
+          "ticker": "OKLO",
+          "signal": "THESIS",
+          "approved": true,
+          "score": "6/6",
+          "notes": [
+            "\u2713 price 56.48 within 25% of 52wk low 45.58",
+            "\u00b7 stop 10% (constant, unscored)",
+            "\u00b7 convergence: other agent also holds OKLO",
+            "\u2713 20d avg vol 15.3M >= 1M",
+            "\u2713 conviction >= 6 fits thesis hold",
+            "\u2713 OKLO not on agent's banned list",
+            "\u2713 not a recent IPO",
+            "\u2713 open positions 0 < 6"
+          ],
+          "filled": true
+        },
+        {
+          "date": "2026-06-12",
+          "ticker": "SPCX",
+          "signal": "THESIS",
+          "approved": false,
+          "score": "5/6",
+          "notes": [
+            "\u2713 price 160.95 within 25% of 52wk low 160.95",
+            "\u00b7 stop 10% (constant, unscored)",
+            "\u00b7 no convergence",
+            "\u2713 20d avg vol 519.2M >= 1M",
+            "\u2713 conviction >= 6 fits thesis hold",
+            "\u2713 SPCX not on agent's banned list",
+            "\u2717 public 0d >= 90d",
+            "\u2713 open positions 1 < 6"
+          ]
+        },
+        {
+          "date": "2026-06-15",
+          "ticker": "SPCX",
+          "signal": "THESIS",
+          "approved": false,
+          "score": "5/6",
+          "notes": [
+            "\u2713 price 192.50 within 25% of 52wk low 160.95",
+            "\u00b7 stop 10% (constant, unscored)",
+            "\u00b7 no convergence",
+            "\u2713 20d avg vol 387.7M >= 1M",
+            "\u2713 conviction >= 6 fits thesis hold",
+            "\u2713 SPCX not on agent's banned list",
+            "\u2717 public 3d >= 90d",
+            "\u2713 open positions 1 < 6"
+          ]
+        },
+        {
+          "date": "2026-06-17",
+          "ticker": "SPCX",
+          "signal": "THESIS",
+          "approved": false,
+          "score": "5/6",
+          "notes": [
+            "\u2713 price 191.82 within 25% of 52wk low 160.95",
+            "\u00b7 stop 10% (constant, unscored)",
+            "\u00b7 no convergence",
+            "\u2713 20d avg vol 293.1M >= 1M",
+            "\u2713 conviction >= 6 fits thesis hold",
+            "\u2713 SPCX not on agent's banned list",
+            "\u2717 public 5d >= 90d",
+            "\u2713 open positions 1 < 6"
+          ]
+        },
+        {
+          "date": "2026-06-18",
+          "ticker": "SPCX",
+          "signal": "THESIS",
+          "approved": false,
+          "score": "5/6",
+          "notes": [
+            "\u2713 price 185.00 within 25% of 52wk low 160.95",
+            "\u00b7 stop 10% (constant, unscored)",
+            "\u00b7 no convergence",
+            "\u2713 20d avg vol 288.9M >= 1M",
+            "\u2713 conviction >= 6 fits thesis hold",
+            "\u2713 SPCX not on agent's banned list",
+            "\u2717 public 6d >= 90d",
+            "\u2713 open positions 1 < 6"
+          ]
+        },
+        {
+          "date": "2026-06-22",
+          "ticker": "SPCX",
+          "signal": "THESIS",
+          "approved": false,
+          "score": "5/6",
+          "notes": [
+            "\u2713 price 154.60 within 25% of 52wk low 154.60",
+            "\u00b7 stop 10% (constant, unscored)",
+            "\u00b7 no convergence",
+            "\u2713 20d avg vol 269.0M >= 1M",
+            "\u2713 conviction >= 6 fits thesis hold",
+            "\u2713 SPCX not on agent's banned list",
+            "\u2717 public 10d >= 90d",
+            "\u2713 open positions 1 < 6"
+          ]
+        },
+        {
+          "date": "2026-06-23",
+          "ticker": "SPCX",
+          "signal": "THESIS",
+          "approved": false,
+          "score": "5/6",
+          "notes": [
+            "\u2713 price 156.11 within 25% of 52wk low 154.60",
+            "\u00b7 stop 10% (constant, unscored)",
+            "\u00b7 no convergence",
+            "\u2713 20d avg vol 252.8M >= 1M",
+            "\u2713 conviction >= 6 fits thesis hold",
+            "\u2713 SPCX not on agent's banned list",
+            "\u2717 public 11d >= 90d",
+            "\u2713 open positions 1 < 6"
+          ]
+        },
+        {
+          "date": "2026-06-24",
+          "ticker": "SPCX",
+          "signal": "THESIS",
+          "approved": false,
+          "score": "5/6",
+          "notes": [
+            "\u2713 price 154.54 within 25% of 52wk low 154.54",
+            "\u00b7 stop 10% (constant, unscored)",
+            "\u00b7 no convergence",
+            "\u2713 20d avg vol 230.7M >= 1M",
+            "\u2713 conviction >= 6 fits thesis hold",
+            "\u2713 SPCX not on agent's banned list",
+            "\u2717 public 12d >= 90d",
+            "\u2713 open positions 1 < 6"
+          ]
+        },
+        {
+          "date": "2026-06-25",
+          "ticker": "SPCX",
+          "signal": "THESIS",
+          "approved": false,
+          "score": "5/6",
+          "notes": [
+            "\u2713 price 153.00 within 25% of 52wk low 153.00",
+            "\u00b7 stop 10% (constant, unscored)",
+            "\u00b7 no convergence",
+            "\u2713 20d avg vol 212.0M >= 1M",
+            "\u2713 conviction >= 6 fits thesis hold",
+            "\u2713 SPCX not on agent's banned list",
+            "\u2717 public 13d >= 90d",
+            "\u2713 open positions 1 < 6"
+          ]
+        },
+        {
+          "date": "2026-06-26",
+          "ticker": "OKLO",
+          "signal": "THESIS",
+          "approved": true,
+          "score": "6/6",
+          "notes": [
+            "\u2713 price 50.00 within 25% of 52wk low 45.58",
+            "\u00b7 stop 10% (constant, unscored)",
+            "\u00b7 no convergence",
+            "\u2713 20d avg vol 13.8M >= 1M",
+            "\u2713 conviction >= 6 fits thesis hold",
+            "\u2713 OKLO not on agent's banned list",
+            "\u2713 not a recent IPO",
+            "\u2713 open positions 0 < 6"
+          ],
+          "filled": true
+        },
+        {
+          "date": "2026-06-26",
+          "ticker": "SPCX",
+          "signal": "THESIS",
+          "approved": false,
+          "score": "5/6",
+          "notes": [
+            "\u2713 price 153.23 within 25% of 52wk low 153.00",
+            "\u00b7 stop 10% (constant, unscored)",
+            "\u00b7 no convergence",
+            "\u2713 20d avg vol 203.5M >= 1M",
+            "\u2713 conviction >= 6 fits thesis hold",
+            "\u2713 SPCX not on agent's banned list",
+            "\u2717 public 14d >= 90d",
+            "\u2713 open positions 1 < 6"
+          ]
+        },
+        {
+          "date": "2026-06-29",
+          "ticker": "SPCX",
+          "signal": "THESIS",
+          "approved": false,
+          "score": "5/6",
+          "notes": [
+            "\u2713 price 164.19 within 25% of 52wk low 153.00",
+            "\u00b7 stop 10% (constant, unscored)",
+            "\u00b7 no convergence",
+            "\u2713 20d avg vol 192.4M >= 1M",
+            "\u2713 conviction >= 6 fits thesis hold",
+            "\u2713 SPCX not on agent's banned list",
+            "\u2717 public 17d >= 90d",
+            "\u2713 open positions 1 < 6"
+          ]
+        },
+        {
+          "date": "2026-06-30",
+          "ticker": "SPCX",
+          "signal": "THESIS",
+          "approved": false,
+          "score": "5/6",
+          "notes": [
+            "\u2713 price 170.86 within 25% of 52wk low 153.00",
+            "\u00b7 stop 10% (constant, unscored)",
+            "\u00b7 no convergence",
+            "\u2713 20d avg vol 183.2M >= 1M",
+            "\u2713 conviction >= 6 fits thesis hold",
+            "\u2713 SPCX not on agent's banned list",
+            "\u2717 public 18d >= 90d",
+            "\u2713 open positions 1 < 6"
+          ]
+        },
+        {
+          "date": "2026-07-01",
+          "ticker": "SPCX",
+          "signal": "THESIS",
+          "approved": false,
+          "score": "5/6",
+          "notes": [
+            "\u2713 price 157.54 within 25% of 52wk low 153.00",
+            "\u00b7 stop 10% (constant, unscored)",
+            "\u00b7 no convergence",
+            "\u2713 20d avg vol 177.5M >= 1M",
+            "\u2713 conviction >= 6 fits thesis hold",
+            "\u2713 SPCX not on agent's banned list",
+            "\u2717 public 19d >= 90d",
+            "\u2713 open positions 1 < 6"
+          ]
+        },
+        {
+          "date": "2026-07-02",
+          "ticker": "NVDA",
+          "signal": "THESIS",
+          "approved": false,
+          "score": "5/6",
+          "notes": [
+            "\u2713 price 194.83 within 25% of 52wk low 157.04",
+            "\u00b7 stop 10% (constant, unscored)",
+            "\u00b7 convergence: other agent also holds NVDA",
+            "\u2713 20d avg vol 157.3M >= 1M",
+            "\u2713 conviction >= 6 fits thesis hold",
+            "\u2717 NVDA not on agent's banned list",
+            "\u2713 not a recent IPO",
+            "\u2713 open positions 1 < 6"
+          ]
+        },
+        {
+          "date": "2026-07-02",
+          "ticker": "SPCX",
+          "signal": "THESIS",
+          "approved": false,
+          "score": "5/6",
+          "notes": [
+            "\u2713 price 162.00 within 25% of 52wk low 153.00",
+            "\u00b7 stop 10% (constant, unscored)",
+            "\u00b7 no convergence",
+            "\u2713 20d avg vol 169.2M >= 1M",
+            "\u2713 conviction >= 6 fits thesis hold",
+            "\u2713 SPCX not on agent's banned list",
+            "\u2717 public 20d >= 90d",
+            "\u2713 open positions 1 < 6"
+          ]
+        },
+        {
+          "date": "2026-07-06",
+          "ticker": "NVDA",
+          "signal": "THESIS",
+          "approved": false,
+          "score": "5/6",
+          "notes": [
+            "\u2713 price 195.55 within 25% of 52wk low 158.03",
+            "\u00b7 stop 10% (constant, unscored)",
+            "\u00b7 convergence: other agent also holds NVDA",
+            "\u2713 20d avg vol 154.3M >= 1M",
+            "\u2713 conviction >= 6 fits thesis hold",
+            "\u2717 NVDA not on agent's banned list",
+            "\u2713 not a recent IPO",
+            "\u2713 open positions 1 < 6"
+          ]
+        },
+        {
+          "date": "2026-07-06",
+          "ticker": "SPCX",
+          "signal": "THESIS",
+          "approved": false,
+          "score": "5/6",
+          "notes": [
+            "\u2713 price 160.42 within 25% of 52wk low 153.00",
+            "\u00b7 stop 10% (constant, unscored)",
+            "\u00b7 no convergence",
+            "\u2713 20d avg vol 170.5M >= 1M",
+            "\u2713 conviction >= 6 fits thesis hold",
+            "\u2713 SPCX not on agent's banned list",
+            "\u2717 public 24d >= 90d",
+            "\u2713 open positions 1 < 6"
+          ]
+        },
+        {
+          "date": "2026-07-07",
+          "ticker": "NVDA",
+          "signal": "THESIS",
+          "approved": false,
+          "score": "5/6",
+          "notes": [
+            "\u2713 price 196.93 within 25% of 52wk low 158.03",
+            "\u00b7 stop 10% (constant, unscored)",
+            "\u00b7 no convergence",
+            "\u2713 20d avg vol 149.5M >= 1M",
+            "\u2713 conviction >= 6 fits thesis hold",
+            "\u2717 NVDA not on agent's banned list",
+            "\u2713 not a recent IPO",
+            "\u2713 open positions 1 < 6"
+          ]
+        },
+        {
+          "date": "2026-07-07",
+          "ticker": "SPCX",
+          "signal": "THESIS",
+          "approved": false,
+          "score": "5/6",
+          "notes": [
+            "\u2713 price 149.47 within 25% of 52wk low 149.47",
+            "\u00b7 stop 10% (constant, unscored)",
+            "\u00b7 no convergence",
+            "\u2713 20d avg vol 165.1M >= 1M",
+            "\u2713 conviction >= 6 fits thesis hold",
+            "\u2713 SPCX not on agent's banned list",
+            "\u2717 public 25d >= 90d",
+            "\u2713 open positions 1 < 6"
+          ]
+        },
+        {
+          "date": "2026-07-08",
+          "ticker": "SPCX",
+          "signal": "THESIS",
+          "approved": false,
+          "score": "5/6",
+          "notes": [
+            "\u2713 price 148.30 within 25% of 52wk low 148.30",
+            "\u00b7 stop 10% (constant, unscored)",
+            "\u00b7 no convergence",
+            "\u2713 20d avg vol 159.0M >= 1M",
+            "\u2713 conviction >= 6 fits thesis hold",
+            "\u2713 SPCX not on agent's banned list",
+            "\u2717 public 26d >= 90d",
+            "\u2713 open positions 1 < 6"
+          ]
+        },
+        {
+          "date": "2026-07-09",
+          "ticker": "NVDA",
+          "signal": "THESIS",
+          "approved": false,
+          "score": "5/6",
+          "notes": [
+            "\u2713 price 202.78 within 25% of 52wk low 162.66",
+            "\u00b7 stop 10% (constant, unscored)",
+            "\u00b7 no convergence",
+            "\u2713 20d avg vol 147.5M >= 1M",
+            "\u2713 conviction >= 6 fits thesis hold",
+            "\u2717 NVDA not on agent's banned list",
+            "\u2713 not a recent IPO",
+            "\u2713 open positions 1 < 6"
+          ]
+        },
+        {
+          "date": "2026-07-09",
+          "ticker": "SPCX",
+          "signal": "THESIS",
+          "approved": false,
+          "score": "5/6",
+          "notes": [
+            "\u2713 price 152.16 within 25% of 52wk low 148.30",
+            "\u00b7 stop 10% (constant, unscored)",
+            "\u00b7 no convergence",
+            "\u2713 20d avg vol 152.7M >= 1M",
+            "\u2713 conviction >= 6 fits thesis hold",
+            "\u2713 SPCX not on agent's banned list",
+            "\u2717 public 27d >= 90d",
+            "\u2713 open positions 1 < 6"
+          ]
+        },
+        {
+          "date": "2026-07-10",
+          "ticker": "SPCX",
+          "signal": "THESIS",
+          "approved": false,
+          "score": "5/6",
+          "notes": [
+            "\u2713 price 145.30 within 25% of 52wk low 145.30",
+            "\u00b7 stop 10% (constant, unscored)",
+            "\u00b7 no convergence",
+            "\u2713 20d avg vol 147.2M >= 1M",
+            "\u2713 conviction >= 6 fits thesis hold",
+            "\u2713 SPCX not on agent's banned list",
+            "\u2717 public 28d >= 90d",
+            "\u2713 open positions 1 < 6"
+          ]
+        },
+        {
+          "date": "2026-07-13",
+          "ticker": "NVDA",
+          "signal": "THESIS",
+          "approved": false,
+          "score": "5/6",
+          "notes": [
+            "\u2713 price 203.53 within 25% of 52wk low 163.85",
+            "\u00b7 stop 10% (constant, unscored)",
+            "\u00b7 no convergence",
+            "\u2713 20d avg vol 145.0M >= 1M",
+            "\u2713 conviction >= 6 fits thesis hold",
+            "\u2717 NVDA not on agent's banned list",
+            "\u2713 not a recent IPO",
+            "\u2713 open positions 1 < 6"
+          ]
+        },
+        {
+          "date": "2026-07-13",
+          "ticker": "SPCX",
+          "signal": "THESIS",
+          "approved": false,
+          "score": "5/6",
+          "notes": [
+            "\u2713 price 139.14 within 25% of 52wk low 139.14",
+            "\u00b7 stop 10% (constant, unscored)",
+            "\u00b7 no convergence",
+            "\u2713 20d avg vol 143.4M >= 1M",
+            "\u2713 conviction >= 6 fits thesis hold",
+            "\u2713 SPCX not on agent's banned list",
+            "\u2717 public 31d >= 90d",
+            "\u2713 open positions 1 < 6"
+          ]
+        },
+        {
+          "date": "2026-07-14",
+          "ticker": "SPCX",
+          "signal": "THESIS",
+          "approved": false,
+          "score": "5/6",
+          "notes": [
+            "\u2713 price 136.08 within 25% of 52wk low 136.08",
+            "\u00b7 stop 10% (constant, unscored)",
+            "\u00b7 no convergence",
+            "\u2713 20d avg vol 119.7M >= 1M",
+            "\u2713 conviction >= 6 fits thesis hold",
+            "\u2713 SPCX not on agent's banned list",
+            "\u2717 public 32d >= 90d",
+            "\u2713 open positions 1 < 6"
+          ]
+        },
+        {
+          "date": "2026-07-15",
+          "ticker": "SPCX",
+          "signal": "THESIS",
+          "approved": false,
+          "score": "5/6",
+          "notes": [
+            "\u2713 price 135.27 within 25% of 52wk low 135.27",
+            "\u00b7 stop 10% (constant, unscored)",
+            "\u00b7 no convergence",
+            "\u2713 20d avg vol 109.8M >= 1M",
+            "\u2713 conviction >= 6 fits thesis hold",
+            "\u2713 SPCX not on agent's banned list",
+            "\u2717 public 33d >= 90d",
+            "\u2713 open positions 1 < 6"
+          ]
+        },
+        {
+          "date": "2026-07-16",
+          "ticker": "CCJ",
+          "signal": "THESIS",
+          "approved": true,
+          "score": "6/6",
+          "notes": [
+            "\u2713 price 87.36 within 25% of 52wk low 70.33",
+            "\u00b7 stop 10% (constant, unscored)",
+            "\u00b7 no convergence",
+            "\u2713 20d avg vol 3.3M >= 1M",
+            "\u2713 conviction >= 6 fits thesis hold",
+            "\u2713 CCJ not on agent's banned list",
+            "\u2713 not a recent IPO",
+            "\u2713 open positions 0 < 6"
+          ],
+          "filled": true
+        },
+        {
+          "date": "2026-07-16",
+          "ticker": "OKLO",
+          "signal": "THESIS",
+          "approved": true,
+          "score": "6/6",
+          "notes": [
+            "\u2713 price 41.70 within 25% of 52wk low 41.70",
+            "\u00b7 stop 10% (constant, unscored)",
+            "\u00b7 no convergence",
+            "\u2713 20d avg vol 9.8M >= 1M",
+            "\u2713 conviction >= 6 fits thesis hold",
+            "\u2713 OKLO not on agent's banned list",
+            "\u2713 not a recent IPO",
+            "\u2713 open positions 1 < 6"
+          ],
+          "filled": true
+        },
+        {
+          "date": "2026-07-16",
+          "ticker": "SPCX",
+          "signal": "THESIS",
+          "approved": false,
+          "score": "5/6",
+          "notes": [
+            "\u2713 price 131.11 within 25% of 52wk low 131.11",
+            "\u00b7 stop 10% (constant, unscored)",
+            "\u00b7 no convergence",
+            "\u2713 20d avg vol 103.0M >= 1M",
+            "\u2713 conviction >= 6 fits thesis hold",
+            "\u2713 SPCX not on agent's banned list",
+            "\u2717 public 34d >= 90d",
+            "\u2713 open positions 2 < 6"
+          ]
+        },
+        {
+          "date": "2026-07-17",
+          "ticker": "NVDA",
+          "signal": "THESIS",
+          "approved": false,
+          "score": "5/6",
+          "notes": [
+            "\u2713 price 202.81 within 25% of 52wk low 164.98",
+            "\u00b7 stop 10% (constant, unscored)",
+            "\u00b7 no convergence",
+            "\u2713 20d avg vol 145.0M >= 1M",
+            "\u2713 conviction >= 6 fits thesis hold",
+            "\u2717 NVDA not on agent's banned list",
+            "\u2713 not a recent IPO",
+            "\u2713 open positions 2 < 6"
+          ]
+        },
+        {
+          "date": "2026-07-17",
+          "ticker": "SPCX",
+          "signal": "THESIS",
+          "approved": false,
+          "score": "5/6",
+          "notes": [
+            "\u2713 price 123.99 within 25% of 52wk low 123.99",
+            "\u00b7 stop 10% (constant, unscored)",
+            "\u00b7 no convergence",
+            "\u2713 20d avg vol 97.1M >= 1M",
+            "\u2713 conviction >= 6 fits thesis hold",
+            "\u2713 SPCX not on agent's banned list",
+            "\u2717 public 35d >= 90d",
+            "\u2713 open positions 2 < 6"
+          ]
+        },
+        {
+          "date": "2026-07-20",
+          "ticker": "NVDA",
+          "signal": "THESIS",
+          "approved": false,
+          "score": "5/6",
+          "notes": [
+            "\u2713 price 203.28 within 25% of 52wk low 164.98",
+            "\u00b7 stop 10% (constant, unscored)",
+            "\u00b7 no convergence",
+            "\u2713 20d avg vol 137.4M >= 1M",
+            "\u2713 conviction >= 6 fits thesis hold",
+            "\u2717 NVDA not on agent's banned list",
+            "\u2713 not a recent IPO",
+            "\u2713 open positions 2 < 6"
+          ]
+        },
+        {
+          "date": "2026-07-20",
+          "ticker": "SPCX",
+          "signal": "THESIS",
+          "approved": false,
+          "score": "5/6",
+          "notes": [
+            "\u2713 price 119.85 within 25% of 52wk low 119.85",
+            "\u00b7 stop 10% (constant, unscored)",
+            "\u00b7 no convergence",
+            "\u2713 20d avg vol 86.4M >= 1M",
+            "\u2713 conviction >= 6 fits thesis hold",
+            "\u2713 SPCX not on agent's banned list",
+            "\u2717 public 38d >= 90d",
+            "\u2713 open positions 2 < 6"
+          ]
+        },
+        {
+          "date": "2026-07-21",
+          "ticker": "SPCX",
+          "signal": "THESIS",
+          "approved": false,
+          "score": "5/6",
+          "notes": [
+            "\u2713 price 123.54 within 25% of 52wk low 119.85",
+            "\u00b7 stop 10% (constant, unscored)",
+            "\u00b7 no convergence",
+            "\u2713 20d avg vol 81.9M >= 1M",
+            "\u2713 conviction >= 6 fits thesis hold",
+            "\u2713 SPCX not on agent's banned list",
+            "\u2717 public 39d >= 90d",
+            "\u2713 open positions 2 < 6"
+          ]
+        }
+      ],
+      "equity_curve": [
+        [
+          "2026-01-02",
+          2500.0
+        ],
+        [
+          "2026-01-05",
+          2500.0
+        ],
+        [
+          "2026-01-06",
+          2500.0
+        ],
+        [
+          "2026-01-07",
+          2500.0
+        ],
+        [
+          "2026-01-08",
+          2500.0
+        ],
+        [
+          "2026-01-09",
+          2500.0
+        ],
+        [
+          "2026-01-12",
+          2500.0
+        ],
+        [
+          "2026-01-13",
+          2500.0
+        ],
+        [
+          "2026-01-14",
+          2500.0
+        ],
+        [
+          "2026-01-15",
+          2500.0
+        ],
+        [
+          "2026-01-16",
+          2500.0
+        ],
+        [
+          "2026-01-20",
+          2500.0
+        ],
+        [
+          "2026-01-21",
+          2500.0
+        ],
+        [
+          "2026-01-22",
+          2500.0
+        ],
+        [
+          "2026-01-23",
+          2500.0
+        ],
+        [
+          "2026-01-26",
+          2500.0
+        ],
+        [
+          "2026-01-27",
+          2500.0
+        ],
+        [
+          "2026-01-28",
+          2500.0
+        ],
+        [
+          "2026-01-29",
+          2500.0
+        ],
+        [
+          "2026-01-30",
+          2500.0
+        ],
+        [
+          "2026-02-02",
+          2500.0
+        ],
+        [
+          "2026-02-03",
+          2500.0
+        ],
+        [
+          "2026-02-04",
+          2500.0
+        ],
+        [
+          "2026-02-05",
+          2500.0
+        ],
+        [
+          "2026-02-06",
+          2500.0
+        ],
+        [
+          "2026-02-09",
+          2500.0
+        ],
+        [
+          "2026-02-10",
+          2500.0
+        ],
+        [
+          "2026-02-11",
+          2500.0
+        ],
+        [
+          "2026-02-12",
+          2500.0
+        ],
+        [
+          "2026-02-13",
+          2500.0
+        ],
+        [
+          "2026-02-17",
+          2500.0
+        ],
+        [
+          "2026-02-18",
+          2500.0
+        ],
+        [
+          "2026-02-19",
+          2500.0
+        ],
+        [
+          "2026-02-20",
+          2500.0
+        ],
+        [
+          "2026-02-23",
+          2500.0
+        ],
+        [
+          "2026-02-24",
+          2500.0
+        ],
+        [
+          "2026-02-25",
+          2500.0
+        ],
+        [
+          "2026-02-26",
+          2500.0
+        ],
+        [
+          "2026-02-27",
+          2500.0
+        ],
+        [
+          "2026-03-02",
+          2500.0
+        ],
+        [
+          "2026-03-03",
+          2500.0
+        ],
+        [
+          "2026-03-04",
+          2500.0
+        ],
+        [
+          "2026-03-05",
+          2500.0
+        ],
+        [
+          "2026-03-06",
+          2500.0
+        ],
+        [
+          "2026-03-09",
+          2500.0
+        ],
+        [
+          "2026-03-10",
+          2500.0
+        ],
+        [
+          "2026-03-11",
+          2500.0
+        ],
+        [
+          "2026-03-12",
+          2500.0
+        ],
+        [
+          "2026-03-13",
+          2500.0
+        ],
+        [
+          "2026-03-16",
+          2500.0
+        ],
+        [
+          "2026-03-17",
+          2500.0
+        ],
+        [
+          "2026-03-18",
+          2500.0
+        ],
+        [
+          "2026-03-19",
+          2500.0
+        ],
+        [
+          "2026-03-20",
+          2500.0
+        ],
+        [
+          "2026-03-23",
+          2500.0
+        ],
+        [
+          "2026-03-24",
+          2500.0
+        ],
+        [
+          "2026-03-25",
+          2500.0
+        ],
+        [
+          "2026-03-26",
+          2500.0
+        ],
+        [
+          "2026-03-27",
+          2500.0
+        ],
+        [
+          "2026-03-30",
+          2500.0
+        ],
+        [
+          "2026-03-31",
+          2500.0
+        ],
+        [
+          "2026-04-01",
+          2500.0
+        ],
+        [
+          "2026-04-02",
+          2500.0
+        ],
+        [
+          "2026-04-06",
+          2500.0
+        ],
+        [
+          "2026-04-07",
+          2500.0
+        ],
+        [
+          "2026-04-08",
+          2500.0
+        ],
+        [
+          "2026-04-09",
+          2500.0
+        ],
+        [
+          "2026-04-10",
+          2500.0
+        ],
+        [
+          "2026-04-13",
+          2500.0
+        ],
+        [
+          "2026-04-14",
+          2500.0
+        ],
+        [
+          "2026-04-15",
+          2500.0
+        ],
+        [
+          "2026-04-16",
+          2500.0
+        ],
+        [
+          "2026-04-17",
+          2500.0
+        ],
+        [
+          "2026-04-20",
+          2500.0
+        ],
+        [
+          "2026-04-21",
+          2500.0
+        ],
+        [
+          "2026-04-22",
+          2500.0
+        ],
+        [
+          "2026-04-23",
+          2500.0
+        ],
+        [
+          "2026-04-24",
+          2500.0
+        ],
+        [
+          "2026-04-27",
+          2500.0
+        ],
+        [
+          "2026-04-28",
+          2500.0
+        ],
+        [
+          "2026-04-29",
+          2500.0
+        ],
+        [
+          "2026-04-30",
+          2500.0
+        ],
+        [
+          "2026-05-01",
+          2500.0
+        ],
+        [
+          "2026-05-04",
+          2500.0
+        ],
+        [
+          "2026-05-05",
+          2500.0
+        ],
+        [
+          "2026-05-06",
+          2500.0
+        ],
+        [
+          "2026-05-07",
+          2500.0
+        ],
+        [
+          "2026-05-08",
+          2500.0
+        ],
+        [
+          "2026-05-11",
+          2500.0
+        ],
+        [
+          "2026-05-12",
+          2500.0
+        ],
+        [
+          "2026-05-13",
+          2500.0
+        ],
+        [
+          "2026-05-14",
+          2500.0
+        ],
+        [
+          "2026-05-15",
+          2500.0
+        ],
+        [
+          "2026-05-18",
+          2500.0
+        ],
+        [
+          "2026-05-19",
+          2500.0
+        ],
+        [
+          "2026-05-20",
+          2500.0
+        ],
+        [
+          "2026-05-21",
+          2500.0
+        ],
+        [
+          "2026-05-22",
+          2500.0
+        ],
+        [
+          "2026-05-26",
+          2500.0
+        ],
+        [
+          "2026-05-27",
+          2500.0
+        ],
+        [
+          "2026-05-28",
+          2500.0
+        ],
+        [
+          "2026-05-29",
+          2500.0
+        ],
+        [
+          "2026-06-01",
+          2500.0
+        ],
+        [
+          "2026-06-02",
+          2500.0
+        ],
+        [
+          "2026-06-03",
+          2500.0
+        ],
+        [
+          "2026-06-04",
+          2500.0
+        ],
+        [
+          "2026-06-05",
+          2500.0
+        ],
+        [
+          "2026-06-08",
+          2500.0
+        ],
+        [
+          "2026-06-09",
+          2500.0
+        ],
+        [
+          "2026-06-10",
+          2478.11
+        ],
+        [
+          "2026-06-11",
+          2512.28
+        ],
+        [
+          "2026-06-12",
+          2508.99
+        ],
+        [
+          "2026-06-15",
+          2537.91
+        ],
+        [
+          "2026-06-16",
+          2508.63
+        ],
+        [
+          "2026-06-17",
+          2520.83
+        ],
+        [
+          "2026-06-18",
+          2541.74
+        ],
+        [
+          "2026-06-22",
+          2517.09
+        ],
+        [
+          "2026-06-23",
+          2506.32
+        ],
+        [
+          "2026-06-24",
+          2478.46
+        ],
+        [
+          "2026-06-25",
+          2451.32
+        ],
+        [
+          "2026-06-26",
+          2442.33
+        ],
+        [
+          "2026-06-29",
+          2469.93
+        ],
+        [
+          "2026-06-30",
+          2465.63
+        ],
+        [
+          "2026-07-01",
+          2466.83
+        ],
+        [
+          "2026-07-02",
+          2465.93
+        ],
+        [
+          "2026-07-06",
+          2460.73
+        ],
+        [
+          "2026-07-07",
+          2421.33
+        ],
+        [
+          "2026-07-08",
+          2415.13
+        ],
+        [
+          "2026-07-09",
+          2435.03
+        ],
+        [
+          "2026-07-10",
+          2430.83
+        ],
+        [
+          "2026-07-13",
+          2400.43
+        ],
+        [
+          "2026-07-14",
+          2404.73
+        ],
+        [
+          "2026-07-15",
+          2399.23
+        ],
+        [
+          "2026-07-16",
+          2359.33
+        ],
+        [
+          "2026-07-17",
+          2342.33
+        ],
+        [
+          "2026-07-20",
+          2342.74
+        ],
+        [
+          "2026-07-21",
+          2396.01
+        ]
+      ]
+    },
+    "beta_baker": {
+      "agent": "beta_baker",
+      "label": "Beta \u2014 Baker / Atreides (live profile since 2026-07-30)",
+      "start_capital": 2500.0,
+      "final_equity": 2978.74,
+      "total_return_pct": 19.15,
+      "realized_pnl": -532.76,
+      "unrealized_pnl": 1011.51,
+      "closed_trades": 9,
+      "wins": "0",
+      "losses": "9",
+      "win_rate": 0.0,
+      "max_drawdown_pct": -31.02,
+      "judge_signals": 39,
+      "judge_approved": 14,
+      "judge_rejected": 25,
+      "approved_but_no_cash": 0,
+      "filled_entries": 14,
+      "final_past": {
+        "risk_tolerance": 5,
+        "conviction": 6,
+        "impulsivity": 7,
+        "patience": 6
+      },
+      "past_history": [
+        {
+          "cycle": 0,
+          "scores": {
+            "risk_tolerance": 5,
+            "conviction": 6,
+            "impulsivity": 3,
+            "patience": 6
+          },
+          "reasons": [
+            "initial"
+          ]
+        },
+        {
+          "cycle": 3,
+          "date": "2026-02-17",
+          "scores": {
+            "risk_tolerance": 5,
+            "conviction": 6,
+            "impulsivity": 4,
+            "patience": 6
+          },
+          "adjustments": {
+            "impulsivity": 4
+          },
+          "reasons": [
+            "1 max-stop exit(s) this period (OKLO) \u2014 Impulsivity +1 (recorded; no cascade defined in paper)"
+          ]
+        },
+        {
+          "cycle": 5,
+          "date": "2026-03-17",
+          "scores": {
+            "risk_tolerance": 5,
+            "conviction": 6,
+            "impulsivity": 5,
+            "patience": 6
+          },
+          "adjustments": {
+            "impulsivity": 5
+          },
+          "reasons": [
+            "2 max-stop exit(s) this period (APLD, OKLO) \u2014 Impulsivity +1 (recorded; no cascade defined in paper)"
+          ]
+        },
+        {
+          "cycle": 6,
+          "date": "2026-03-31",
+          "scores": {
+            "risk_tolerance": 5,
+            "conviction": 6,
+            "impulsivity": 6,
+            "patience": 6
+          },
+          "adjustments": {
+            "impulsivity": 6
+          },
+          "reasons": [
+            "4 max-stop exit(s) this period (OKLO, APLD, MU, OKLO) \u2014 Impulsivity +1 (recorded; no cascade defined in paper)"
+          ]
+        },
+        {
+          "cycle": 11,
+          "date": "2026-06-11",
+          "scores": {
+            "risk_tolerance": 5,
+            "conviction": 6,
+            "impulsivity": 7,
+            "patience": 6
+          },
+          "adjustments": {
+            "impulsivity": 7
+          },
+          "reasons": [
+            "1 max-stop exit(s) this period (CCJ) \u2014 Impulsivity +1 (recorded; no cascade defined in paper)"
+          ]
+        }
+      ],
+      "trades": [
+        {
+          "ticker": "OKLO",
+          "entry_date": "2026-01-02",
+          "exit_date": "2026-02-04",
+          "entry_price": 77.8,
+          "exit_price": 68.23,
+          "shares": 8.0,
+          "cost": 622.4,
+          "pnl": -76.56,
+          "pnl_pct": -0.123,
+          "exit_reason": "STOP_LOSS",
+          "status": "CLOSED"
+        },
+        {
+          "ticker": "APLD",
+          "entry_date": "2026-01-02",
+          "exit_date": "2026-03-06",
+          "entry_price": 28.11,
+          "exit_price": 25.14,
+          "shares": 22.2,
+          "cost": 624.04,
+          "pnl": -65.93,
+          "pnl_pct": -0.1057,
+          "exit_reason": "STOP_LOSS",
+          "status": "CLOSED"
+        },
+        {
+          "ticker": "OKLO",
+          "entry_date": "2026-02-04",
+          "exit_date": "2026-03-06",
+          "entry_price": 68.23,
+          "exit_price": 58.25,
+          "shares": 9.2,
+          "cost": 627.72,
+          "pnl": -91.82,
+          "pnl_pct": -0.1463,
+          "exit_reason": "STOP_LOSS",
+          "status": "CLOSED"
+        },
+        {
+          "ticker": "OKLO",
+          "entry_date": "2026-03-06",
+          "exit_date": "2026-03-26",
+          "entry_price": 58.25,
+          "exit_price": 51.81,
+          "shares": 0.5,
+          "cost": 29.12,
+          "pnl": -3.22,
+          "pnl_pct": -0.1106,
+          "exit_reason": "STOP_LOSS",
+          "status": "CLOSED"
+        },
+        {
+          "ticker": "APLD",
+          "entry_date": "2026-03-06",
+          "exit_date": "2026-03-30",
+          "entry_price": 25.14,
+          "exit_price": 20.545,
+          "shares": 24.9,
+          "cost": 625.99,
+          "pnl": -114.42,
+          "pnl_pct": -0.1828,
+          "exit_reason": "STOP_LOSS",
+          "status": "CLOSED"
+        },
+        {
+          "ticker": "MU",
+          "entry_date": "2026-03-06",
+          "exit_date": "2026-03-30",
+          "entry_price": 370.0876,
+          "exit_price": 321.7505,
+          "shares": 1.2,
+          "cost": 444.11,
+          "pnl": -58.0,
+          "pnl_pct": -0.1306,
+          "exit_reason": "STOP_LOSS",
+          "status": "CLOSED"
+        },
+        {
+          "ticker": "OKLO",
+          "entry_date": "2026-03-26",
+          "exit_date": "2026-03-30",
+          "entry_price": 51.81,
+          "exit_price": 45.58,
+          "shares": 0.5,
+          "cost": 25.91,
+          "pnl": -3.11,
+          "pnl_pct": -0.1202,
+          "exit_reason": "STOP_LOSS",
+          "status": "CLOSED"
+        },
+        {
+          "ticker": "CCJ",
+          "entry_date": "2026-02-05",
+          "exit_date": "2026-06-10",
+          "entry_price": 109.28,
+          "exit_price": 95.03,
+          "shares": 4.9,
+          "cost": 535.47,
+          "pnl": -69.82,
+          "pnl_pct": -0.1304,
+          "exit_reason": "STOP_LOSS",
+          "status": "CLOSED"
+        },
+        {
+          "ticker": "CCJ",
+          "entry_date": "2026-06-10",
+          "exit_date": "2026-07-20",
+          "entry_price": 95.03,
+          "exit_price": 84.85,
+          "shares": 4.9,
+          "cost": 465.65,
+          "pnl": -49.88,
+          "pnl_pct": -0.1071,
+          "exit_reason": "STOP_LOSS",
+          "status": "CLOSED"
+        }
+      ],
+      "open_at_end": [
+        {
+          "ticker": "NVDA",
+          "entry_date": "2026-02-04",
+          "entry_price": 173.9778,
+          "mark": 207.29,
+          "shares": 3.6,
+          "cost": 626.32,
+          "unrealized": 119.92
+        },
+        {
+          "ticker": "APLD",
+          "entry_date": "2026-03-30",
+          "entry_price": 20.545,
+          "mark": 30.05,
+          "shares": 30.4,
+          "cost": 624.57,
+          "unrealized": 288.95
+        },
+        {
+          "ticker": "MU",
+          "entry_date": "2026-03-30",
+          "entry_price": 321.7505,
+          "mark": 970.82,
+          "shares": 0.9,
+          "cost": 289.58,
+          "unrealized": 584.16
+        },
+        {
+          "ticker": "OKLO",
+          "entry_date": "2026-03-30",
+          "entry_price": 45.58,
+          "mark": 44.13,
+          "shares": 0.2,
+          "cost": 9.12,
+          "unrealized": -0.29
+        },
+        {
+          "ticker": "CCJ",
+          "entry_date": "2026-07-20",
+          "entry_price": 84.85,
+          "mark": 88.68,
+          "shares": 4.9,
+          "cost": 415.76,
+          "unrealized": 18.77
+        }
+      ],
+      "verdicts": [
+        {
+          "date": "2026-01-02",
+          "ticker": "APLD",
+          "signal": "THESIS",
+          "approved": true,
+          "score": "5/6",
+          "notes": [
+            "\u2717 price 28.11 within 25% of 52wk low 3.44",
+            "\u00b7 stop 10% (constant, unscored)",
+            "\u00b7 no convergence",
+            "\u2713 20d avg vol 25.5M >= 1M",
+            "\u2713 conviction >= 6 fits thesis hold",
+            "\u2713 APLD not on agent's banned list",
+            "\u2713 not a recent IPO",
+            "\u2713 open positions 0 < 5"
+          ],
+          "filled": true
+        },
+        {
+          "date": "2026-01-02",
+          "ticker": "OKLO",
+          "signal": "THESIS",
+          "approved": true,
+          "score": "5/6",
+          "notes": [
+            "\u2717 price 77.80 within 25% of 52wk low 19.80",
+            "\u00b7 stop 10% (constant, unscored)",
+            "\u00b7 no convergence",
+            "\u2713 20d avg vol 9.9M >= 1M",
+            "\u2713 conviction >= 6 fits thesis hold",
+            "\u2713 OKLO not on agent's banned list",
+            "\u2713 not a recent IPO",
+            "\u2713 open positions 1 < 5"
+          ],
+          "filled": true
+        },
+        {
+          "date": "2026-02-04",
+          "ticker": "NVDA",
+          "signal": "THESIS",
+          "approved": true,
+          "score": "5/6",
+          "notes": [
+            "\u2717 price 173.98 within 25% of 52wk low 94.18",
+            "\u00b7 stop 10% (constant, unscored)",
+            "\u00b7 convergence: other agent also holds NVDA",
+            "\u2713 20d avg vol 168.0M >= 1M",
+            "\u2713 conviction >= 6 fits thesis hold",
+            "\u2713 NVDA not on agent's banned list",
+            "\u2713 not a recent IPO",
+            "\u2713 open positions 1 < 5"
+          ],
+          "filled": true
+        },
+        {
+          "date": "2026-02-04",
+          "ticker": "OKLO",
+          "signal": "THESIS",
+          "approved": true,
+          "score": "5/6",
+          "notes": [
+            "\u2717 price 68.23 within 25% of 52wk low 19.80",
+            "\u00b7 stop 10% (constant, unscored)",
+            "\u00b7 no convergence",
+            "\u2713 20d avg vol 13.8M >= 1M",
+            "\u2713 conviction >= 6 fits thesis hold",
+            "\u2713 OKLO not on agent's banned list",
+            "\u2713 not a recent IPO",
+            "\u2713 open positions 2 < 5"
+          ],
+          "filled": true
+        },
+        {
+          "date": "2026-02-05",
+          "ticker": "CCJ",
+          "signal": "THESIS",
+          "approved": true,
+          "score": "5/6",
+          "notes": [
+            "\u2717 price 109.28 within 25% of 52wk low 36.61",
+            "\u00b7 stop 10% (constant, unscored)",
+            "\u00b7 no convergence",
+            "\u2713 20d avg vol 5.3M >= 1M",
+            "\u2713 conviction >= 6 fits thesis hold",
+            "\u2713 CCJ not on agent's banned list",
+            "\u2713 not a recent IPO",
+            "\u2713 open positions 3 < 5"
+          ],
+          "filled": true
+        },
+        {
+          "date": "2026-03-06",
+          "ticker": "APLD",
+          "signal": "THESIS",
+          "approved": true,
+          "score": "5/6",
+          "notes": [
+            "\u2717 price 25.14 within 25% of 52wk low 3.44",
+            "\u00b7 stop 10% (constant, unscored)",
+            "\u00b7 no convergence",
+            "\u2713 20d avg vol 21.3M >= 1M",
+            "\u2713 conviction >= 6 fits thesis hold",
+            "\u2713 APLD not on agent's banned list",
+            "\u2713 not a recent IPO",
+            "\u2713 open positions 2 < 5"
+          ],
+          "filled": true
+        },
+        {
+          "date": "2026-03-06",
+          "ticker": "MU",
+          "signal": "THESIS",
+          "approved": true,
+          "score": "5/6",
+          "notes": [
+            "\u2717 price 370.09 within 25% of 52wk low 64.56",
+            "\u00b7 stop 10% (constant, unscored)",
+            "\u00b7 convergence: other agent also holds MU",
+            "\u2713 20d avg vol 33.0M >= 1M",
+            "\u2713 conviction >= 6 fits thesis hold",
+            "\u2713 MU not on agent's banned list",
+            "\u2713 not a recent IPO",
+            "\u2713 open positions 3 < 5"
+          ],
+          "filled": true
+        },
+        {
+          "date": "2026-03-06",
+          "ticker": "OKLO",
+          "signal": "THESIS",
+          "approved": true,
+          "score": "5/6",
+          "notes": [
+            "\u2717 price 58.25 within 25% of 52wk low 19.80",
+            "\u00b7 stop 10% (constant, unscored)",
+            "\u00b7 no convergence",
+            "\u2713 20d avg vol 7.5M >= 1M",
+            "\u2713 conviction >= 6 fits thesis hold",
+            "\u2713 OKLO not on agent's banned list",
+            "\u2713 not a recent IPO",
+            "\u2713 open positions 4 < 5"
+          ],
+          "filled": true
+        },
+        {
+          "date": "2026-03-26",
+          "ticker": "OKLO",
+          "signal": "THESIS",
+          "approved": true,
+          "score": "5/6",
+          "notes": [
+            "\u2717 price 51.81 within 25% of 52wk low 19.80",
+            "\u00b7 stop 10% (constant, unscored)",
+            "\u00b7 no convergence",
+            "\u2713 20d avg vol 8.5M >= 1M",
+            "\u2713 conviction >= 6 fits thesis hold",
+            "\u2713 OKLO not on agent's banned list",
+            "\u2713 not a recent IPO",
+            "\u2713 open positions 4 < 5"
+          ],
+          "filled": true
+        },
+        {
+          "date": "2026-03-30",
+          "ticker": "APLD",
+          "signal": "THESIS",
+          "approved": true,
+          "score": "5/6",
+          "notes": [
+            "\u2717 price 20.55 within 25% of 52wk low 3.44",
+            "\u00b7 stop 10% (constant, unscored)",
+            "\u00b7 no convergence",
+            "\u2713 20d avg vol 16.3M >= 1M",
+            "\u2713 conviction >= 6 fits thesis hold",
+            "\u2713 APLD not on agent's banned list",
+            "\u2713 not a recent IPO",
+            "\u2713 open positions 2 < 5"
+          ],
+          "filled": true
+        },
+        {
+          "date": "2026-03-30",
+          "ticker": "MU",
+          "signal": "THESIS",
+          "approved": true,
+          "score": "5/6",
+          "notes": [
+            "\u2717 price 321.75 within 25% of 52wk low 64.56",
+            "\u00b7 stop 10% (constant, unscored)",
+            "\u00b7 no convergence",
+            "\u2713 20d avg vol 46.0M >= 1M",
+            "\u2713 conviction >= 6 fits thesis hold",
+            "\u2713 MU not on agent's banned list",
+            "\u2713 not a recent IPO",
+            "\u2713 open positions 3 < 5"
+          ],
+          "filled": true
+        },
+        {
+          "date": "2026-03-30",
+          "ticker": "OKLO",
+          "signal": "THESIS",
+          "approved": true,
+          "score": "5/6",
+          "notes": [
+            "\u2717 price 45.58 within 25% of 52wk low 19.80",
+            "\u00b7 stop 10% (constant, unscored)",
+            "\u00b7 no convergence",
+            "\u2713 20d avg vol 8.6M >= 1M",
+            "\u2713 conviction >= 6 fits thesis hold",
+            "\u2713 OKLO not on agent's banned list",
+            "\u2713 not a recent IPO",
+            "\u2713 open positions 4 < 5"
+          ],
+          "filled": true
+        },
+        {
+          "date": "2026-06-10",
+          "ticker": "CCJ",
+          "signal": "THESIS",
+          "approved": true,
+          "score": "5/6",
+          "notes": [
+            "\u2717 price 95.03 within 25% of 52wk low 63.71",
+            "\u00b7 stop 10% (constant, unscored)",
+            "\u00b7 convergence: other agent also holds CCJ",
+            "\u2713 20d avg vol 3.3M >= 1M",
+            "\u2713 conviction >= 6 fits thesis hold",
+            "\u2713 CCJ not on agent's banned list",
+            "\u2713 not a recent IPO",
+            "\u2713 open positions 4 < 5"
+          ],
+          "filled": true
+        },
+        {
+          "date": "2026-06-12",
+          "ticker": "SPCX",
+          "signal": "THESIS",
+          "approved": false,
+          "score": "4/6",
+          "notes": [
+            "\u2713 price 160.95 within 25% of 52wk low 160.95",
+            "\u00b7 stop 10% (constant, unscored)",
+            "\u00b7 no convergence",
+            "\u2713 20d avg vol 519.2M >= 1M",
+            "\u2713 conviction >= 6 fits thesis hold",
+            "\u2713 SPCX not on agent's banned list",
+            "\u2717 public 0d >= 90d",
+            "\u2717 open positions 5 < 5"
+          ]
+        },
+        {
+          "date": "2026-06-15",
+          "ticker": "SPCX",
+          "signal": "THESIS",
+          "approved": false,
+          "score": "4/6",
+          "notes": [
+            "\u2713 price 192.50 within 25% of 52wk low 160.95",
+            "\u00b7 stop 10% (constant, unscored)",
+            "\u00b7 no convergence",
+            "\u2713 20d avg vol 387.7M >= 1M",
+            "\u2713 conviction >= 6 fits thesis hold",
+            "\u2713 SPCX not on agent's banned list",
+            "\u2717 public 3d >= 90d",
+            "\u2717 open positions 5 < 5"
+          ]
+        },
+        {
+          "date": "2026-06-17",
+          "ticker": "SPCX",
+          "signal": "THESIS",
+          "approved": false,
+          "score": "4/6",
+          "notes": [
+            "\u2713 price 191.82 within 25% of 52wk low 160.95",
+            "\u00b7 stop 10% (constant, unscored)",
+            "\u00b7 no convergence",
+            "\u2713 20d avg vol 293.1M >= 1M",
+            "\u2713 conviction >= 6 fits thesis hold",
+            "\u2713 SPCX not on agent's banned list",
+            "\u2717 public 5d >= 90d",
+            "\u2717 open positions 5 < 5"
+          ]
+        },
+        {
+          "date": "2026-06-18",
+          "ticker": "SPCX",
+          "signal": "THESIS",
+          "approved": false,
+          "score": "4/6",
+          "notes": [
+            "\u2713 price 185.00 within 25% of 52wk low 160.95",
+            "\u00b7 stop 10% (constant, unscored)",
+            "\u00b7 no convergence",
+            "\u2713 20d avg vol 288.9M >= 1M",
+            "\u2713 conviction >= 6 fits thesis hold",
+            "\u2713 SPCX not on agent's banned list",
+            "\u2717 public 6d >= 90d",
+            "\u2717 open positions 5 < 5"
+          ]
+        },
+        {
+          "date": "2026-06-22",
+          "ticker": "SPCX",
+          "signal": "THESIS",
+          "approved": false,
+          "score": "4/6",
+          "notes": [
+            "\u2713 price 154.60 within 25% of 52wk low 154.60",
+            "\u00b7 stop 10% (constant, unscored)",
+            "\u00b7 no convergence",
+            "\u2713 20d avg vol 269.0M >= 1M",
+            "\u2713 conviction >= 6 fits thesis hold",
+            "\u2713 SPCX not on agent's banned list",
+            "\u2717 public 10d >= 90d",
+            "\u2717 open positions 5 < 5"
+          ]
+        },
+        {
+          "date": "2026-06-23",
+          "ticker": "SPCX",
+          "signal": "THESIS",
+          "approved": false,
+          "score": "4/6",
+          "notes": [
+            "\u2713 price 156.11 within 25% of 52wk low 154.60",
+            "\u00b7 stop 10% (constant, unscored)",
+            "\u00b7 no convergence",
+            "\u2713 20d avg vol 252.8M >= 1M",
+            "\u2713 conviction >= 6 fits thesis hold",
+            "\u2713 SPCX not on agent's banned list",
+            "\u2717 public 11d >= 90d",
+            "\u2717 open positions 5 < 5"
+          ]
+        },
+        {
+          "date": "2026-06-24",
+          "ticker": "SPCX",
+          "signal": "THESIS",
+          "approved": false,
+          "score": "4/6",
+          "notes": [
+            "\u2713 price 154.54 within 25% of 52wk low 154.54",
+            "\u00b7 stop 10% (constant, unscored)",
+            "\u00b7 no convergence",
+            "\u2713 20d avg vol 230.7M >= 1M",
+            "\u2713 conviction >= 6 fits thesis hold",
+            "\u2713 SPCX not on agent's banned list",
+            "\u2717 public 12d >= 90d",
+            "\u2717 open positions 5 < 5"
+          ]
+        },
+        {
+          "date": "2026-06-25",
+          "ticker": "SPCX",
+          "signal": "THESIS",
+          "approved": false,
+          "score": "4/6",
+          "notes": [
+            "\u2713 price 153.00 within 25% of 52wk low 153.00",
+            "\u00b7 stop 10% (constant, unscored)",
+            "\u00b7 no convergence",
+            "\u2713 20d avg vol 212.0M >= 1M",
+            "\u2713 conviction >= 6 fits thesis hold",
+            "\u2713 SPCX not on agent's banned list",
+            "\u2717 public 13d >= 90d",
+            "\u2717 open positions 5 < 5"
+          ]
+        },
+        {
+          "date": "2026-06-26",
+          "ticker": "SPCX",
+          "signal": "THESIS",
+          "approved": false,
+          "score": "4/6",
+          "notes": [
+            "\u2713 price 153.23 within 25% of 52wk low 153.00",
+            "\u00b7 stop 10% (constant, unscored)",
+            "\u00b7 no convergence",
+            "\u2713 20d avg vol 203.5M >= 1M",
+            "\u2713 conviction >= 6 fits thesis hold",
+            "\u2713 SPCX not on agent's banned list",
+            "\u2717 public 14d >= 90d",
+            "\u2717 open positions 5 < 5"
+          ]
+        },
+        {
+          "date": "2026-06-29",
+          "ticker": "SPCX",
+          "signal": "THESIS",
+          "approved": false,
+          "score": "4/6",
+          "notes": [
+            "\u2713 price 164.19 within 25% of 52wk low 153.00",
+            "\u00b7 stop 10% (constant, unscored)",
+            "\u00b7 no convergence",
+            "\u2713 20d avg vol 192.4M >= 1M",
+            "\u2713 conviction >= 6 fits thesis hold",
+            "\u2713 SPCX not on agent's banned list",
+            "\u2717 public 17d >= 90d",
+            "\u2717 open positions 5 < 5"
+          ]
+        },
+        {
+          "date": "2026-06-30",
+          "ticker": "SPCX",
+          "signal": "THESIS",
+          "approved": false,
+          "score": "4/6",
+          "notes": [
+            "\u2713 price 170.86 within 25% of 52wk low 153.00",
+            "\u00b7 stop 10% (constant, unscored)",
+            "\u00b7 no convergence",
+            "\u2713 20d avg vol 183.2M >= 1M",
+            "\u2713 conviction >= 6 fits thesis hold",
+            "\u2713 SPCX not on agent's banned list",
+            "\u2717 public 18d >= 90d",
+            "\u2717 open positions 5 < 5"
+          ]
+        },
+        {
+          "date": "2026-07-01",
+          "ticker": "SPCX",
+          "signal": "THESIS",
+          "approved": false,
+          "score": "4/6",
+          "notes": [
+            "\u2713 price 157.54 within 25% of 52wk low 153.00",
+            "\u00b7 stop 10% (constant, unscored)",
+            "\u00b7 no convergence",
+            "\u2713 20d avg vol 177.5M >= 1M",
+            "\u2713 conviction >= 6 fits thesis hold",
+            "\u2713 SPCX not on agent's banned list",
+            "\u2717 public 19d >= 90d",
+            "\u2717 open positions 5 < 5"
+          ]
+        },
+        {
+          "date": "2026-07-02",
+          "ticker": "SPCX",
+          "signal": "THESIS",
+          "approved": false,
+          "score": "4/6",
+          "notes": [
+            "\u2713 price 162.00 within 25% of 52wk low 153.00",
+            "\u00b7 stop 10% (constant, unscored)",
+            "\u00b7 no convergence",
+            "\u2713 20d avg vol 169.2M >= 1M",
+            "\u2713 conviction >= 6 fits thesis hold",
+            "\u2713 SPCX not on agent's banned list",
+            "\u2717 public 20d >= 90d",
+            "\u2717 open positions 5 < 5"
+          ]
+        },
+        {
+          "date": "2026-07-06",
+          "ticker": "SPCX",
+          "signal": "THESIS",
+          "approved": false,
+          "score": "4/6",
+          "notes": [
+            "\u2713 price 160.42 within 25% of 52wk low 153.00",
+            "\u00b7 stop 10% (constant, unscored)",
+            "\u00b7 no convergence",
+            "\u2713 20d avg vol 170.5M >= 1M",
+            "\u2713 conviction >= 6 fits thesis hold",
+            "\u2713 SPCX not on agent's banned list",
+            "\u2717 public 24d >= 90d",
+            "\u2717 open positions 5 < 5"
+          ]
+        },
+        {
+          "date": "2026-07-07",
+          "ticker": "SPCX",
+          "signal": "THESIS",
+          "approved": false,
+          "score": "4/6",
+          "notes": [
+            "\u2713 price 149.47 within 25% of 52wk low 149.47",
+            "\u00b7 stop 10% (constant, unscored)",
+            "\u00b7 no convergence",
+            "\u2713 20d avg vol 165.1M >= 1M",
+            "\u2713 conviction >= 6 fits thesis hold",
+            "\u2713 SPCX not on agent's banned list",
+            "\u2717 public 25d >= 90d",
+            "\u2717 open positions 5 < 5"
+          ]
+        },
+        {
+          "date": "2026-07-08",
+          "ticker": "SPCX",
+          "signal": "THESIS",
+          "approved": false,
+          "score": "4/6",
+          "notes": [
+            "\u2713 price 148.30 within 25% of 52wk low 148.30",
+            "\u00b7 stop 10% (constant, unscored)",
+            "\u00b7 no convergence",
+            "\u2713 20d avg vol 159.0M >= 1M",
+            "\u2713 conviction >= 6 fits thesis hold",
+            "\u2713 SPCX not on agent's banned list",
+            "\u2717 public 26d >= 90d",
+            "\u2717 open positions 5 < 5"
+          ]
+        },
+        {
+          "date": "2026-07-09",
+          "ticker": "SPCX",
+          "signal": "THESIS",
+          "approved": false,
+          "score": "4/6",
+          "notes": [
+            "\u2713 price 152.16 within 25% of 52wk low 148.30",
+            "\u00b7 stop 10% (constant, unscored)",
+            "\u00b7 no convergence",
+            "\u2713 20d avg vol 152.7M >= 1M",
+            "\u2713 conviction >= 6 fits thesis hold",
+            "\u2713 SPCX not on agent's banned list",
+            "\u2717 public 27d >= 90d",
+            "\u2717 open positions 5 < 5"
+          ]
+        },
+        {
+          "date": "2026-07-10",
+          "ticker": "SPCX",
+          "signal": "THESIS",
+          "approved": false,
+          "score": "4/6",
+          "notes": [
+            "\u2713 price 145.30 within 25% of 52wk low 145.30",
+            "\u00b7 stop 10% (constant, unscored)",
+            "\u00b7 no convergence",
+            "\u2713 20d avg vol 147.2M >= 1M",
+            "\u2713 conviction >= 6 fits thesis hold",
+            "\u2713 SPCX not on agent's banned list",
+            "\u2717 public 28d >= 90d",
+            "\u2717 open positions 5 < 5"
+          ]
+        },
+        {
+          "date": "2026-07-13",
+          "ticker": "SPCX",
+          "signal": "THESIS",
+          "approved": false,
+          "score": "4/6",
+          "notes": [
+            "\u2713 price 139.14 within 25% of 52wk low 139.14",
+            "\u00b7 stop 10% (constant, unscored)",
+            "\u00b7 no convergence",
+            "\u2713 20d avg vol 143.4M >= 1M",
+            "\u2713 conviction >= 6 fits thesis hold",
+            "\u2713 SPCX not on agent's banned list",
+            "\u2717 public 31d >= 90d",
+            "\u2717 open positions 5 < 5"
+          ]
+        },
+        {
+          "date": "2026-07-14",
+          "ticker": "SPCX",
+          "signal": "THESIS",
+          "approved": false,
+          "score": "4/6",
+          "notes": [
+            "\u2713 price 136.08 within 25% of 52wk low 136.08",
+            "\u00b7 stop 10% (constant, unscored)",
+            "\u00b7 no convergence",
+            "\u2713 20d avg vol 119.7M >= 1M",
+            "\u2713 conviction >= 6 fits thesis hold",
+            "\u2713 SPCX not on agent's banned list",
+            "\u2717 public 32d >= 90d",
+            "\u2717 open positions 5 < 5"
+          ]
+        },
+        {
+          "date": "2026-07-15",
+          "ticker": "SPCX",
+          "signal": "THESIS",
+          "approved": false,
+          "score": "4/6",
+          "notes": [
+            "\u2713 price 135.27 within 25% of 52wk low 135.27",
+            "\u00b7 stop 10% (constant, unscored)",
+            "\u00b7 no convergence",
+            "\u2713 20d avg vol 109.8M >= 1M",
+            "\u2713 conviction >= 6 fits thesis hold",
+            "\u2713 SPCX not on agent's banned list",
+            "\u2717 public 33d >= 90d",
+            "\u2717 open positions 5 < 5"
+          ]
+        },
+        {
+          "date": "2026-07-16",
+          "ticker": "SPCX",
+          "signal": "THESIS",
+          "approved": false,
+          "score": "4/6",
+          "notes": [
+            "\u2713 price 131.11 within 25% of 52wk low 131.11",
+            "\u00b7 stop 10% (constant, unscored)",
+            "\u00b7 no convergence",
+            "\u2713 20d avg vol 103.0M >= 1M",
+            "\u2713 conviction >= 6 fits thesis hold",
+            "\u2713 SPCX not on agent's banned list",
+            "\u2717 public 34d >= 90d",
+            "\u2717 open positions 5 < 5"
+          ]
+        },
+        {
+          "date": "2026-07-17",
+          "ticker": "SPCX",
+          "signal": "THESIS",
+          "approved": false,
+          "score": "4/6",
+          "notes": [
+            "\u2713 price 123.99 within 25% of 52wk low 123.99",
+            "\u00b7 stop 10% (constant, unscored)",
+            "\u00b7 no convergence",
+            "\u2713 20d avg vol 97.1M >= 1M",
+            "\u2713 conviction >= 6 fits thesis hold",
+            "\u2713 SPCX not on agent's banned list",
+            "\u2717 public 35d >= 90d",
+            "\u2717 open positions 5 < 5"
+          ]
+        },
+        {
+          "date": "2026-07-20",
+          "ticker": "CCJ",
+          "signal": "THESIS",
+          "approved": true,
+          "score": "6/6",
+          "notes": [
+            "\u2713 price 84.85 within 25% of 52wk low 70.33",
+            "\u00b7 stop 10% (constant, unscored)",
+            "\u00b7 no convergence",
+            "\u2713 20d avg vol 3.6M >= 1M",
+            "\u2713 conviction >= 6 fits thesis hold",
+            "\u2713 CCJ not on agent's banned list",
+            "\u2713 not a recent IPO",
+            "\u2713 open positions 4 < 5"
+          ],
+          "filled": true
+        },
+        {
+          "date": "2026-07-20",
+          "ticker": "SPCX",
+          "signal": "THESIS",
+          "approved": false,
+          "score": "4/6",
+          "notes": [
+            "\u2713 price 119.85 within 25% of 52wk low 119.85",
+            "\u00b7 stop 10% (constant, unscored)",
+            "\u00b7 no convergence",
+            "\u2713 20d avg vol 86.4M >= 1M",
+            "\u2713 conviction >= 6 fits thesis hold",
+            "\u2713 SPCX not on agent's banned list",
+            "\u2717 public 38d >= 90d",
+            "\u2717 open positions 5 < 5"
+          ]
+        },
+        {
+          "date": "2026-07-21",
+          "ticker": "SPCX",
+          "signal": "THESIS",
+          "approved": false,
+          "score": "4/6",
+          "notes": [
+            "\u2713 price 123.54 within 25% of 52wk low 119.85",
+            "\u00b7 stop 10% (constant, unscored)",
+            "\u00b7 no convergence",
+            "\u2713 20d avg vol 81.9M >= 1M",
+            "\u2713 conviction >= 6 fits thesis hold",
+            "\u2713 SPCX not on agent's banned list",
+            "\u2717 public 39d >= 90d",
+            "\u2717 open positions 5 < 5"
+          ]
+        }
+      ],
+      "equity_curve": [
+        [
+          "2026-01-02",
+          2500.0
+        ],
+        [
+          "2026-01-05",
+          2638.72
+        ],
+        [
+          "2026-01-06",
+          2690.13
+        ],
+        [
+          "2026-01-07",
+          2690.59
+        ],
+        [
+          "2026-01-08",
+          2743.43
+        ],
+        [
+          "2026-01-09",
+          2932.53
+        ],
+        [
+          "2026-01-12",
+          2921.82
+        ],
+        [
+          "2026-01-13",
+          2845.24
+        ],
+        [
+          "2026-01-14",
+          2822.74
+        ],
+        [
+          "2026-01-15",
+          2767.04
+        ],
+        [
+          "2026-01-16",
+          2843.44
+        ],
+        [
+          "2026-01-20",
+          2760.21
+        ],
+        [
+          "2026-01-21",
+          2758.13
+        ],
+        [
+          "2026-01-22",
+          2752.23
+        ],
+        [
+          "2026-01-23",
+          2791.32
+        ],
+        [
+          "2026-01-26",
+          2715.23
+        ],
+        [
+          "2026-01-27",
+          2853.69
+        ],
+        [
+          "2026-01-28",
+          2901.56
+        ],
+        [
+          "2026-01-29",
+          2787.03
+        ],
+        [
+          "2026-01-30",
+          2642.65
+        ],
+        [
+          "2026-02-02",
+          2615.08
+        ],
+        [
+          "2026-02-03",
+          2692.3
+        ],
+        [
+          "2026-02-04",
+          2499.59
+        ],
+        [
+          "2026-02-05",
+          2353.22
+        ],
+        [
+          "2026-02-06",
+          2663.35
+        ],
+        [
+          "2026-02-09",
+          2824.36
+        ],
+        [
+          "2026-02-10",
+          2737.41
+        ],
+        [
+          "2026-02-11",
+          2699.05
+        ],
+        [
+          "2026-02-12",
+          2643.4
+        ],
+        [
+          "2026-02-13",
+          2607.98
+        ],
+        [
+          "2026-02-17",
+          2595.7
+        ],
+        [
+          "2026-02-18",
+          2585.03
+        ],
+        [
+          "2026-02-19",
+          2591.01
+        ],
+        [
+          "2026-02-20",
+          2518.95
+        ],
+        [
+          "2026-02-23",
+          2526.93
+        ],
+        [
+          "2026-02-24",
+          2575.8
+        ],
+        [
+          "2026-02-25",
+          2555.4
+        ],
+        [
+          "2026-02-26",
+          2525.24
+        ],
+        [
+          "2026-02-27",
+          2411.69
+        ],
+        [
+          "2026-03-02",
+          2497.25
+        ],
+        [
+          "2026-03-03",
+          2397.34
+        ],
+        [
+          "2026-03-04",
+          2497.22
+        ],
+        [
+          "2026-03-05",
+          2423.16
+        ],
+        [
+          "2026-03-06",
+          2280.7
+        ],
+        [
+          "2026-03-09",
+          2401.36
+        ],
+        [
+          "2026-03-10",
+          2453.84
+        ],
+        [
+          "2026-03-11",
+          2482.69
+        ],
+        [
+          "2026-03-12",
+          2428.38
+        ],
+        [
+          "2026-03-13",
+          2395.43
+        ],
+        [
+          "2026-03-16",
+          2453.7
+        ],
+        [
+          "2026-03-17",
+          2474.29
+        ],
+        [
+          "2026-03-18",
+          2435.12
+        ],
+        [
+          "2026-03-19",
+          2394.08
+        ],
+        [
+          "2026-03-20",
+          2303.1
+        ],
+        [
+          "2026-03-23",
+          2345.39
+        ],
+        [
+          "2026-03-24",
+          2332.98
+        ],
+        [
+          "2026-03-25",
+          2373.67
+        ],
+        [
+          "2026-03-26",
+          2225.83
+        ],
+        [
+          "2026-03-27",
+          2161.42
+        ],
+        [
+          "2026-03-30",
+          2022.98
+        ],
+        [
+          "2026-03-31",
+          2196.8
+        ],
+        [
+          "2026-04-01",
+          2263.51
+        ],
+        [
+          "2026-04-02",
+          2277.15
+        ],
+        [
+          "2026-04-06",
+          2297.45
+        ],
+        [
+          "2026-04-07",
+          2296.98
+        ],
+        [
+          "2026-04-08",
+          2445.38
+        ],
+        [
+          "2026-04-09",
+          2395.51
+        ],
+        [
+          "2026-04-10",
+          2435.58
+        ],
+        [
+          "2026-04-13",
+          2488.11
+        ],
+        [
+          "2026-04-14",
+          2664.62
+        ],
+        [
+          "2026-04-15",
+          2660.46
+        ],
+        [
+          "2026-04-16",
+          2643.46
+        ],
+        [
+          "2026-04-17",
+          2699.69
+        ],
+        [
+          "2026-04-20",
+          2729.91
+        ],
+        [
+          "2026-04-21",
+          2661.03
+        ],
+        [
+          "2026-04-22",
+          2788.76
+        ],
+        [
+          "2026-04-23",
+          2880.43
+        ],
+        [
+          "2026-04-24",
+          2873.89
+        ],
+        [
+          "2026-04-27",
+          2894.8
+        ],
+        [
+          "2026-04-28",
+          2782.07
+        ],
+        [
+          "2026-04-29",
+          2787.49
+        ],
+        [
+          "2026-04-30",
+          2843.47
+        ],
+        [
+          "2026-05-01",
+          2828.33
+        ],
+        [
+          "2026-05-04",
+          2910.65
+        ],
+        [
+          "2026-05-05",
+          3071.43
+        ],
+        [
+          "2026-05-06",
+          3316.28
+        ],
+        [
+          "2026-05-07",
+          3202.83
+        ],
+        [
+          "2026-05-08",
+          3288.3
+        ],
+        [
+          "2026-05-11",
+          3466.48
+        ],
+        [
+          "2026-05-12",
+          3408.74
+        ],
+        [
+          "2026-05-13",
+          3499.02
+        ],
+        [
+          "2026-05-14",
+          3532.59
+        ],
+        [
+          "2026-05-15",
+          3297.26
+        ],
+        [
+          "2026-05-18",
+          3131.35
+        ],
+        [
+          "2026-05-19",
+          3055.6
+        ],
+        [
+          "2026-05-20",
+          3187.75
+        ],
+        [
+          "2026-05-21",
+          3465.93
+        ],
+        [
+          "2026-05-22",
+          3372.86
+        ],
+        [
+          "2026-05-26",
+          3496.68
+        ],
+        [
+          "2026-05-27",
+          3630.8
+        ],
+        [
+          "2026-05-28",
+          3668.39
+        ],
+        [
+          "2026-05-29",
+          3637.79
+        ],
+        [
+          "2026-06-01",
+          3762.89
+        ],
+        [
+          "2026-06-02",
+          3820.78
+        ],
+        [
+          "2026-06-03",
+          3679.12
+        ],
+        [
+          "2026-06-04",
+          3599.26
+        ],
+        [
+          "2026-06-05",
+          3240.65
+        ],
+        [
+          "2026-06-08",
+          3380.38
+        ],
+        [
+          "2026-06-09",
+          3380.02
+        ],
+        [
+          "2026-06-10",
+          3185.58
+        ],
+        [
+          "2026-06-11",
+          3392.77
+        ],
+        [
+          "2026-06-12",
+          3428.16
+        ],
+        [
+          "2026-06-15",
+          3694.98
+        ],
+        [
+          "2026-06-16",
+          3613.81
+        ],
+        [
+          "2026-06-17",
+          3592.22
+        ],
+        [
+          "2026-06-18",
+          3731.17
+        ],
+        [
+          "2026-06-22",
+          3753.5
+        ],
+        [
+          "2026-06-23",
+          3589.68
+        ],
+        [
+          "2026-06-24",
+          3471.34
+        ],
+        [
+          "2026-06-25",
+          3561.21
+        ],
+        [
+          "2026-06-26",
+          3426.4
+        ],
+        [
+          "2026-06-29",
+          3400.13
+        ],
+        [
+          "2026-06-30",
+          3404.41
+        ],
+        [
+          "2026-07-01",
+          3209.59
+        ],
+        [
+          "2026-07-02",
+          3069.68
+        ],
+        [
+          "2026-07-06",
+          3098.66
+        ],
+        [
+          "2026-07-07",
+          2962.42
+        ],
+        [
+          "2026-07-08",
+          3020.04
+        ],
+        [
+          "2026-07-09",
+          3084.96
+        ],
+        [
+          "2026-07-10",
+          3069.79
+        ],
+        [
+          "2026-07-13",
+          2905.77
+        ],
+        [
+          "2026-07-14",
+          2972.6
+        ],
+        [
+          "2026-07-15",
+          2918.19
+        ],
+        [
+          "2026-07-16",
+          2756.58
+        ],
+        [
+          "2026-07-17",
+          2707.83
+        ],
+        [
+          "2026-07-20",
+          2783.31
+        ],
+        [
+          "2026-07-21",
+          2978.74
+        ]
+      ]
+    }
+  }
+}
