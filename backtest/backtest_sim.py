@@ -1,8 +1,11 @@
 #!/usr/bin/env python3
 """Simulation runner, Judge checklist, Rocky PAST tuning."""
-import json, os, sys, datetime
+import os, sys, math
 sys.path.insert(0, os.path.dirname(__file__))
-from backtest_engine import *
+from backtest_engine import (
+    ALLOC, alpha_should_enter, alpha_should_exit,
+    beta_should_enter, beta_should_exit
+)
 
 # ─── JUDGE 13-POINT CHECKLIST (simplified for backtest) ───
 def judge_evaluate(agent, ticker, entry_price, row, past_scores, agent_name):
@@ -17,8 +20,8 @@ def judge_evaluate(agent, ticker, entry_price, row, past_scores, agent_name):
         else: notes.append(f'RSI {rsi:.1f} >= 35 ✗')
     else:
         low52 = row.get('Low52', entry_price)
-        if entry_price <= low52 * 1.25: score += 1; notes.append(f'Within 25% of 52wk low ✓')
-        else: notes.append(f'Not near 52wk low ✗')
+        if entry_price <= low52 * 1.25: score += 1; notes.append('Within 25% of 52wk low ✓')
+        else: notes.append('Not near 52wk low ✗')
     
     # 2. Position size appropriate ($2,500 allocation)?
     score += 1; notes.append('Position <= $2,500 ✓')
@@ -136,6 +139,9 @@ def run_simulation(df, ticker, ticker_info, agent_name, start_date, end_date):
                 position = None
         
         # ── CHECK ENTRY ──
+        # NOTE: unlike backtest_v2.py (just_exited guard), this original v0.1
+        # harness allows re-entry on the same bar as an exit. Kept as-is so the
+        # v0.1 results stay reproducible; use backtest_v2.py for current figures.
         if position is None:
             if agent_name == 'alpha':
                 should_enter = alpha_should_enter(row, position)
@@ -161,15 +167,16 @@ def run_simulation(df, ticker, ticker_info, agent_name, start_date, end_date):
                         shares = min(cash / entry_price, ALLOC * max_pct / entry_price)
                     else:
                         shares = min(cash / entry_price, ALLOC * 0.25 / entry_price)  # Baker: 25% max per position (diversified)
-                    shares = round(shares, 1)
-                    cost = entry_price * shares
-                    cash -= cost
-                    position = {
-                        'entry_price': entry_price,
-                        'shares': shares,
-                        'entry_date': date,
-                        'entry_row': row
-                    }
+                    shares = max(0, math.floor(shares * 10) / 10)  # floor to 1 decimal, never round up past cash
+                    if shares > 0:  # budget < 0.1 share: skip, don't open a 0-share phantom position
+                        cost = entry_price * shares
+                        cash -= cost
+                        position = {
+                            'entry_price': entry_price,
+                            'shares': shares,
+                            'entry_date': date,
+                            'entry_row': row
+                        }
         
         # ── BI-WEEKLY ROCKY TUNING ──
         if i > 0 and i % 10 == 0:  # every 10 trading days (~2 weeks)
