@@ -70,7 +70,7 @@ checks).
    historical submissions. Includes positive controls and adversarial
    cases (backdated-clock attack, understated position value,
    allocation_share inflation, circular risk budget, negative shares,
-   partial-trust fallback). 34 cases: 34 pass.
+   partial-trust fallback, thesis-claimed shared cash). 36 cases: 36 pass.
 2. **Shadow mode.** Run before the LLM Judge for N sessions, logging only.
    Compare verdicts. The danger case is Gate-FAIL + Judge-APPROVE
    (over-rejection) — those get mandatory human review. Gate-PASS +

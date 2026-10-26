@@ -37,7 +37,7 @@ cap) · `RISK` (wider stop ⇒ smaller size, dollar risk constant) ·
 below) · `REENTRY` (5-day ban after stop-out).
 
 **Validation methodology:** (1) selftest ran 19 synthetic scenarios at
-launch (34 after the update below)
+launch (36 after the update below)
 built from the failure patterns documented in the Judge's decision log
 (including positive controls and adversarial cases — backdated-clock
 attack, understated position value, allocation_share inflation,
@@ -75,7 +75,10 @@ all three trusted sources are supplied (it previously filled missing ones
 from the thesis itself); `SLOTS` rejects unknown layers; earnings on the
 evaluation day need gap sizing unless trusted data marks them reported;
 a stop at the 20% cap gets one-cent tolerance; future quote timestamps
-fail `PRICE`. Selftest: 34 cases, 34 pass.
+fail `PRICE`; `allocation_share` is read only from the trusted account
+payload (default 1.0 = single-agent v5), never from the thesis; naive quote
+timestamps are treated as UTC instead of crashing `PRICE`. Selftest: 36
+cases, 36 pass.
 
 ---
 

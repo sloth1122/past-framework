@@ -100,11 +100,15 @@ def _parse_time(v):
     if v is None:
         return None
     if isinstance(v, datetime):
-        return v
-    try:
-        return datetime.fromisoformat(str(v).replace("Z", "+00:00"))
-    except (ValueError, TypeError):
-        return None
+        dt = v
+    else:
+        try:
+            dt = datetime.fromisoformat(str(v).replace("Z", "+00:00"))
+        except (ValueError, TypeError):
+            return None
+    # naive timestamps are treated as UTC (same rule as REENTRY records), so
+    # aware-vs-naive subtraction can never crash a check
+    return dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)
 
 def _parse_date(v):
     """Accept date, datetime, or ISO string → date, else None."""
@@ -140,7 +144,8 @@ def check_capital(thesis, account, config) -> GateResult:
 
     Verified order cost = shares x entry_price (recomputed from first
     principles). A materially understated position_value cannot enlarge
-    the permitted purchase. allocation_share is bounded to (0, 1] — an
+    the permitted purchase. allocation_share comes from the TRUSTED account
+    payload (never the thesis) and is bounded to (0, 1] — an
     agent cannot multiply its own allowance.
     """
     shares = thesis["shares"]
@@ -160,7 +165,10 @@ def check_capital(thesis, account, config) -> GateResult:
                 verified=f"${order_cost:,.2f} (shares×entry)",
             )
     # (b) allocation_share must be a valid fraction of the account
-    share = thesis.get("allocation_share", 1.0)
+    # Trusted source only: a thesis cannot set its own share of shared cash.
+    # Default 1.0 = the whole account belongs to one agent (Arena v5: Beta is
+    # the sole agent since Oct 22 2026); a multi-agent harness must supply it.
+    share = account.get("allocation_share", 1.0)
     if not (0.0 < share <= 1.0):
         return GateResult(
             "CAPITAL", False,
@@ -587,12 +595,22 @@ def selftest():
     run_case("understated position_value", t, a,
              copy.deepcopy(base_market), copy.deepcopy(base_book), False, clock=now)
 
-    # 1c. allocation_share > 1 (agent multiplying its own allowance)
+    # 1c. allocation_share > 1 in the trusted account payload is invalid
     t = copy.deepcopy(base_thesis)
-    t.update({"allocation_share": 2.0, "position_value": 5000.0,
-              "shares": 50.0})
-    run_case("allocation_share > 1", t, copy.deepcopy(base_account),
-             copy.deepcopy(base_market), copy.deepcopy(base_book), False, clock=now)
+    t.update({"position_value": 2800.0, "shares": 28.0})
+    run_case("allocation_share > 1", t, {"cash": 9000.0, "allocation_share": 2.0},
+             copy.deepcopy(base_market), copy.deepcopy(base_book), False,
+             clock=now, expect_fail_ids={"CAPITAL"})
+
+    # 1d. shared-cash misrep: the THESIS claims the whole account (share 1.0)
+    # but the trusted account says this agent owns 30% → deployable $2,685 <
+    # $2,800 order. The thesis value must be ignored.
+    t = copy.deepcopy(base_thesis)
+    t.update({"position_value": 2800.0, "shares": 28.0, "allocation_share": 1.0})
+    run_case("thesis cannot claim shared cash (trusted share 0.3)", t,
+             {"cash": 9000.0, "allocation_share": 0.3},
+             copy.deepcopy(base_market), copy.deepcopy(base_book), False,
+             clock=now, expect_fail_ids={"CAPITAL"})
 
     # 2. ALAB market-cap 5.5x error: claimed 8.5B actual 46.7B
     t = copy.deepcopy(base_thesis); t["market_cap"] = 8.5e9
@@ -818,6 +836,12 @@ def selftest():
     run_case("future quote timestamp (PRICE)", copy.deepcopy(base_thesis),
              copy.deepcopy(base_account), m, copy.deepcopy(base_book), False,
              clock=now, expect_fail_ids={"PRICE"})
+
+    # PRICE: a timezone-naive quote timestamp (UTC) must not crash the check
+    m = copy.deepcopy(base_market)
+    m["quote_time"] = fresh.replace(tzinfo=None).isoformat()
+    run_case("naive UTC quote timestamp → PASS (no crash)", copy.deepcopy(base_thesis),
+             copy.deepcopy(base_account), m, copy.deepcopy(base_book), True, clock=now)
 
     print(f"\nSelf-test: {passing} passed, {failing} failed")
     if failing:
