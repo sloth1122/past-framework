@@ -32,7 +32,7 @@ The PAST research paper's Limitations section (now §9.2 of v2.4; §7.2 in the J
 
 > "Beta's [return] was dominated by a single MU trade. In a different market regime, Beta's [low] win rate with 10% stops could produce consecutive losses without a compensating win."
 
-*(The specific dollar and win-rate figures in the original sentence — +$754, +$880, 27% — came from the v1 harness and have been retracted; see the Backtest Comparison section below and CHANGELOG v0.5.0. The qualitative warning stands and the v3 backtest confirms it: every closed Beta trade was a stop-loss.)*
+*(The specific dollar and win-rate figures in the original sentence — +$754, +$880, 27% — came from the v1 harness and have been retracted; see the Backtest Comparison section below and CHANGELOG v0.4.1. The qualitative warning stands and the v3 backtest confirms it: every closed Beta trade was a stop-loss.)*
 
 The paper also noted:
 - **Regime dependence** — the Aschenbrenner thesis (AI infrastructure) works in a bull market, fails in a downturn
