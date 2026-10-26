@@ -288,7 +288,9 @@ def check_rr_arithmetic(thesis) -> GateResult:
     rr = (target - entry) / (entry - stop)
     claimed_rr = thesis.get("claimed_rr", rr)
     ok = rr >= CONFIG["min_rr"]
-    honest = abs(rr - claimed_rr) / max(claimed_rr, 0.01) < 0.05  # 5% tolerance
+    # one-sided: only OVERstating the edge is misrepresentation (BA claimed
+    # 2.02, real 1.02); a conservative claim below the real R/R is honest
+    honest = claimed_rr <= rr * 1.05  # 5% tolerance
     if not honest:
         return GateResult(
             "RR", False,
@@ -462,9 +464,13 @@ def effective_config(account) -> dict:
     of CURRENT equity when the trusted account payload carries `equity`;
     otherwise the CONFIG constants (set at ~$9.7K equity) apply."""
     cfg = dict(CONFIG)
-    eq = (account or {}).get("equity")
+    acct = account or {}
+    eq = acct.get("equity")
     if isinstance(eq, (int, float)) and not isinstance(eq, bool) \
             and math.isfinite(eq) and eq > 0:
+        share = acct.get("allocation_share", 1.0)
+        if isinstance(share, (int, float)) and 0.0 < share <= 1.0:
+            eq = eq * share  # limits apply to THIS agent's slice of the account
         cfg["max_position_value"] = round(0.30 * eq, 2)
         cfg["risk_budget"] = round(0.03 * eq, 2)
     return cfg
@@ -887,6 +893,21 @@ def selftest():
     run_case("tz-aware earnings in 3d, no implied move (EARN)",
              copy.deepcopy(base_thesis), copy.deepcopy(base_account), m,
              copy.deepcopy(base_book), False, clock=now, expect_fail_ids={"EARN"})
+
+    # RR: a conservative claim (2.0 vs real 2.5) is honest, not misrepresentation
+    t = copy.deepcopy(base_thesis); t.update({"target_price": 125.0, "claimed_rr": 2.0})
+    run_case("understated R/R (2.0 claimed, 2.5 real) → PASS", t,
+             copy.deepcopy(base_account), copy.deepcopy(base_market),
+             copy.deepcopy(base_book), True, clock=now)
+    # equity limits scale by allocation_share: agent slice $6K → cap $1,800,
+    # risk budget $180. $1,500 position inside the cap; risk 15 × $13 = $195.
+    t = copy.deepcopy(base_thesis)
+    t.update({"shares": 15.0, "position_value": 1500.0, "stop_price": 87.0,
+              "target_price": 126.0, "claimed_rr": 2.0})
+    run_case("equity × allocation_share: $195 risk > $180 budget (RISK)", t,
+             {"cash": 9000.0, "equity": 20000.0, "allocation_share": 0.3},
+             copy.deepcopy(base_market), copy.deepcopy(base_book), False,
+             clock=now, expect_fail_ids={"RISK"})
 
     print(f"\nSelf-test: {passing} passed, {failing} failed")
     if failing:

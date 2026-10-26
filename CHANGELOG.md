@@ -37,7 +37,7 @@ cap) · `RISK` (wider stop ⇒ smaller size, dollar risk constant) ·
 below) · `REENTRY` (5-day ban after stop-out).
 
 **Validation methodology:** (1) selftest ran 19 synthetic scenarios at
-launch (41 after the update below)
+launch (43 after the update below)
 built from the failure patterns documented in the Judge's decision log
 (including positive controls and adversarial cases — backdated-clock
 attack, understated position value, allocation_share inflation,
@@ -53,15 +53,16 @@ from the harness (live MCP pulls). Thesis-embedded data is restricted
 to explicit `--demo` mode; the evaluation clock is always the gate's
 own, preventing backdated freshness checks.
 
-**Integration:** the pre-market health check now runs the Gate 1
+**Integration:** the pre-market health check
+(`scripts/trading_arena_premarket_health.py`, published with PR #6) runs the Gate 1
 selftest every morning (5 AM) alongside model/API checks — any edit
 that breaks a check alerts before agents trade.
 
 ### Updated 2026-10-26 — synced to the live Arena v5.1 Gate 1
 
 The published `gate1_pregate.py` is now the version the arena runs
-(Oct 24 2026; the Arena v5 rule changes are documented in the v0.5.0+
-entries from PR #6): `STOP` =
+(Oct 24 2026; the Arena v5 rule changes are documented in the v0.5.x
+entries added by PR #6, merged after this one): `STOP` =
 2×ATR14 with a 5% floor (was 10%) and 20% cap; `RISK` uses an explicit
 budget of 3% of equity ($290) instead of 10% of the position cap;
 `EARN` no longer blacks out earnings — earnings inside the hold must be
@@ -80,7 +81,8 @@ payload (default 1.0 = single-agent v5), never from the thesis; naive quote
 timestamps are treated as UTC instead of crashing `PRICE`; `STOP` fails
 closed without ATR14; `REENTRY` matches tickers case-insensitively; the
 30% cap and 3% risk budget are derived from `equity` when the trusted
-account payload provides it. Selftest: 41 cases, 41 pass.
+account payload provides it (scaled by `allocation_share`); `RR` rejects
+only overstated ratios, not conservative ones. Selftest: 43 cases, 43 pass.
 
 ---
 

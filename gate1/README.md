@@ -17,7 +17,7 @@ get wrong.
 | `SLOTS` | book/layer position caps; layer must be compute, memory, networking or power |
 | `MKTCAP` | claimed market cap vs verified source (±10%) |
 | `PRICE` | stale quote (>5 min), wrong-instrument parse (>±2%), gap-chase (>1.5% above claimed) |
-| `RR` | R/R recomputed from entry/target/stop — floor 2:1, >5% misrep rejected |
+| `RR` | R/R recomputed from entry/target/stop — floor 2:1; a claim >5% above the real ratio is rejected |
 | `STOP` | **stop distance = 2×ATR14, floor 5%, cap 20% below entry** — normal noise can't kill a months-long thesis (anti-whipsaw); fails closed without ATR14 |
 | `RISK` | wider stop ⇒ smaller size; dollar risk ≤ fixed budget (3% of equity) |
 | `EARN` | earnings inside the hold are allowed but must be gap-sized: shares × max(stop distance, implied move) ≤ risk budget |
@@ -71,7 +71,7 @@ checks).
    historical submissions. Includes positive controls and adversarial
    cases (backdated-clock attack, understated position value,
    allocation_share inflation, circular risk budget, negative shares,
-   partial-trust fallback, thesis-claimed shared cash, ticker-casing evasion). 41 cases: 41 pass.
+   partial-trust fallback, thesis-claimed shared cash, ticker-casing evasion). 43 cases: 43 pass.
 2. **Shadow mode.** Run before the LLM Judge for N sessions, logging only.
    Compare verdicts. The danger case is Gate-FAIL + Judge-APPROVE
    (over-rejection) — those get mandatory human review. Gate-PASS +
