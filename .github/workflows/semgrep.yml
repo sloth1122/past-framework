@@ -23,8 +23,11 @@ jobs:
         env:
           BASE_REF: ${{ github.base_ref }}
         run: |
-          if git fetch origin "$BASE_REF" --depth=1 \
-             && git show "origin/$BASE_REF:.semgrep.yml" > /tmp/base.semgrep.yml 2>/dev/null; then
+          # Keep the PR's own policy so rule edits can be smoke-tested below.
+          cp .semgrep.yml /tmp/pr.semgrep.yml
+          if ! git fetch origin "$BASE_REF" --depth=1; then
+            echo "::warning::Could not fetch origin/$BASE_REF — using PR's own .semgrep.yml"
+          elif git show "origin/$BASE_REF:.semgrep.yml" > /tmp/base.semgrep.yml 2>/dev/null; then
             cp /tmp/base.semgrep.yml .semgrep.yml
             echo "Using base-branch .semgrep.yml from origin/$BASE_REF"
           else
@@ -41,3 +44,10 @@ jobs:
 
       - name: Run Semgrep
         run: semgrep scan --config .semgrep.yml --error --json
+
+      # Non-blocking: validates rule edits made in this PR (the gate above
+      # deliberately uses the base branch's policy).
+      - name: Smoke-test PR's own Semgrep policy (non-blocking)
+        if: github.event_name == 'pull_request'
+        continue-on-error: true
+        run: semgrep scan --config /tmp/pr.semgrep.yml --error

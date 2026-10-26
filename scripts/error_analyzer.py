@@ -18,7 +18,6 @@ Pattern detection:
 Usage (CLI):
   python3 error_analyzer.py              # Check last 24h, alert if recurring
   python3 error_analyzer.py --hours 48   # Check last 48h
-  python3 error_analyzer.py --dry-run    # Show what would be analyzed, don't call LLM
 """
 import sys
 import os
@@ -183,7 +182,6 @@ def main():
     import argparse
     parser = argparse.ArgumentParser(description="Trading Arena Error Analyzer")
     parser.add_argument("--hours", type=int, default=24, help="Hours to analyze")
-    parser.add_argument("--dry-run", action="store_true", help="Show what would be analyzed, don't alert")
     args = parser.parse_args()
 
     should_alert, report = analyze_errors(hours=args.hours)
