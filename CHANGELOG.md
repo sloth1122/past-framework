@@ -33,9 +33,11 @@ clear 2× ATR14, with position size reduced so dollar risk is unchanged.
 gap-chase detection) · `RR` (recomputed from entry/target/stop; floor
 2:1; >5% misrepresentation rejected) · `STOP` (2×ATR14 minimum, 20%
 cap) · `RISK` (wider stop ⇒ smaller size, dollar risk constant) ·
-`EARN` (7-day blackout) · `REENTRY` (5-day ban after stop-out).
+`EARN` (7-day blackout as first shipped; now gap sizing — see update
+below) · `REENTRY` (5-day ban after stop-out).
 
-**Validation methodology:** (1) selftest runs 19 synthetic scenarios
+**Validation methodology:** (1) selftest ran 19 synthetic scenarios at
+launch (34 after the update below)
 built from the failure patterns documented in the Judge's decision log
 (including positive controls and adversarial cases — backdated-clock
 attack, understated position value, allocation_share inflation,
@@ -58,13 +60,22 @@ that breaks a check alerts before agents trade.
 ### Updated 2026-10-26 — synced to the live Arena v5.1 Gate 1
 
 The published `gate1_pregate.py` is now the version the arena runs
-(Oct 24 2026; see v0.5.x for the Arena v5 rule changes): `STOP` =
+(Oct 24 2026; the Arena v5 rule changes are documented in the v0.5.0+
+entries from PR #6): `STOP` =
 2×ATR14 with a 5% floor (was 10%) and 20% cap; `RISK` uses an explicit
 budget of 3% of equity ($290) instead of 10% of the position cap;
 `EARN` no longer blacks out earnings — earnings inside the hold must be
 gap-sized against the risk budget; max 4 positions (was 5), max
-position $2,900 (was $750), $50 fee buffer (was a $500 reserve).
-Selftest: 26 cases, 26 pass.
+position $2,900 (was $750, and now enforced in `CAPITAL`), $50 fee buffer
+(was a $500 reserve).
+
+Review fixes in the same update: new `INPUT` check fails closed on zero,
+negative or non-numeric sizing fields; enforce mode refuses to run unless
+all three trusted sources are supplied (it previously filled missing ones
+from the thesis itself); `SLOTS` rejects unknown layers; earnings on the
+evaluation day need gap sizing unless trusted data marks them reported;
+a stop at the 20% cap gets one-cent tolerance; future quote timestamps
+fail `PRICE`. Selftest: 34 cases, 34 pass.
 
 ---
 

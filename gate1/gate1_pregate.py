@@ -37,9 +37,10 @@ Usage:
 
 import argparse
 import json
+import math
 import sys
 from dataclasses import dataclass, field, asdict
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta, timezone, date
 from pathlib import Path
 
 # ---------------------------------------------------------------------------
@@ -108,13 +109,31 @@ def _parse_time(v):
 def _parse_date(v):
     """Accept date, datetime, or ISO string → date, else None."""
     dt = _parse_time(v)
-    if isinstance(v, __import__("datetime").date) and not isinstance(v, datetime):
+    if isinstance(v, date) and not isinstance(v, datetime):
         return v
     return dt.date() if dt else None
 
 # ---------------------------------------------------------------------------
 # CHECKS — every one is deterministic: number vs number.
 # ---------------------------------------------------------------------------
+
+POSITIVE_FIELDS = ("shares", "entry_price", "target_price", "stop_price",
+                   "position_value")
+
+def check_inputs(thesis) -> GateResult:
+    """Fail closed on malformed numbers: zero/negative/NaN/inf share counts or
+    prices would otherwise make CAPITAL/RISK/EARN compare a non-positive
+    number against a positive budget and pass."""
+    bad = []
+    for k in POSITIVE_FIELDS:
+        v = thesis.get(k)
+        if isinstance(v, bool) or not isinstance(v, (int, float)) \
+                or not math.isfinite(v) or v <= 0:
+            bad.append(f"{k}={v!r}")
+    if bad:
+        return GateResult("INPUT", False,
+                          "non-positive or non-numeric field(s): " + ", ".join(bad))
+    return GateResult("INPUT", True, "all sizing/price fields finite and > 0")
 
 def check_capital(thesis, account, config) -> GateResult:
     """Deployable capital check — catches the INTC $3,377 vs $385 error.
@@ -151,7 +170,17 @@ def check_capital(thesis, account, config) -> GateResult:
     shared_cash = account["cash"]                    # whole account cash
     reserve = config["deployable_reserve"]
     deployable = max(0.0, shared_cash - reserve) * share
-    # (c) VERIFIED order cost (not the claimed value) must fit
+    # (c) per-trade position cap (v5.1: 30% of equity)
+    cap = config["max_position_value"]
+    if order_cost > cap * 1.001:
+        return GateResult(
+            "CAPITAL", False,
+            f"verified order cost ${order_cost:,.2f} exceeds per-trade cap "
+            f"${cap:,.2f}",
+            claimed=f"${claimed_position_value:,.2f}",
+            verified=f"${order_cost:,.2f} (shares×entry)",
+        )
+    # (d) VERIFIED order cost (not the claimed value) must fit
     ok = order_cost <= deployable * 1.001  # 0.1% rounding grace
     return GateResult(
         "CAPITAL", ok,
@@ -167,6 +196,10 @@ def check_slots(thesis, agent_book, config) -> GateResult:
     n_open = len(agent_book["positions"])
     ok_count = n_open < config["max_positions"]
     layer = thesis.get("layer", "").lower()
+    known = [k.lower() for k in config["known_layers"]]
+    if layer not in known:
+        return GateResult("SLOTS", False,
+                          f"layer '{layer}' not one of {', '.join(known)}")
     n_layer = sum(1 for p in agent_book["positions"]
                   if p.get("layer", "").lower() == layer)
     ok_layer = n_layer < config["per_layer_max"]
@@ -206,6 +239,9 @@ def check_price_freshness(thesis, market, now) -> GateResult:
     if quote_time is None:
         return GateResult("PRICE", False, "no/invalid quote timestamp from source")
     age = (now - quote_time).total_seconds()
+    if age < -60:
+        return GateResult("PRICE", False,
+                          f"quote timestamp {-age:.0f}s in the future — bad source clock")
     if age > CONFIG["price_freshness_seconds"]:
         return GateResult(
             "PRICE", False,
@@ -272,7 +308,8 @@ def check_stop_vs_volatility(thesis, market) -> GateResult:
         return GateResult("STOP", False, f"stop ${stop} >= entry ${entry}")
     floor_distance = entry * CONFIG["stop_floor_pct"]     # 5% of entry
     cap_distance = entry * CONFIG["stop_cap_pct"]         # 20% of entry
-    within_cap = actual_distance <= cap_distance + eps
+    cent = 0.01  # prices are quoted in cents: a stop AT the cap must be placeable
+    within_cap = actual_distance <= cap_distance + cent
     if not atr or atr <= 0:
         # no ATR available: enforce the 5% floor and 20% cap only
         ok = actual_distance >= floor_distance - eps and within_cap
@@ -282,9 +319,10 @@ def check_stop_vs_volatility(thesis, market) -> GateResult:
                           f"cap {CONFIG['stop_cap_pct']*100:.0f}%)")
     atr_distance = CONFIG["stop_atr_multiple"] * atr      # 2 x ATR14
     min_stop_distance = min(max(floor_distance, atr_distance), cap_distance)
-    ok = actual_distance >= min_stop_distance - eps and within_cap
+    tol = cent if min_stop_distance == cap_distance else eps
+    ok = actual_distance >= min_stop_distance - tol and within_cap
     reason = ""
-    if actual_distance < min_stop_distance - eps:
+    if actual_distance < min_stop_distance - tol:
         if min_stop_distance == floor_distance:
             reason = " — below 5% floor"
         elif min_stop_distance == cap_distance:
@@ -330,20 +368,22 @@ def check_earnings_window(thesis, market, now) -> GateResult:
     `implied_move_pct` (options-implied earnings move, %) must come from
     the trusted market data; if earnings are inside the hold and it is
     missing, FAIL — the gap cannot be sized. Earnings dates in the PAST
-    (or today) are allowed through (already reported)."""
+    are allowed through (already reported). Earnings TODAY count as inside
+    the hold unless trusted market data sets `earnings_reported: true`
+    (e.g. a BMO print) — an after-close report is the highest gap risk."""
     edate = _parse_date(market.get("earnings_date"))
     if edate is None:
         return GateResult("EARN", True, "no earnings date on file")
     today = now.date()
     days = (edate - today).days
     window = CONFIG["earnings_hold_window_days"]
-    if days <= 0:
+    if days < 0 or (days == 0 and market.get("earnings_reported") is True):
         return GateResult("EARN", True,
                           f"earnings already reported ({abs(days)}d ago)")
     if days > window:
         return GateResult("EARN", True,
                           f"earnings {days} days out (beyond {window}d hold window)")
-    # strictly future earnings inside the hold → gap sizing required
+    # earnings today (not yet reported) or ahead, inside the hold → gap sizing
     implied = market.get("implied_move_pct")
     if implied is None or implied <= 0:
         return GateResult("EARN", False,
@@ -398,6 +438,7 @@ def check_no_reentry(thesis, agent_book, now) -> GateResult:
 
 CHECKS = [
     # (check_id, function, arg-builder from (thesis, account, market, book, now))
+    ("INPUT",   check_inputs,         lambda th, ac, mk, bk, nw: (th,)),
     ("CAPITAL", check_capital,        lambda th, ac, mk, bk, nw: (th, ac, CONFIG)),
     ("SLOTS",   check_slots,          lambda th, ac, mk, bk, nw: (th, bk, CONFIG)),
     ("MKTCAP",  check_market_cap,     lambda th, ac, mk, bk, nw: (th, mk)),
@@ -690,21 +731,22 @@ def selftest():
              copy.deepcopy(amzn_market), copy.deepcopy(amzn_book), True,
              clock=now)
 
-    # (b) same trade at 30 sh: stop risk 30 × $14.22 = $426.60 > $290 (RISK)
-    # and gap risk 30 × $19.15 = $574.38 > $290 (EARN) — both fire.
+    # (b) same trade at 30 sh: $7,459 > $2,900 cap (CAPITAL), stop risk
+    # 30 × $14.22 = $426.60 > $290 (RISK) and gap risk 30 × $19.15 =
+    # $574.38 > $290 (EARN) — all three fire.
     t = copy.deepcopy(amzn_thesis)
     t.update({"shares": 30, "position_value": 30 * 248.64})
     run_case("v5 AMZN 30 sh oversized for earnings gap", t,
              copy.deepcopy(amzn_account), copy.deepcopy(amzn_market),
              copy.deepcopy(amzn_book), False, clock=now,
-             expect_fail_ids={"RISK", "EARN"})
+             expect_fail_ids={"CAPITAL", "RISK", "EARN"})
 
-    # (b2) 18 sh isolates the GAP rule: stop risk $255.96 passes RISK, but
-    # gap risk 18 × $19.15 = $344.73 > $290 → EARN only.
-    t = copy.deepcopy(amzn_thesis)
-    t.update({"shares": 18, "position_value": 18 * 248.64})
-    run_case("v5 AMZN 18 sh: gap sizing binds, stop risk OK", t,
-             copy.deepcopy(amzn_account), copy.deepcopy(amzn_market),
+    # (b2) isolates the GAP rule inside the $2,900 cap: the replay's 11 sh
+    # with a 12% implied move — stop risk $156.42 passes RISK, but gap risk
+    # 11 × $29.84 = $328.20 > $290 → EARN only.
+    m = copy.deepcopy(amzn_market); m["implied_move_pct"] = 12.0
+    run_case("v5 AMZN 11 sh, 12% implied move: gap sizing binds", 
+             copy.deepcopy(amzn_thesis), copy.deepcopy(amzn_account), m,
              copy.deepcopy(amzn_book), False, clock=now,
              expect_fail_ids={"EARN"})
 
@@ -730,6 +772,52 @@ def selftest():
     run_case("v5 stop 21% > 20% cap", t, copy.deepcopy(base_account),
              copy.deepcopy(base_market), copy.deepcopy(base_book), False,
              clock=now, expect_fail_ids={"STOP"})
+
+    # --- review fixes (Oct 26 2026) ----------------------------------------
+    # INPUT: negative / zero shares used to pass CAPITAL, RISK and EARN
+    for label, sh in (("negative", -50.0), ("zero", 0.0)):
+        t = copy.deepcopy(base_thesis)
+        t.update({"shares": sh, "position_value": sh * 100.0})
+        run_case(f"{label} shares rejected (INPUT)", t,
+                 copy.deepcopy(base_account), copy.deepcopy(base_market),
+                 copy.deepcopy(base_book), False, clock=now,
+                 expect_fail_ids={"INPUT"})
+    # CAPITAL: $3,600 position (36 sh, 8% stop, $288 risk) with $9K cash —
+    # inside the risk budget but over the $2,900 per-trade cap
+    t = copy.deepcopy(base_thesis)
+    t.update({"shares": 36.0, "position_value": 3600.0, "stop_price": 92.0,
+              "target_price": 116.0, "claimed_rr": 2.0})
+    run_case("position over $2,900 cap (CAPITAL)", t, {"cash": 9000.0},
+             copy.deepcopy(base_market), copy.deepcopy(base_book), False,
+             clock=now, expect_fail_ids={"CAPITAL"})
+    # SLOTS: layer must be a known architecture layer
+    t = copy.deepcopy(base_thesis); t["layer"] = "crypto-lol"
+    run_case("unknown layer rejected (SLOTS)", t, copy.deepcopy(base_account),
+             copy.deepcopy(base_market), copy.deepcopy(base_book), False,
+             clock=now, expect_fail_ids={"SLOTS"})
+    # EARN: earnings TODAY (after-close) with no implied move → cannot size gap
+    m = copy.deepcopy(base_market); m["earnings_date"] = now.date().isoformat()
+    run_case("earnings today, no implied move (EARN)", copy.deepcopy(base_thesis),
+             copy.deepcopy(base_account), m, copy.deepcopy(base_book), False,
+             clock=now, expect_fail_ids={"EARN"})
+    # control: same, but trusted data says the report already printed (BMO)
+    m["earnings_reported"] = True
+    run_case("earnings today, already reported → PASS", copy.deepcopy(base_thesis),
+             copy.deepcopy(base_account), m, copy.deepcopy(base_book), True,
+             clock=now)
+    # STOP: 2·ATR beyond the 20% cap — a cent-rounded stop AT the cap passes
+    t = copy.deepcopy(base_thesis)
+    t.update({"entry_price": 248.64, "position_value": 248.64,
+              "stop_price": 198.91, "target_price": 348.20, "claimed_rr": 2.0})
+    m = copy.deepcopy(base_market); m.update({"last_price": 248.64, "atr14": 30.0})
+    run_case("stop at 20% cap, cent-rounded (STOP) → PASS", t,
+             copy.deepcopy(base_account), m, copy.deepcopy(base_book), True,
+             clock=now)
+    # PRICE: quote timestamped 10 min in the future = bad source clock
+    m = copy.deepcopy(base_market); m["quote_time"] = now + timedelta(minutes=10)
+    run_case("future quote timestamp (PRICE)", copy.deepcopy(base_thesis),
+             copy.deepcopy(base_account), m, copy.deepcopy(base_book), False,
+             clock=now, expect_fail_ids={"PRICE"})
 
     print(f"\nSelf-test: {passing} passed, {failing} failed")
     if failing:
@@ -799,16 +887,17 @@ def main():
 
     # TRUST MODEL: enforce/shadow require harness-supplied trusted data.
     # Thesis-embedded data is allowed ONLY in explicit demo mode.
-    trusted_sources = (args.account or args.market or args.book)
-    if trusted_sources:
-        account = (json.loads(Path(args.account).read_text())
-                   if args.account else embedded.get("account", {}))
-        market = (json.loads(Path(args.market).read_text())
-                  if args.market else embedded.get("market", {}))
-        book = (json.loads(Path(args.book).read_text())
-                if args.book else embedded.get("agent_book",
-                                                {"positions": [],
-                                                 "recent_stop_exits": []}))
+    supplied = [f for f in ("account", "market", "book") if getattr(args, f)]
+    if supplied and len(supplied) < 3:
+        missing = sorted({"account", "market", "book"} - set(supplied))
+        print("ERROR: enforce/shadow mode needs ALL trusted sources; missing "
+              + ", ".join("--" + m for m in missing)
+              + ". Refusing to fall back to submitter-embedded data.")
+        sys.exit(2)
+    if supplied:
+        account = json.loads(Path(args.account).read_text())
+        market = json.loads(Path(args.market).read_text())
+        book = json.loads(Path(args.book).read_text())
         mode = "shadow" if args.shadow else "enforce"
     elif args.demo:
         account = embedded.get("account", {})

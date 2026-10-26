@@ -8,12 +8,13 @@ placed into pre-market gaps, risk/reward ratios that don't recompute.
 No LLM should ever spend reasoning budget on arithmetic a script can't
 get wrong.
 
-## The 9 checks (number vs number, zero LLM)
+## The 10 checks (number vs number, zero LLM)
 
 | Check | What it rejects |
 |---|---|
-| `CAPITAL` | position value > actual deployable (shared-cash misreps) |
-| `SLOTS` | book/layer position caps |
+| `INPUT` | zero, negative, NaN or non-numeric shares/prices/position value (fails closed) |
+| `CAPITAL` | position value > actual deployable (shared-cash misreps), or > the per-trade cap ($2,900) |
+| `SLOTS` | book/layer position caps; layer must be compute, memory, networking or power |
 | `MKTCAP` | claimed market cap vs verified source (±10%) |
 | `PRICE` | stale quote (>5 min), wrong-instrument parse (>±2%), gap-chase (>1.5% above claimed) |
 | `RR` | R/R recomputed from entry/target/stop — floor 2:1, >5% misrep rejected |
@@ -35,8 +36,14 @@ pre-earnings blackout (see CHANGELOG).
 
 ```
 python3 gate1_pregate.py --selftest       # regression suite — run after ANY edit
-python3 gate1_pregate.py --thesis t.json # enforce mode: exit 0 = PASS, 1 = REJECT
-python3 gate1_pregate.py --thesis t.json --shadow  # log-only (no enforcement)
+
+# enforce: ALL three trusted sources required (exit 0 = PASS, 1 = REJECT,
+# 2 = refused because a trusted source is missing)
+python3 gate1_pregate.py --thesis t.json --account a.json --market m.json --book b.json
+python3 gate1_pregate.py --thesis t.json --account a.json --market m.json --book b.json --shadow  # log-only
+
+# demo/testing: account/market/agent_book embedded in the thesis file
+python3 gate1_pregate.py --thesis t.json --demo --shadow
 ```
 
 Every verdict is appended to `gate1_log.jsonl` with claimed-vs-verified
@@ -46,7 +53,8 @@ pass — the gate cannot fail quietly by construction.
 ## Trust model
 
 Account, market, and agent-book data is trusted ONLY when injected by
-the harness from live MCP pulls (`--account/--market/--book`). A thesis
+the harness from live MCP pulls — all three of `--account/--market/--book`;
+supplying only some is refused rather than filled from the thesis. A thesis
 file may embed these values ONLY in explicit `--demo` mode — enforce
 mode refuses to run on submitter-controlled data, and the evaluation
 clock is always the gate's own (a thesis cannot backdate freshness
@@ -57,11 +65,12 @@ checks).
 1. **Selftest = synthetic scenarios built from real failure patterns.**
    Each test case reconstructs a failure pattern documented in the
    Judge's decision log (capital misrep, market-cap error, gap chase,
-   R/R misrep, whipsaw stop, re-entry ban, blackout, stale quote,
+   R/R misrep, whipsaw stop, re-entry ban, earnings gap sizing, stale quote,
    layer cap, price-parse deviation) — not byte-for-byte replays of
    historical submissions. Includes positive controls and adversarial
    cases (backdated-clock attack, understated position value,
-   allocation_share inflation, circular risk budget). 26 cases: 26 pass.
+   allocation_share inflation, circular risk budget, negative shares,
+   partial-trust fallback). 34 cases: 34 pass.
 2. **Shadow mode.** Run before the LLM Judge for N sessions, logging only.
    Compare verdicts. The danger case is Gate-FAIL + Judge-APPROVE
    (over-rejection) — those get mandatory human review. Gate-PASS +
