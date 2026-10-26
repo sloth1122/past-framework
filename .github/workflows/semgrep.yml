@@ -1,0 +1,55 @@
+name: "Semgrep Architecture Rules"
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  semgrep:
+    name: Semgrep Architecture Scan
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Checkout base-branch Semgrep policy
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          # Keep the PR's own policy so rule edits can be smoke-tested below.
+          cp .semgrep.yml /tmp/pr.semgrep.yml
+          if ! git fetch origin "$BASE_REF" --depth=1; then
+            echo "::warning::Could not fetch origin/$BASE_REF — using PR's own .semgrep.yml"
+          elif git show "origin/$BASE_REF:.semgrep.yml" > /tmp/base.semgrep.yml 2>/dev/null; then
+            cp /tmp/base.semgrep.yml .semgrep.yml
+            echo "Using base-branch .semgrep.yml from origin/$BASE_REF"
+          else
+            echo "No .semgrep.yml on origin/$BASE_REF — using PR's own .semgrep.yml"
+          fi
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Semgrep (pinned)
+        run: 'pip install --only-binary :all: semgrep==1.85.0'
+
+      - name: Run Semgrep
+        # --error fails on ANY finding, WARNING rules included — intentional:
+        # the tree is clean today and this gate keeps it clean.
+        run: semgrep scan --config .semgrep.yml --error
+
+      # Non-blocking: validates rule edits made in this PR (the gate above
+      # deliberately uses the base branch's policy).
+      - name: Smoke-test PR's own Semgrep policy (non-blocking)
+        if: github.event_name == 'pull_request'
+        continue-on-error: true
+        run: semgrep scan --config /tmp/pr.semgrep.yml --error
