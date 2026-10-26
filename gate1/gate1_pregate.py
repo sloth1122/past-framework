@@ -115,7 +115,7 @@ def _parse_date(v):
     dt = _parse_time(v)
     if isinstance(v, date) and not isinstance(v, datetime):
         return v
-    return dt.date() if dt else None
+    return dt.astimezone(timezone.utc).date() if dt else None
 
 # ---------------------------------------------------------------------------
 # CHECKS — every one is deterministic: number vs number.
@@ -319,12 +319,11 @@ def check_stop_vs_volatility(thesis, market) -> GateResult:
     cent = 0.01  # prices are quoted in cents: a stop AT the cap must be placeable
     within_cap = actual_distance <= cap_distance + cent
     if not atr or atr <= 0:
-        # no ATR available: enforce the 5% floor and 20% cap only
-        ok = actual_distance >= floor_distance - eps and within_cap
-        return GateResult("STOP", ok,
-                          f"no ATR; dist {pct_distance*100:.2f}% "
-                          f"(floor {CONFIG['stop_floor_pct']*100:.0f}%, "
-                          f"cap {CONFIG['stop_cap_pct']*100:.0f}%)")
+        # fail closed (like MKTCAP / EARN): the 2·ATR rule is this check's
+        # whole purpose, so missing trusted ATR is a data failure, not a pass
+        return GateResult("STOP", False,
+                          f"no ATR14 from data source — cannot verify the 2·ATR "
+                          f"stop (dist {pct_distance*100:.2f}%)")
     atr_distance = CONFIG["stop_atr_multiple"] * atr      # 2 x ATR14
     min_stop_distance = min(max(floor_distance, atr_distance), cap_distance)
     tol = cent if min_stop_distance == cap_distance else eps
@@ -363,11 +362,11 @@ def check_dollar_risk(thesis, config) -> GateResult:
     ok = dollar_risk <= risk_budget * 1.001
     return GateResult(
         "RISK", ok,
-        f"dollar risk ${dollar_risk:.2f} vs fixed budget "
+        f"dollar risk ${dollar_risk:.2f} vs budget "
         f"${risk_budget:.2f} (3% of equity)",
     )
 
-def check_earnings_window(thesis, market, now) -> GateResult:
+def check_earnings_window(thesis, market, now, config=None) -> GateResult:
     """v5: NO pre-earnings blackout (earnings are valid event bets), but
     when earnings fall inside the hold window the position must be sized
     for the gap:
@@ -403,7 +402,7 @@ def check_earnings_window(thesis, market, now) -> GateResult:
     implied_dist = entry * implied / 100.0
     per_share = max(stop_dist, implied_dist)
     gap_risk = shares * per_share
-    budget = CONFIG["risk_budget"]
+    budget = (config or CONFIG)["risk_budget"]
     ok = gap_risk <= budget * 1.001
     return GateResult(
         "EARN", ok,
@@ -418,11 +417,11 @@ def check_no_reentry(thesis, agent_book, now) -> GateResult:
     (functionally averaging down on a failed setup — the BAC rule).
     Cutoff uses the TRUSTED clock, not wall time, so replay verdicts apply
     the window relative to their evaluation time."""
-    ticker = thesis["ticker"]
+    ticker = str(thesis["ticker"]).strip().upper()
     cutoff = now - timedelta(days=CONFIG["no_reentry_days"])
     recent_stops = []
     for s in agent_book.get("recent_stop_exits", []):
-        if s.get("ticker") != ticker:
+        if str(s.get("ticker", "")).strip().upper() != ticker:
             continue
         d = _parse_time(s.get("date"))
         if d is None:
@@ -446,17 +445,29 @@ def check_no_reentry(thesis, agent_book, now) -> GateResult:
 
 CHECKS = [
     # (check_id, function, arg-builder from (thesis, account, market, book, now))
-    ("INPUT",   check_inputs,         lambda th, ac, mk, bk, nw: (th,)),
-    ("CAPITAL", check_capital,        lambda th, ac, mk, bk, nw: (th, ac, CONFIG)),
-    ("SLOTS",   check_slots,          lambda th, ac, mk, bk, nw: (th, bk, CONFIG)),
-    ("MKTCAP",  check_market_cap,     lambda th, ac, mk, bk, nw: (th, mk)),
-    ("PRICE",   check_price_freshness,lambda th, ac, mk, bk, nw: (th, mk, nw)),
-    ("RR",      check_rr_arithmetic,  lambda th, ac, mk, bk, nw: (th,)),
-    ("STOP",    check_stop_vs_volatility, lambda th, ac, mk, bk, nw: (th, mk)),
-    ("RISK",    check_dollar_risk,    lambda th, ac, mk, bk, nw: (th, CONFIG)),
-    ("EARN",    check_earnings_window,lambda th, ac, mk, bk, nw: (th, mk, nw)),
-    ("REENTRY", check_no_reentry,     lambda th, ac, mk, bk, nw: (th, bk, nw)),
+    ("INPUT",   check_inputs,         lambda th, ac, mk, bk, nw, cf: (th,)),
+    ("CAPITAL", check_capital,        lambda th, ac, mk, bk, nw, cf: (th, ac, cf)),
+    ("SLOTS",   check_slots,          lambda th, ac, mk, bk, nw, cf: (th, bk, cf)),
+    ("MKTCAP",  check_market_cap,     lambda th, ac, mk, bk, nw, cf: (th, mk)),
+    ("PRICE",   check_price_freshness,lambda th, ac, mk, bk, nw, cf: (th, mk, nw)),
+    ("RR",      check_rr_arithmetic,  lambda th, ac, mk, bk, nw, cf: (th,)),
+    ("STOP",    check_stop_vs_volatility, lambda th, ac, mk, bk, nw, cf: (th, mk)),
+    ("RISK",    check_dollar_risk,    lambda th, ac, mk, bk, nw, cf: (th, cf)),
+    ("EARN",    check_earnings_window,lambda th, ac, mk, bk, nw, cf: (th, mk, nw, cf)),
+    ("REENTRY", check_no_reentry,     lambda th, ac, mk, bk, nw, cf: (th, bk, nw)),
 ]
+
+def effective_config(account) -> dict:
+    """Equity-relative limits (v5.1): position cap = 30% and risk budget = 3%
+    of CURRENT equity when the trusted account payload carries `equity`;
+    otherwise the CONFIG constants (set at ~$9.7K equity) apply."""
+    cfg = dict(CONFIG)
+    eq = (account or {}).get("equity")
+    if isinstance(eq, (int, float)) and not isinstance(eq, bool) \
+            and math.isfinite(eq) and eq > 0:
+        cfg["max_position_value"] = round(0.30 * eq, 2)
+        cfg["risk_budget"] = round(0.03 * eq, 2)
+    return cfg
 
 def run_gate(thesis: dict, account: dict, market: dict,
              agent_book: dict, mode: str = "enforce",
@@ -466,6 +477,7 @@ def run_gate(thesis: dict, account: dict, market: dict,
       backdate freshness checks.
     - replay/demo: harness-supplied historical time."""
     now = clock or datetime.now(timezone.utc)
+    cfg = effective_config(account)
     report = GateReport(
         thesis_id=thesis.get("thesis_id", "unknown"),
         timestamp=datetime.now(timezone.utc).isoformat(),
@@ -474,7 +486,7 @@ def run_gate(thesis: dict, account: dict, market: dict,
     for check_id, fn, build_args in CHECKS:
         try:
             report.results.append(fn(*build_args(thesis, account, market,
-                                                agent_book, now)))
+                                                agent_book, now, cfg)))
         except Exception as e:  # a check that crashes = FAIL that check
             report.results.append(
                 GateResult(check_id, False, f"CHECK ERROR: {e}"))
@@ -842,6 +854,39 @@ def selftest():
     m["quote_time"] = fresh.replace(tzinfo=None).isoformat()
     run_case("naive UTC quote timestamp → PASS (no crash)", copy.deepcopy(base_thesis),
              copy.deepcopy(base_account), m, copy.deepcopy(base_book), True, clock=now)
+
+    # REENTRY: ticker casing/whitespace cannot evade the ban
+    t = copy.deepcopy(base_thesis); t["ticker"] = " bac "
+    b = copy.deepcopy(base_book)
+    b["recent_stop_exits"] = [{"ticker": "BAC",
+                               "date": (now - timedelta(days=2)).isoformat(),
+                               "price": 56.20}]
+    run_case("re-entry ban not evaded by ' bac ' casing", t,
+             copy.deepcopy(base_account), copy.deepcopy(base_market), b, False,
+             clock=now, expect_fail_ids={"REENTRY"})
+    # STOP: no ATR from the source fails closed
+    m = copy.deepcopy(base_market); m["atr14"] = None
+    run_case("no ATR14 → STOP fails closed", copy.deepcopy(base_thesis),
+             copy.deepcopy(base_account), m, copy.deepcopy(base_book), False,
+             clock=now, expect_fail_ids={"STOP"})
+    # equity-relative limits: $5,000 position, $400 risk
+    t = copy.deepcopy(base_thesis)
+    t.update({"shares": 50.0, "position_value": 5000.0, "stop_price": 92.0,
+              "target_price": 116.0, "claimed_rr": 2.0})
+    run_case("equity $20K → cap $6,000 / risk $600 → PASS", t,
+             {"cash": 9000.0, "equity": 20000.0}, copy.deepcopy(base_market),
+             copy.deepcopy(base_book), True, clock=now)
+    run_case("no equity → $2,900 / $290 constants → FAIL", copy.deepcopy(t),
+             {"cash": 9000.0}, copy.deepcopy(base_market),
+             copy.deepcopy(base_book), False, clock=now,
+             expect_fail_ids={"CAPITAL", "RISK"})
+    # EARN: offset-aware earnings datetime normalised to UTC (inside hold)
+    m = copy.deepcopy(base_market)
+    m["earnings_date"] = (now + timedelta(days=3)).astimezone(
+        timezone(timedelta(hours=-4))).isoformat()
+    run_case("tz-aware earnings in 3d, no implied move (EARN)",
+             copy.deepcopy(base_thesis), copy.deepcopy(base_account), m,
+             copy.deepcopy(base_book), False, clock=now, expect_fail_ids={"EARN"})
 
     print(f"\nSelf-test: {passing} passed, {failing} failed")
     if failing:
