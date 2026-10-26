@@ -17,10 +17,19 @@ get wrong.
 | `MKTCAP` | claimed market cap vs verified source (±10%) |
 | `PRICE` | stale quote (>5 min), wrong-instrument parse (>±2%), gap-chase (>1.5% above claimed) |
 | `RR` | R/R recomputed from entry/target/stop — floor 2:1, >5% misrep rejected |
-| `STOP` | **stop must clear 2×ATR14** — normal noise can't kill a months-long thesis (anti-whipsaw) |
-| `RISK` | wider stop ⇒ smaller size, dollar risk held constant |
-| `EARN` | earnings blackout window (7d) |
+| `STOP` | **stop distance = 2×ATR14, floor 5%, cap 20% below entry** — normal noise can't kill a months-long thesis (anti-whipsaw) |
+| `RISK` | wider stop ⇒ smaller size; dollar risk ≤ fixed budget (3% of equity) |
+| `EARN` | earnings inside the hold are allowed but must be gap-sized: shares × max(stop distance, implied move) ≤ risk budget |
 | `REENTRY` | re-entry ban after recent stop-out in same ticker (5d) |
+
+## Current rules (Arena v5.1, Oct 24 2026)
+
+Constants live in `CONFIG` at the top of `gate1_pregate.py`: max 4 positions
+(3 event bets + 1 QQQ core), max position value $2,900 (30% of ~$9.7K equity),
+risk budget $290 (3% of equity — recompute as equity changes), $50 fee
+buffer instead of a cash reserve, R/R floor 2:1, re-entry ban 5 days.
+Earlier versions used a 10% stop floor, $750 cap, 5 positions and a 7-day
+pre-earnings blackout (see CHANGELOG).
 
 ## Usage
 
@@ -52,7 +61,7 @@ checks).
    layer cap, price-parse deviation) — not byte-for-byte replays of
    historical submissions. Includes positive controls and adversarial
    cases (backdated-clock attack, understated position value,
-   allocation_share inflation, circular risk budget). 19 cases: 19 pass.
+   allocation_share inflation, circular risk budget). 26 cases: 26 pass.
 2. **Shadow mode.** Run before the LLM Judge for N sessions, logging only.
    Compare verdicts. The danger case is Gate-FAIL + Judge-APPROVE
    (over-rejection) — those get mandatory human review. Gate-PASS +

@@ -5,7 +5,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
-## [v0.5.0] — 2026-09-28 — Gate 1: Deterministic Pre-Gate for the LLM Judge
+## [v0.4.1] — 2026-09-28 — Gate 1: Deterministic Pre-Gate for the LLM Judge
 
 ### Summary
 
@@ -54,6 +54,17 @@ own, preventing backdated freshness checks.
 **Integration:** the pre-market health check now runs the Gate 1
 selftest every morning (5 AM) alongside model/API checks — any edit
 that breaks a check alerts before agents trade.
+
+### Updated 2026-10-26 — synced to the live Arena v5.1 Gate 1
+
+The published `gate1_pregate.py` is now the version the arena runs
+(Oct 24 2026; see v0.5.x for the Arena v5 rule changes): `STOP` =
+2×ATR14 with a 5% floor (was 10%) and 20% cap; `RISK` uses an explicit
+budget of 3% of equity ($290) instead of 10% of the position cap;
+`EARN` no longer blacks out earnings — earnings inside the hold must be
+gap-sized against the risk budget; max 4 positions (was 5), max
+position $2,900 (was $750), $50 fee buffer (was a $500 reserve).
+Selftest: 26 cases, 26 pass.
 
 ---
 

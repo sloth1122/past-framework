@@ -43,22 +43,25 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 # ---------------------------------------------------------------------------
-# CONFIG — tuned to the arena's rulebook (skill v3.0.0 defaults)
+# CONFIG — tuned to the arena's rulebook (Arena v5.1, Oct 24 2026)
 # ---------------------------------------------------------------------------
 CONFIG = {
-    "max_positions": 5,               # per agent book limit
+    "max_positions": 4,               # v5 (Oct 22 2026): 3 event bets + 1 QQQ core
     "per_layer_max": 2,               # max positions per architecture layer
-    "deployable_reserve": 500.0,      # cash reserve below which no entries
+    "deployable_reserve": 50.0,       # v5: no strategic reserve (10% core / 90% bets); $50 fee buffer
     "min_rr": 2.0,                    # risk/reward floor (Judge's standard)
     "price_freshness_seconds": 300,   # quote older than 5 min = stale
     "premarket_gap_pct": 1.5,         # live price > entry price by this = gap chase
-    "stop_atr_multiple": 2.0,         # MIN stop distance = 2x ATR14 (anti-whipsaw)
-    "stop_floor_pct": 0.10,           # traditional 10% minimum (unchanged rule)
-    "stop_cap_pct": 0.20,              # widened stop allowed up to 20% w/ sizing
+    "stop_atr_multiple": 2.0,         # v5: stop distance = 2x ATR14 (anti-whipsaw) ...
+    "stop_floor_pct": 0.05,           # ... FLOOR 5% below entry (v5; was 10% pre-v5)
+    "stop_cap_pct": 0.20,             # ... CAP 20% below entry
     "entry_price_sanity_pct": 0.02,   # thesis price vs live quote tolerance ±2%
     "position_value_tolerance": 0.02, # position_value vs shares×entry tolerance ±2%
-    "max_position_value": 750.0,      # FIXED budget baseline per trade (allocation cap, raised from $500 by John 2026-09-28)
-    "earnings_blackout_days": 7,      # no entries within N days BEFORE earnings
+    "max_position_value": 2900.0,     # v5.1 (Oct 23 2026): 30% of ~$9.7K equity (was $1,500 v5; $750 since 2026-09-28)
+    "risk_budget": 290.0,             # v5.1: max dollar risk per trade = 3% of equity (~$9,676 → $290).
+                                      # RECOMPUTE as 3% of CURRENT equity; decoupled from stop_floor_pct.
+    "earnings_hold_window_days": 45,  # v5: earnings within this many CALENDAR days (~30 trading days =
+                                      # the max catalyst hold) are "inside the hold" → gap-sized, not blacked out
     "no_reentry_days": 5,             # banned from re-entering a recent stop-out
     "market_cap_tolerance": 0.10,     # claimed mktcap within 10% of source
     "known_layers": ["compute", "memory", "networking", "power"],
@@ -254,10 +257,12 @@ def check_stop_vs_volatility(thesis, market) -> GateResult:
     """Audit fix: stop distance must clear noise so a normal 2-3 day move
     can't kill a months-long thesis (COHR/MU class).
 
-    When ATR is available, the required stop distance is the LARGER of
-    (10% of entry — the classic floor — and 2x ATR14), capped at 20%.
+    v5 rule: stop distance = 2 x ATR14, FLOOR 5% and CAP 20% below entry.
+    Required minimum distance = clamp(2·ATR, 5% of entry, 20% of entry);
+    the stop may sit wider than that minimum but never beyond the 20% cap.
     Dollar risk is held constant by the RISK check below.
     """
+    eps = 1e-9  # float grace so an exact 2·ATR stop (e.g. 14.22) isn't lost to rounding
     entry = thesis["entry_price"]
     stop = thesis["stop_price"]
     atr = market.get("atr14")
@@ -265,67 +270,100 @@ def check_stop_vs_volatility(thesis, market) -> GateResult:
     pct_distance = actual_distance / entry
     if actual_distance <= 0:
         return GateResult("STOP", False, f"stop ${stop} >= entry ${entry}")
+    floor_distance = entry * CONFIG["stop_floor_pct"]     # 5% of entry
+    cap_distance = entry * CONFIG["stop_cap_pct"]         # 20% of entry
+    within_cap = actual_distance <= cap_distance + eps
     if not atr or atr <= 0:
-        # no ATR available: fall back to the classic 10% floor
-        ok = pct_distance >= CONFIG["stop_floor_pct"]
+        # no ATR available: enforce the 5% floor and 20% cap only
+        ok = actual_distance >= floor_distance - eps and within_cap
         return GateResult("STOP", ok,
-                          f"no ATR; classic floor dist {pct_distance*100:.1f}% "
-                          f"(min {CONFIG['stop_floor_pct']*100:.0f}%)")
-    floor_distance = entry * CONFIG["stop_floor_pct"]     # classic 10% of entry
+                          f"no ATR; dist {pct_distance*100:.2f}% "
+                          f"(floor {CONFIG['stop_floor_pct']*100:.0f}%, "
+                          f"cap {CONFIG['stop_cap_pct']*100:.0f}%)")
     atr_distance = CONFIG["stop_atr_multiple"] * atr      # 2 x ATR14
-    min_stop_distance = max(floor_distance, atr_distance)
-    within_cap = pct_distance <= CONFIG["stop_cap_pct"]
-    ok = actual_distance >= min_stop_distance and within_cap
+    min_stop_distance = min(max(floor_distance, atr_distance), cap_distance)
+    ok = actual_distance >= min_stop_distance - eps and within_cap
+    reason = ""
+    if actual_distance < min_stop_distance - eps:
+        if min_stop_distance == floor_distance:
+            reason = " — below 5% floor"
+        elif min_stop_distance == cap_distance:
+            reason = " — 2·ATR exceeds 20% cap; stop must sit at the cap"
+        else:
+            reason = " — inside 2·ATR noise"
+    elif not within_cap:
+        reason = " — beyond 20% cap"
     return GateResult(
         "STOP", ok,
-        f"stop ${stop:.2f} = {pct_distance*100:.1f}% below entry "
-        f"(required ≥ max(10% floor ${floor_distance:.2f}, "
-        f"2·ATR ${atr_distance:.2f}) = ${min_stop_distance:.2f}; "
-        f"cap {CONFIG['stop_cap_pct']*100:.0f}%)",
+        f"stop ${stop:.2f} = {pct_distance*100:.2f}% below entry "
+        f"(required ≥ clamp(2·ATR ${atr_distance:.2f}, 5% floor "
+        f"${floor_distance:.2f}, 20% cap ${cap_distance:.2f}) = "
+        f"${min_stop_distance:.2f}, ≤ cap){reason}",
     )
 
 def check_dollar_risk(thesis, config) -> GateResult:
     """Anti-whipsaw companion: wider stop ⇒ smaller size, SAME dollar risk.
 
-    The risk budget is a FIXED baseline (max_position_value x 10%) — it is
-    NOT derived from the proposed shares, which would be circular (a
-    bigger position would inflate its own budget).
+    The risk budget is a FIXED, explicit CONFIG value (v5.1: 3% of equity,
+    `risk_budget`) — it is NOT derived from the proposed shares (circular:
+    a bigger position would inflate its own budget) and NOT coupled to the
+    stop floor (a 5% floor must not halve the budget).
     """
     shares = thesis["shares"]
     entry = thesis["entry_price"]
     stop = thesis["stop_price"]
     dollar_risk = shares * (entry - stop)
-    # fixed budget: 10% of the per-trade allocation cap
-    risk_budget = config["max_position_value"] * config["stop_floor_pct"]
+    risk_budget = config["risk_budget"]
     ok = dollar_risk <= risk_budget * 1.001
     return GateResult(
         "RISK", ok,
         f"dollar risk ${dollar_risk:.2f} vs fixed budget "
-        f"${risk_budget:.2f} (10% of ${config['max_position_value']:,.0f} "
-        f"allocation cap)",
+        f"${risk_budget:.2f} (3% of equity)",
     )
 
 def check_earnings_window(thesis, market, now) -> GateResult:
-    """No entries inside the pre-earnings blackout (event risk ≠ thesis
-    risk). Earnings dates in the PAST are allowed through (already
-    reported)."""
+    """v5: NO pre-earnings blackout (earnings are valid event bets), but
+    when earnings fall inside the hold window the position must be sized
+    for the gap:
+        shares x max(stop distance/share, entry x implied_move_pct/100)
+            <= risk_budget (3% of equity)
+    `implied_move_pct` (options-implied earnings move, %) must come from
+    the trusted market data; if earnings are inside the hold and it is
+    missing, FAIL — the gap cannot be sized. Earnings dates in the PAST
+    (or today) are allowed through (already reported)."""
     edate = _parse_date(market.get("earnings_date"))
     if edate is None:
         return GateResult("EARN", True, "no earnings date on file")
     today = now.date()
     days = (edate - today).days
-    # blackout: strictly future earnings within the window
-    in_blackout = 0 < days <= CONFIG["earnings_blackout_days"]
-    if in_blackout:
-        return GateResult("EARN", False,
-                          f"earnings in {days} days (blackout "
-                          f"{CONFIG['earnings_blackout_days']}d)")
+    window = CONFIG["earnings_hold_window_days"]
     if days <= 0:
         return GateResult("EARN", True,
                           f"earnings already reported ({abs(days)}d ago)")
-    return GateResult("EARN", True,
-                      f"earnings {days} days out (blackout "
-                      f"{CONFIG['earnings_blackout_days']}d)")
+    if days > window:
+        return GateResult("EARN", True,
+                          f"earnings {days} days out (beyond {window}d hold window)")
+    # strictly future earnings inside the hold → gap sizing required
+    implied = market.get("implied_move_pct")
+    if implied is None or implied <= 0:
+        return GateResult("EARN", False,
+                          f"earnings inside hold: implied move required for "
+                          f"gap sizing (earnings in {days}d)")
+    shares = thesis["shares"]
+    entry = thesis["entry_price"]
+    stop_dist = entry - thesis["stop_price"]
+    implied_dist = entry * implied / 100.0
+    per_share = max(stop_dist, implied_dist)
+    gap_risk = shares * per_share
+    budget = CONFIG["risk_budget"]
+    ok = gap_risk <= budget * 1.001
+    return GateResult(
+        "EARN", ok,
+        f"earnings in {days}d inside hold; gap risk {shares:g} sh × "
+        f"max(stop ${stop_dist:.2f}, implied {implied:g}% ${implied_dist:.2f}) "
+        f"= ${gap_risk:.2f} vs budget ${budget:.2f}"
+        + ("" if ok else " — oversized for earnings gap"),
+    )
 
 def check_no_reentry(thesis, agent_book, now) -> GateResult:
     """Banned from re-entering a ticker stopped out within N days
@@ -341,6 +379,8 @@ def check_no_reentry(thesis, agent_book, now) -> GateResult:
         d = _parse_time(s.get("date"))
         if d is None:
             continue  # unparseable stop-exit record — treat as not matching
+        if d.tzinfo is None:  # date-only / naive record → treat as UTC (Rocky fix Oct 24 2026)
+            d = d.replace(tzinfo=timezone.utc)
         if d >= cutoff:
             recent_stops.append((s, d))
     ok = not recent_stops
@@ -408,29 +448,38 @@ def print_report(report: GateReport):
 
 # ---------------------------------------------------------------------------
 # TESTS — run: python3 gate1_pregate.py --selftest
-# 12 synthetic scenarios CONSTRUCTED FROM the failure patterns documented in
-# the Judge's decision log (Sep 16-28). They are not byte-for-byte replays
-# of historical submissions — the real thesis JSON was not preserved — but
+# Synthetic scenarios CONSTRUCTED FROM the failure patterns documented in
+# the Judge's decision log (Sep 16-28), plus v5.1 rule cases (Oct 24 2026).
+# They are not byte-for-byte replays of historical submissions — the real
+# thesis JSON was not preserved (except the AMZN Oct 23 replay) — but
 # every rejection pattern (capital misrep, market-cap error, gap chase,
-# R/R misrep, whipsaw stop, re-entry ban, blackout, stale quote, layer cap,
-# price-parse deviation) is represented, with 2 expected-PASS controls.
+# R/R misrep, whipsaw stop, 5% stop floor / 20% cap, re-entry ban,
+# earnings gap sizing, stale quote, layer cap, price-parse deviation) is
+# represented, with expected-PASS controls.
 # ---------------------------------------------------------------------------
 def selftest():
     import copy
     passing = 0; failing = 0
 
-    def run_case(name, thesis, account, market, book, expect_pass, clock=None):
+    def run_case(name, thesis, account, market, book, expect_pass, clock=None,
+                 expect_fail_ids=None):
+        """expect_fail_ids (optional): exact set of check_ids that must FAIL
+        (pins WHICH rule fired, not just the overall verdict)."""
         nonlocal passing, failing
         rep = run_gate(thesis, account, market, book, mode="replay",
                        clock=clock)
         ok, fails = rep.summary()
         got_pass = ok
-        if got_pass == expect_pass:
+        fail_ids = {f.check_id for f in fails}
+        ids_ok = (expect_fail_ids is None or fail_ids == set(expect_fail_ids))
+        if got_pass == expect_pass and ids_ok:
             passing += 1
         else:
             failing += 1
             print(f"  ❌ TEST FAILURE {name}: expected "
-                  f"{'PASS' if expect_pass else 'FAIL'}, got "
+                  f"{'PASS' if expect_pass else 'FAIL'}"
+                  + (f" {sorted(expect_fail_ids)}" if expect_fail_ids else "")
+                  + f", got "
                   f"{'PASS' if ok else 'FAIL ' + str([f.check_id for f in fails])}")
 
     now = datetime.now(timezone.utc)
@@ -453,20 +502,19 @@ def selftest():
              copy.deepcopy(base_account), copy.deepcopy(base_market),
              copy.deepcopy(base_book), True, clock=now)
 
-    # 2. COHR-class boundary: the historical fixed-10% stop ($276.71 on a
-    # $307.45 entry, ATR14 $15) misses the new volatility-scaled threshold
-    # by half a cent (30.74 < max(30.745, 30.0)) — the gate REJECTS it.
-    # That is the audit's conclusion made executable: the historical stop
-    # was marginally too tight for this name's volatility, and the stop
-    # fired at the exact low of the move.
+    # 2. COHR-class stop under v5: the historical fixed-10% stop ($276.71 on
+    # a $307.45 entry, ATR14 $15). Pre-v5 this was REJECTED by half a cent
+    # (30.74 < max(10% floor 30.745, 2·ATR 30.0)). Under v5 the binding
+    # requirement is 2·ATR = $30.00 (5% floor $15.37 is looser), so the
+    # $30.74 stop now CLEARS the noise threshold — the gate PASSES it.
     t = copy.deepcopy(base_thesis)
     t.update({"entry_price": 307.45, "stop_price": 276.71,
               "target_price": 370.0, "position_value": 307.45,
               "shares": 1.0, "claimed_rr": 2.04})
     m = copy.deepcopy(base_market); m.update({"last_price": 307.45, "atr14": 15.0})
-    run_case("historical COHR stop REJECTED by half a cent (rule works)",
+    run_case("historical COHR stop clears v5 2·ATR (30.74 ≥ 30.00)",
              t, copy.deepcopy(base_account), m,
-             copy.deepcopy(base_book), False, clock=now)
+             copy.deepcopy(base_book), True, clock=now)
 
     # 2b. the corrected COHR trade: stop widened to 12% below entry
     # ($270.55) clears the noise threshold — but note the rule interaction
@@ -487,7 +535,7 @@ def selftest():
     # 1. INTC buying-power misrep: $485 position vs $385 deployable
     t = copy.deepcopy(base_thesis)
     t.update({"position_value": 485.0, "shares": 4.85, "entry_price": 100.0})
-    a = copy.deepcopy(base_account); a["cash"] = 885.0  # 885-500=385 deployable
+    a = copy.deepcopy(base_account); a["cash"] = 435.0  # v5: 435-50=385 deployable (was 885-500)
     run_case("INTC-class capital misrep", t, a,
              copy.deepcopy(base_market), copy.deepcopy(base_book), False, clock=now)
 
@@ -535,19 +583,19 @@ def selftest():
     t.update({"entry_price": 307.45, "stop_price": 291.0,
               "target_price": 370.0, "position_value": 307.45,
               "shares": 1.0, "claimed_rr": 2.5})
-    # stop distance 16.45 < required max(30.745, 30) — reject
+    # stop distance 16.45 < required 2·ATR $30.00 (5% floor $15.37 looser) — reject
     m = copy.deepcopy(base_market); m.update({"last_price": 307.45, "atr14": 15.0})
     run_case("whipsaw stop < noise threshold", t, copy.deepcopy(base_account), m,
              copy.deepcopy(base_book), False, clock=now)
 
     # 6b. circular-risk exploit: huge position setting its own budget
-    # (RISK uses the FIXED budget: 10% of $750 = $75)
+    # (RISK uses the FIXED CONFIG risk_budget: 3% of equity = $290 in v5.1)
     t = copy.deepcopy(base_thesis)
-    t.update({"entry_price": 100.0, "stop_price": 80.0, "shares": 10.0,
-              "position_value": 1000.0, "target_price": 140.0,
+    t.update({"entry_price": 100.0, "stop_price": 80.0, "shares": 20.0,
+              "position_value": 2000.0, "target_price": 140.0,
               "claimed_rr": 3.0, "allocation_share": 1.0})
     a = copy.deepcopy(base_account); a["cash"] = 100000.0  # capital passes
-    # dollar risk = 10 * 20 = $200 >> $75 budget → reject
+    # dollar risk = 20 * 20 = $400 > $290 budget → reject (v5.1 fixture)
     run_case("oversized dollar risk vs fixed budget", t, a,
              copy.deepcopy(base_market), copy.deepcopy(base_book), False, clock=now)
 
@@ -569,12 +617,25 @@ def selftest():
     run_case("re-entry ban (string date parse)", t, copy.deepcopy(base_account),
              copy.deepcopy(base_market), b, False, clock=now)
 
-    # 8. earnings blackout: earnings in 3 days
+    # 8. earnings inside the hold (3 days out): v5 lifted the blackout, so
+    # this tests GAP SIZING instead. 25 sh, $10 stop → stop risk $250 passes
+    # RISK, but implied move 15% → 25 × max($10, $15) = $375 > $290 → EARN fail.
+    t = copy.deepcopy(base_thesis)
+    t.update({"shares": 25.0, "position_value": 2500.0})
     m = copy.deepcopy(base_market)
     m["earnings_date"] = (now + timedelta(days=3)).date().isoformat()
-    run_case("earnings blackout", copy.deepcopy(base_thesis),
+    m["implied_move_pct"] = 15.0
+    run_case("earnings gap oversized vs risk budget", t,
              copy.deepcopy(base_account), m, copy.deepcopy(base_book),
-             False, clock=now)
+             False, clock=now, expect_fail_ids={"EARN"})
+
+    # 8a. earnings inside the hold with NO implied move → cannot size gap
+    m = copy.deepcopy(base_market)
+    m["earnings_date"] = (now + timedelta(days=3)).date().isoformat()
+    run_case("earnings inside hold, implied move missing",
+             copy.deepcopy(base_thesis), copy.deepcopy(base_account), m,
+             copy.deepcopy(base_book), False, clock=now,
+             expect_fail_ids={"EARN"})
 
     # 8b. PAST earnings date must be allowed (already reported)
     m = copy.deepcopy(base_market)
@@ -605,6 +666,71 @@ def selftest():
              copy.deepcopy(base_account), m, copy.deepcopy(base_book),
              False, clock=now)  # trusted clock = now; quote 30 min old = stale
 
+    # --- v5.1 rule cases (Oct 24 2026) ------------------------------------
+    # (a) AMZN Oct 23 replay — v5-legal, Judge 3/3 approved: 11 sh @ $248.64,
+    # stop $234.42 = exactly 2·ATR14 ($7.11) = 5.72%, earnings 6d out (Oct 29
+    # AMC), options-implied move 7.7%. Gap risk 11 × max($14.22, $19.15) =
+    # $210.59 ≤ $290. Must PASS (pre-v5 gate wrongly failed STOP + EARN).
+    amzn_thesis = {
+        "thesis_id": "AMZN-2026-10-23", "ticker": "AMZN", "shares": 11,
+        "entry_price": 248.64, "position_value": 2735.04,
+        "target_price": 280.0, "stop_price": 234.42, "layer": "compute",
+        "market_cap": 2.66e12, "claimed_rr": 2.2,
+    }
+    amzn_market = {"last_price": 248.64, "quote_time": fresh,
+                   "market_cap": 2.66e12, "atr14": 7.11,
+                   "earnings_date": (now + timedelta(days=6)).date().isoformat(),
+                   "implied_move_pct": 7.7}
+    amzn_account = {"cash": 8931.58}
+    amzn_book = {"positions": [{"ticker": "CIEN", "layer": "networking"},
+                               {"ticker": "VST", "layer": "power"}],
+                 "recent_stop_exits": []}
+    run_case("v5 AMZN Oct 23 replay (2·ATR stop, gap-sized earnings)",
+             copy.deepcopy(amzn_thesis), copy.deepcopy(amzn_account),
+             copy.deepcopy(amzn_market), copy.deepcopy(amzn_book), True,
+             clock=now)
+
+    # (b) same trade at 30 sh: stop risk 30 × $14.22 = $426.60 > $290 (RISK)
+    # and gap risk 30 × $19.15 = $574.38 > $290 (EARN) — both fire.
+    t = copy.deepcopy(amzn_thesis)
+    t.update({"shares": 30, "position_value": 30 * 248.64})
+    run_case("v5 AMZN 30 sh oversized for earnings gap", t,
+             copy.deepcopy(amzn_account), copy.deepcopy(amzn_market),
+             copy.deepcopy(amzn_book), False, clock=now,
+             expect_fail_ids={"RISK", "EARN"})
+
+    # (b2) 18 sh isolates the GAP rule: stop risk $255.96 passes RISK, but
+    # gap risk 18 × $19.15 = $344.73 > $290 → EARN only.
+    t = copy.deepcopy(amzn_thesis)
+    t.update({"shares": 18, "position_value": 18 * 248.64})
+    run_case("v5 AMZN 18 sh: gap sizing binds, stop risk OK", t,
+             copy.deepcopy(amzn_account), copy.deepcopy(amzn_market),
+             copy.deepcopy(amzn_book), False, clock=now,
+             expect_fail_ids={"EARN"})
+
+    # (c) stop 4% below entry with low ATR (2·ATR = 3%) → below 5% floor
+    t = copy.deepcopy(base_thesis)
+    t.update({"stop_price": 96.0, "target_price": 108.0, "claimed_rr": 2.0})
+    m = copy.deepcopy(base_market); m["atr14"] = 1.5
+    run_case("v5 stop 4% < 5% floor", t, copy.deepcopy(base_account), m,
+             copy.deepcopy(base_book), False, clock=now,
+             expect_fail_ids={"STOP"})
+
+    # (c2) control: same low-ATR name, stop exactly at the 5% floor → PASS
+    t = copy.deepcopy(base_thesis)
+    t.update({"stop_price": 95.0, "target_price": 110.0, "claimed_rr": 2.0})
+    m = copy.deepcopy(base_market); m["atr14"] = 1.5
+    run_case("v5 stop exactly at 5% floor passes", t,
+             copy.deepcopy(base_account), m, copy.deepcopy(base_book), True,
+             clock=now)
+
+    # (d) stop 21% below entry → beyond the 20% cap
+    t = copy.deepcopy(base_thesis)
+    t.update({"stop_price": 79.0, "target_price": 142.0, "claimed_rr": 2.0})
+    run_case("v5 stop 21% > 20% cap", t, copy.deepcopy(base_account),
+             copy.deepcopy(base_market), copy.deepcopy(base_book), False,
+             clock=now, expect_fail_ids={"STOP"})
+
     print(f"\nSelf-test: {passing} passed, {failing} failed")
     if failing:
         print("GATE 1 NOT READY — fix failing cases before deployment")
@@ -621,8 +747,8 @@ def selftest():
 # PHASE 1 — REPLAY (confidence it catches the right things)
 #   Synthetic scenarios built from every failure pattern the Judge
 #   documented (capital misrep, mktcap error, gap chase, R/R misrep,
-#   whipsaw stop, re-entry, blackout, stale quote, layer cap, parse
-#   deviation) + 2 positive controls. Encoded as the selftest above.
+#   whipsaw stop, re-entry, earnings gap sizing, stale quote, layer cap, parse
+#   deviation) + positive controls + v5.1 rule cases. Encoded as the selftest above.
 #
 # PHASE 2 — SHADOW MODE (confidence it doesn't over-reject)
 #   For 5 sessions, the harness runs Gate 1 with TRUSTED MCP data and
