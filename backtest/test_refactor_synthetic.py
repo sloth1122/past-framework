@@ -5,9 +5,8 @@ Stubs LLM calls AND entry-signal functions so every refactored path
 executes deterministically: entry, floor sizing, stop exit, same-bar
 re-entry block, final close, Rocky clamp.
 """
-import sys, os, math
+import sys, os
 import pandas as pd
-import numpy as np
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 

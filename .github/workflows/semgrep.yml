@@ -45,7 +45,7 @@ jobs:
       - name: Run Semgrep
         # --error fails on ANY finding, WARNING rules included — intentional:
         # the tree is clean today and this gate keeps it clean.
-        run: semgrep scan --config .semgrep.yml --error --json
+        run: semgrep scan --config .semgrep.yml --error
 
       # Non-blocking: validates rule edits made in this PR (the gate above
       # deliberately uses the base branch's policy).
