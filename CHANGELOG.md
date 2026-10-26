@@ -12,6 +12,12 @@ Format based on [Keep a Changelog](https://keepachangelog.com/).
 > rebuilt by replaying the logged Sep 8–10 edits; the result JSONs and the v2.4 PDF are the
 > original Sep 10 artifacts. Verified: rebuilt paper text matches the Sep 10 PDF word-for-word
 > (9,631 words) and all 30 Section 7 figures match `docs/BACKTEST_V3_RESULTS.md`.
+>
+> **Known issues found in the Oct 26 review (results unchanged, disclosed here):**
+> (1) the re-entry cooldown applies only after `STOP_LOSS`; after a time or RSI exit Alpha
+> can sell and re-buy at the same close (NVDA 2026-03-06, CCJ 2026-03-13 in the base run),
+> which is inside Alpha's published +2.55%. (2) Prices use yfinance `auto_adjust=True`, so
+> re-runs drift by cents as dividends adjust history; the committed JSONs are the record.
 
 ### Summary
 

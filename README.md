@@ -38,7 +38,7 @@ The Trading Arena implements PAST with four agents:
 
 Jan 1 — Jul 21, 2026 | 6 tickers | portfolio-level, shared $2,500 per agent
 
-> **v0.5.0 integrity update:** earlier READMEs and paper drafts reported +11.7% / +15.3%. Those numbers came from the v1 harness, which simulated each ticker as an independent $2,500 book and summed the results (plus look-ahead 52-week extremes and a stub Judge). They are retracted. The figures below are from `backtest/backtest_v3.py` — one shared cash pool per agent, strictly rolling indicators, a deterministic Judge that scores only checks that can actually fail, re-entry eligible the session after a stop. Raw JSON in `examples/backtest_v3/`; full tables in [docs/BACKTEST_V3_RESULTS.md](docs/BACKTEST_V3_RESULTS.md); defect history in [CHANGELOG v0.5.0](CHANGELOG.md).
+> **v0.4.1 integrity update:** earlier READMEs and paper drafts reported +11.7% / +15.3%. Those numbers came from the v1 harness, which simulated each ticker as an independent $2,500 book and summed the results (plus look-ahead 52-week extremes and a stub Judge). They are retracted. The figures below are from `backtest/backtest_v3.py` — one shared cash pool per agent, strictly rolling indicators, a deterministic Judge that scores only checks that can actually fail, re-entry eligible the session after a stop. Raw JSON in `examples/backtest_v3/`; full tables in [docs/BACKTEST_V3_RESULTS.md](docs/BACKTEST_V3_RESULTS.md); defect history in [CHANGELOG v0.4.1](CHANGELOG.md).
 
 | Agent | Final equity | Return | Closed trades | Max drawdown |
 |-------|-----|-------|-------|-------|
@@ -85,8 +85,13 @@ python backtest/backtest_v3.py --cooldown 5
 python backtest/backtest_v3.py --cooldown -1      # v1 same-bar artifact
 python backtest/backtest_v3.py --no-ipo-ban
 
-# Regenerate docs/BACKTEST_V3_RESULTS.md from the JSON
-python backtest/report_v3.py "~/trading-arena/state/backtests/backtest_v3_ipoban_cd0_*.json"
+# Regenerate docs/BACKTEST_V3_RESULTS.md (incl. the §7.6 sensitivity table)
+B=examples/backtest_v3   # committed paper runs; or ~/trading-arena/state/backtests
+python backtest/report_v3.py "$B/backtest_v3_ipoban_cd0_*.json" --sens \
+  "Same-bar re-entry (v1 artifact, cooldown −1)=$B/backtest_v3_ipoban_cd-1_*.json" \
+  "1 further session (cooldown 1)=$B/backtest_v3_ipoban_cd1_*.json" \
+  "5 further sessions (cooldown 5)=$B/backtest_v3_ipoban_cd5_*.json" \
+  "IPO ban off=$B/backtest_v3_noipoban_cd0_*.json"
 ```
 
 Output JSON is written to `~/trading-arena/state/backtests/` (override with
@@ -128,8 +133,8 @@ past-framework/
 ├── backtest/
 │   ├── backtest_engine.py          ← Agent rules, indicators (RSI, MA)
 │   ├── backtest_sim.py             ← [v0.1.0] Simulation, stub Judge, Rocky tuning
-│   ├── backtest_v3.py              ← [v0.5.0] Portfolio-level harness — source of all published figures
-│   ├── report_v3.py                ← [v0.5.0] JSON → docs/BACKTEST_V3_RESULTS.md
+│   ├── backtest_v3.py              ← [v0.4.1] Portfolio-level harness — source of all published figures
+│   ├── report_v3.py                ← [v0.4.1] JSON → docs/BACKTEST_V3_RESULTS.md
 │   ├── backtest_v2.py              ← [v0.2.0] Single-ticker runner (rolling window, LLM Judge)
 │   ├── llm_judge.py                ← [v0.2.0] LLM Judge + Rocky via local Ollama
 │   ├── run_backtest.py             ← [v0.1.0] Original runner + go/no-go
