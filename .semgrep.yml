@@ -13,7 +13,11 @@ rules:
     languages: [python]
     severity: WARNING
     patterns:
+      # A bare `except:` clause alone is not a complete statement in Semgrep's
+      # Python grammar (it never matched); anchor it on its `try:`.
       - pattern: |
+          try:
+            ...
           except:
             pass
     paths:
