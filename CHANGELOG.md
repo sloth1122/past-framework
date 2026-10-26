@@ -79,6 +79,103 @@ fail `PRICE`. Selftest: 34 cases, 34 pass.
 
 ---
 
+## [v0.4.1] — 2026-09-10 — Backtest v3: Portfolio-Level Harness, Results Retracted and Re-Run
+
+> **Restored 2026-10-26.** This work was finished on Sep 10 but never committed; on Sep 13 an
+> automated review job reset the working tree and emptied the uncommitted files. Sources were
+> rebuilt by replaying the logged Sep 8–10 edits; the result JSONs and the v2.4 PDF are the
+> original Sep 10 artifacts. Verified: rebuilt paper text matches the Sep 10 PDF word-for-word
+> (9,631 words) and all 30 Section 7 figures match `docs/BACKTEST_V3_RESULTS.md`.
+>
+> **Known issues found in the Oct 26 review (results unchanged, disclosed here):**
+> (1) the re-entry cooldown applies only after `STOP_LOSS`; after a time or RSI exit Alpha
+> can sell and re-buy at the same close (NVDA 2026-03-06, CCJ 2026-03-13 in the base run),
+> which is inside Alpha's published +2.55%. (2) Prices use yfinance `auto_adjust=True`, so
+> re-runs drift by cents as dividends adjust history; the committed JSONs are the record.
+
+### Summary
+
+While preparing the research paper for arXiv, a third defect was found in
+the v1 backtest harness on top of the two disclosed in v0.2.0: each ticker
+was simulated as an independent run that started with the full $2,500 per
+agent, and the six results were summed. The "+15.3% on $5,000" headline
+therefore measured up to $15,000 of deployed capital against a $5,000
+denominator. The single largest contributor (MU +$880, "+35.2%") was a
+full-allocation position, not the 20% position the rules specify.
+
+All previously published return figures (+15.3% paper, +11.7% README,
+Aschenbrenner +$754 / Baker +$574 case study) are **retracted**. The paper,
+README, and case study now report v3 results only, with the retraction
+disclosed in each.
+
+### Added — `backtest/backtest_v3.py`
+
+- One portfolio per agent across all tickers; single shared $2,500 cash pool.
+- Day-by-day simulation: exits before entries; tickers alphabetical (disclosed).
+- Rolling 252-day indicators everywhere; no full-dataset extremes.
+- Deterministic Judge scoring the 6 checklist items that can genuinely fail
+  from price data (1, 7, 8, 11b, 11c, 13); approval threshold scaled
+  10/13 → 5/6; IPO ban, restricted list and position cap are hard blocks.
+  Items 6, 9, 10, 11 (need non-price data) and items 2, 3, 4, 5 (cannot fail
+  in a rule-based harness) are explicitly unscored, not auto-passed. Approvals
+  that cannot be filled for lack of cash are counted separately
+  (`approved_but_no_cash`).
+- Rocky evaluates only trades closed since the previous review (a two-week
+  window), not cumulative history. Beta max positions = 5, per the live skill
+  file at Risk Tolerance 5/7. Holding periods counted in trading sessions.
+- Judge item 1 for Beta re-derives "within 25% of the 52-week low" from the
+  price row instead of trusting the agent's signal; item 3 (stop defined) moved
+  to the unscored list because it is a constant. Six items scored, threshold 5/6.
+- Rule-based Rocky (v1 logic) with the paper's §3.2 cascade implemented for
+  Alpha Patience = 7. Other adjustments are recorded and disclosed as inert.
+- `--cooldown` (default 0 = re-entry eligible at the next session, matching
+  the once-daily live cadence), `--no-ipo-ban`, `--agents`, `--tickers`.
+- Both Beta profiles run (Aschenbrenner = paper §6.3 config; Baker = live).
+
+### Added — `backtest/report_v3.py`
+
+Generates `docs/BACKTEST_V3_RESULTS.md` from the JSON so no number in the
+paper is hand-typed. Raw outputs committed to `examples/backtest_v3/`.
+
+### Results (base case: re-entry eligible next session, IPO ban on)
+
+| Agent | Return | Max DD |
+|---|---|---|
+| Alpha | +2.55% | −2.9% |
+| Beta — Baker | +14.71% | −30.7% |
+| Beta — Aschenbrenner | −5.67% | −9.4% |
+| Alpha + Baker | **+8.63%** | |
+
+Not a performance claim. Beta's entire gain is one unrealized MU position
+entered the session after a stop; blocking re-entry for one further session
+gives Alpha + Baker −2.99%, and the v1 same-bar artifact gives +11.42%. The
+paper reports all three and draws its conclusions only from the behavioral
+findings that are identical across them.
+
+### Changed — Paper v2.4
+
+- **Alpha personality vector corrected to the production go-live values**
+  `[Risk 3, Conviction 2, Impulsivity 2, Entry Patience 3]` (from
+  `skills/trading-arena-alpha.md`). Earlier drafts used `[3,4,2,6]`, which
+  never matched what was deployed. §3.1 trait table now lists all nine
+  production traits for both agents; §8.3 reports the first two live Rocky
+  adjustments (Aug 29: Alpha Entry Patience 3→4, Beta Technical Focus 3→2)
+  and notes that the Technical Focus change points the wrong way relative
+  to the trait's defined cascade — reported as a finding about trait
+  definition, not corrected retroactively.
+  Backtest re-run with the corrected vector — Alpha's entry rules do not
+  depend on Patience below 7; Rocky raises Alpha Entry Patience 3→4 on
+  Mar 31 after a three-loss fortnight (§7.4).
+- Abstract, §1, §6, §7, §9, §10, Appendix A rewritten around v3 results;
+  no outperformance claimed.
+- Live P&L corrected to −$140.17 (−2.80%) from the paper's own realized +
+  unrealized components; trade counts corrected to 6 entries / 4 exits.
+- Duplicate §3.1/§4.2 heading and an unbalanced `\lfloor…\rceil` removed.
+- References 6, 7, 8 corrected to verifiable citations.
+- LaTeX source added under `arxiv/` (`build.py` → `main.tex` → PDF).
+
+---
+
 ## [v0.4.0] — 2026-08-24 — Live Trading Lessons (Aug 18-24): Risk, Reliability, Regime
 
 ### Summary

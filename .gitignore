@@ -35,3 +35,4 @@ Thumbs.db
 state/
 transcripts/
 gate1_log.jsonl
+.review/
