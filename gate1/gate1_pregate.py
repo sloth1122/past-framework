@@ -286,7 +286,11 @@ def check_rr_arithmetic(thesis) -> GateResult:
     if target <= entry:
         return GateResult("RR", False, f"target ${target} <= entry ${entry}")
     rr = (target - entry) / (entry - stop)
-    claimed_rr = thesis.get("claimed_rr", rr)
+    claimed_rr = thesis.get("claimed_rr")
+    if claimed_rr is None:          # absent or JSON null = no claim to verify
+        claimed_rr = rr
+    elif isinstance(claimed_rr, bool) or not isinstance(claimed_rr, (int, float)):
+        return GateResult("RR", False, f"claimed_rr {claimed_rr!r} is not a number")
     ok = rr >= CONFIG["min_rr"]
     # one-sided: only OVERstating the edge is misrepresentation (BA claimed
     # 2.02, real 1.02); a conservative claim below the real R/R is honest
@@ -908,6 +912,11 @@ def selftest():
              {"cash": 9000.0, "equity": 20000.0, "allocation_share": 0.3},
              copy.deepcopy(base_market), copy.deepcopy(base_book), False,
              clock=now, expect_fail_ids={"RISK"})
+
+    # RR: claimed_rr null = no claim (recomputed ratio still enforced)
+    t = copy.deepcopy(base_thesis); t["claimed_rr"] = None
+    run_case("claimed_rr null → PASS (no crash)", t, copy.deepcopy(base_account),
+             copy.deepcopy(base_market), copy.deepcopy(base_book), True, clock=now)
 
     print(f"\nSelf-test: {passing} passed, {failing} failed")
     if failing:

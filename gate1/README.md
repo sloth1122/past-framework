@@ -14,7 +14,7 @@ get wrong.
 |---|---|
 | `INPUT` | zero, negative, NaN or non-numeric shares/prices/position value (fails closed) |
 | `CAPITAL` | position value > actual deployable (shared-cash misreps), or > the per-trade cap ($2,900) |
-| `SLOTS` | book/layer position caps; layer must be compute, memory, networking or power |
+| `SLOTS` | book/layer position caps; layer must be compute, memory, networking or power. Adding to a ticker already held is **not** checked — CAPITAL/RISK size each order on its own |
 | `MKTCAP` | claimed market cap vs verified source (±10%) |
 | `PRICE` | stale quote (>5 min), wrong-instrument parse (>±2%), gap-chase (>1.5% above claimed) |
 | `RR` | R/R recomputed from entry/target/stop — floor 2:1; a claim >5% above the real ratio is rejected |
@@ -71,7 +71,7 @@ checks).
    historical submissions. Includes positive controls and adversarial
    cases (backdated-clock attack, understated position value,
    allocation_share inflation, circular risk budget, negative shares,
-   partial-trust fallback, thesis-claimed shared cash, ticker-casing evasion). 43 cases: 43 pass.
+   partial-trust fallback, thesis-claimed shared cash, ticker-casing evasion). 44 cases: 44 pass.
 2. **Shadow mode.** Run before the LLM Judge for N sessions, logging only.
    Compare verdicts. The danger case is Gate-FAIL + Judge-APPROVE
    (over-rejection) — those get mandatory human review. Gate-PASS +
