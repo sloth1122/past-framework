@@ -6,13 +6,32 @@ Every number in the paper's results section must come from this file.
 """
 import argparse, collections, json, os
 
-def load(p):
+ROOT = os.path.realpath(os.path.join(os.path.dirname(__file__), ".."))
+# JSON inputs may only come from the repo or the backtest output directory.
+INPUT_ROOTS = [ROOT, os.path.realpath(os.path.expanduser(
+    os.environ.get("OUT_DIR", "~/trading-arena/state/backtests")))]
+
+
+def _inside(path, roots):
+    return any(os.path.commonpath([path, r]) == r for r in roots)
+
+
+def safe_input(p):
+    """Resolve a CLI-supplied path or glob to one .json file under INPUT_ROOTS."""
     import glob
     p = os.path.expanduser(p)
     hits = sorted(glob.glob(p)) if any(c in p for c in "*?[") else [p]
     if not hits:
         raise FileNotFoundError(p)
-    return json.load(open(hits[-1]))
+    real = os.path.realpath(hits[-1])
+    if not real.endswith(".json") or not _inside(real, INPUT_ROOTS):
+        raise ValueError(f"refusing input outside {INPUT_ROOTS} or not .json: {real}")
+    return real
+
+
+def load(p):
+    with open(safe_input(p)) as f:
+        return json.load(f)
 
 def money(x):
     return f"{'+' if x >= 0 else '−'}${abs(x):,.2f}"
@@ -133,8 +152,11 @@ def main():
         L.append("")
         L.append("Cooldown semantics: 0 = a ticker stopped at session D may be re-entered at D+1 (live-matching); N = N further sessions must pass; −1 = same-bar re-entry (v1 artifact). Beta's result is dominated by whether MU is re-entered on 2026-03-31 ($337.79) or not until 2026-06-10 ($891.74); see paper §7.6.\n")
 
-    out = os.path.abspath(a.out)
-    open(out, "w").write("\n".join(L))
+    out = os.path.realpath(a.out)
+    if not out.endswith(".md") or not _inside(out, [ROOT]):
+        raise SystemExit(f"--out must be a .md file inside the repo: {out}")
+    with open(out, "w") as f:
+        f.write("\n".join(L))
     print(f"wrote {out}")
 
 if __name__ == "__main__":
