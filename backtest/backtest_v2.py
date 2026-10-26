@@ -259,6 +259,10 @@ def run_simulation_llm(df, ticker, agent_name, strategy_meta, call_log, verbose=
     """
     Run full simulation with LLM Judge + Rocky.
     Every Judge call is a real Ollama query to deepseek-r1:70b.
+
+    Behavior change (PR #4, Oct 2026): no re-entry on the bar of an exit
+    (just_exited) and share sizing floors to 0.1 instead of rounding. Outputs
+    are NOT comparable to v2 JSON produced before this change.
     """
     agent = agent_name
     past = strategy_meta['past_init'].copy()
