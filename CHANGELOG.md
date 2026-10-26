@@ -5,7 +5,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
-## [v0.4.1] — 2026-09-28 — Gate 1: Deterministic Pre-Gate for the LLM Judge
+## [v0.4.2] — 2026-09-28 — Gate 1: Deterministic Pre-Gate for the LLM Judge
 
 ### Summary
 
