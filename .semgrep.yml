@@ -52,19 +52,10 @@ rules:
         - "**/generate_dashboard.py"
         - "**/orchestrator.py"
 
-  # Rule 4: Z.AI timeout must be >= 300 seconds (must not be below 300)
-  - id: past-zai-stale-timeout-minimum
-    message: "Z.AI CLAUDE_TIMEOUT must be >= 300 (GLM-5.2 cold-start takes 90-120s, low values kill it)"
-    languages: [python]
-    severity: ERROR
-    patterns:
-      - pattern: CLAUDE_TIMEOUT = $N
-      - metavariable-comparison:
-          metavariable: $N
-          comparison: str($N).isdigit() and int($N) < 300
-    paths:
-      include:
-        - "**/trading_arena_premarket_health.py"
+  # (Former rule 4, past-zai-stale-timeout-minimum, removed Oct 2026: it enforced
+  # CLAUDE_TIMEOUT >= 300 for Z.AI/GLM cold starts. Z.AI was retired; the health
+  # check now calls Anthropic Claude, where 90s is correct. Its comparison was
+  # also outside Semgrep's grammar, so it never matched — a false-green gate.)
 
   # Rule 5: No hardcoded $2,500 in any string in agent scripts
   - id: past-no-hardcoded-2500

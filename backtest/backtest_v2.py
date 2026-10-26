@@ -11,7 +11,7 @@ Usage:
   python3 backtest_v2.py [ticker] [start_date] [end_date]
   python3 backtest_v2.py OKLO 2025-08-01 2026-07-21
 """
-import json, os, sys, datetime, time, math
+import json, os, sys, datetime, time, math, re
 sys.path.insert(0, os.path.dirname(__file__))
 
 def safe_path(path, base_dir=None):
@@ -342,7 +342,11 @@ def run_simulation_llm(df, ticker, agent_name, strategy_meta, call_log, verbose=
 # ════════════════════════════════════════════════════════════
 def main():
     args = sys.argv[1:]
-    ticker = args[0] if len(args) > 0 else "OKLO"
+    ticker = (args[0] if len(args) > 0 else "OKLO").upper()
+    # Fail fast, before the LLM runs: safe_filename() would otherwise reject a
+    # bad ticker only at save time, discarding a full backtest's results.
+    if not re.fullmatch(r"[A-Z0-9.\-]{1,10}", ticker):
+        sys.exit(f"Invalid ticker {ticker!r}: expected 1-10 chars of A-Z, 0-9, '.', '-'")
     start = args[1] if len(args) > 1 else "2025-08-01"
     end = args[2] if len(args) > 2 else "2026-07-21"
 

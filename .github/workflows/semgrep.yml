@@ -20,13 +20,15 @@ jobs:
 
       - name: Checkout base-branch Semgrep policy
         if: github.event_name == 'pull_request'
+        env:
+          BASE_REF: ${{ github.base_ref }}
         run: |
-          git fetch origin "${{ github.base_ref }}" --depth=1
-          if git show "origin/${{ github.base_ref }}:.semgrep.yml" > /tmp/base.semgrep.yml 2>/dev/null; then
+          if git fetch origin "$BASE_REF" --depth=1 \
+             && git show "origin/$BASE_REF:.semgrep.yml" > /tmp/base.semgrep.yml 2>/dev/null; then
             cp /tmp/base.semgrep.yml .semgrep.yml
-            echo "Using base-branch .semgrep.yml from origin/${{ github.base_ref }}"
+            echo "Using base-branch .semgrep.yml from origin/$BASE_REF"
           else
-            echo "No .semgrep.yml on origin/${{ github.base_ref }} — using PR's own .semgrep.yml"
+            echo "No .semgrep.yml on origin/$BASE_REF — using PR's own .semgrep.yml"
           fi
 
       - name: Set up Python

@@ -139,6 +139,9 @@ def run_simulation(df, ticker, ticker_info, agent_name, start_date, end_date):
                 position = None
         
         # ── CHECK ENTRY ──
+        # NOTE: unlike backtest_v2.py (just_exited guard), this original v0.1
+        # harness allows re-entry on the same bar as an exit. Kept as-is so the
+        # v0.1 results stay reproducible; use backtest_v2.py for current figures.
         if position is None:
             if agent_name == 'alpha':
                 should_enter = alpha_should_enter(row, position)
@@ -165,14 +168,15 @@ def run_simulation(df, ticker, ticker_info, agent_name, start_date, end_date):
                     else:
                         shares = min(cash / entry_price, ALLOC * 0.25 / entry_price)  # Baker: 25% max per position (diversified)
                     shares = max(0, math.floor(shares * 10) / 10)  # floor to 1 decimal, never round up past cash
-                    cost = entry_price * shares
-                    cash -= cost
-                    position = {
-                        'entry_price': entry_price,
-                        'shares': shares,
-                        'entry_date': date,
-                        'entry_row': row
-                    }
+                    if shares > 0:  # budget < 0.1 share: skip, don't open a 0-share phantom position
+                        cost = entry_price * shares
+                        cash -= cost
+                        position = {
+                            'entry_price': entry_price,
+                            'shares': shares,
+                            'entry_date': date,
+                            'entry_row': row
+                        }
         
         # ── BI-WEEKLY ROCKY TUNING ──
         if i > 0 and i % 10 == 0:  # every 10 trading days (~2 weeks)
