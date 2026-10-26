@@ -35,7 +35,7 @@ jobs:
           python-version: '3.11'
 
       - name: Install Semgrep (pinned)
-        run: pip install semgrep==1.85.0
+        run: 'pip install --only-binary :all: semgrep==1.85.0'
 
       - name: Run Semgrep
         run: semgrep scan --config .semgrep.yml --error --json
