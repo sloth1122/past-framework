@@ -73,7 +73,7 @@ def main():
     L.append(f"| Tickers | {', '.join(d['tickers'])} |")
     L.append(f"| Capital | ${d['alloc_per_agent']:,.0f} per agent, one shared cash pool across all tickers |")
     L.append(f"| Fills | {d['fills']} |")
-    L.append(f"| Indicators | rolling 52-week window; every value at day D uses only D−252…D |")
+    L.append("| Indicators | rolling 52-week window; every value at day D uses only D−252…D |")
     L.append(f"| Stop re-entry cooldown | {d['stop_cooldown_days']} trading day(s) |")
     L.append(f"| IPO ban (Judge 11c) | {'ON — no entries < 90 days public' if d['ipo_ban'] else 'OFF'} |")
     L.append(f"| Judge | {d['judge']} |")
