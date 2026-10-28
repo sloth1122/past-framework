@@ -12,21 +12,38 @@ INPUT_ROOTS = [ROOT, os.path.realpath(os.path.expanduser(
     os.environ.get("OUT_DIR", "~/trading-arena/state/backtests")))]
 
 
-def _inside(path, roots):
-    return any(os.path.commonpath([path, r]) == r for r in roots)
+def safe_path(path, base_dir):
+    """Canonicalize *path* and require it to stay inside *base_dir*
+    (same guard as backtest_v2.safe_path). Raises ValueError otherwise."""
+    base_dir = os.path.realpath(base_dir)
+    resolved = os.path.realpath(path)
+    # separator suffix prevents "/data/resources-secret" matching "/data/resources"
+    if resolved != base_dir and not resolved.startswith(base_dir + os.sep):
+        raise ValueError(f"path {path!r} resolves outside {base_dir!r}")
+    return resolved
+
+
+def _safe_dir(d):
+    for root in INPUT_ROOTS:
+        try:
+            return safe_path(d, root)
+        except ValueError:
+            continue
+    raise ValueError(f"input directory {d!r} is outside {INPUT_ROOTS}")
 
 
 def safe_input(p):
-    """Resolve a CLI-supplied path or glob to one .json file under INPUT_ROOTS."""
-    import glob
-    p = os.path.expanduser(p)
-    hits = sorted(glob.glob(p)) if any(c in p for c in "*?[") else [p]
-    if not hits:
+    """Resolve a CLI path whose FILENAME may hold a glob (e.g. *_cd0_*.json)
+    to the newest-named matching .json file inside an allowed directory."""
+    import fnmatch
+    d, pattern = os.path.split(os.path.expanduser(p))
+    if not pattern.endswith(".json"):
+        raise ValueError(f"input must be a .json file: {p!r}")
+    d = _safe_dir(d or ".")
+    names = sorted(n for n in os.listdir(d) if fnmatch.fnmatch(n, pattern))
+    if not names:
         raise FileNotFoundError(p)
-    real = os.path.realpath(hits[-1])
-    if not real.endswith(".json") or not _inside(real, INPUT_ROOTS):
-        raise ValueError(f"refusing input outside {INPUT_ROOTS} or not .json: {real}")
-    return real
+    return safe_path(os.path.join(d, names[-1]), d)
 
 
 def load(p):
@@ -152,8 +169,8 @@ def main():
         L.append("")
         L.append("Cooldown semantics: 0 = a ticker stopped at session D may be re-entered at D+1 (live-matching); N = N further sessions must pass; −1 = same-bar re-entry (v1 artifact). Beta's result is dominated by whether MU is re-entered on 2026-03-31 ($337.79) or not until 2026-06-10 ($891.74); see paper §7.6.\n")
 
-    out = os.path.realpath(a.out)
-    if not out.endswith(".md") or not _inside(out, [ROOT]):
+    out = safe_path(a.out, ROOT)
+    if not out.endswith(".md"):
         raise SystemExit(f"--out must be a .md file inside the repo: {out}")
     with open(out, "w") as f:
         f.write("\n".join(L))
