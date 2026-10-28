@@ -389,8 +389,11 @@ def main():
 
     os.makedirs(OUT_DIR, exist_ok=True)
     ts = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-    tag = ("ipoban" if ipo_ban else "noipoban") + f"_cd{a.cooldown}"
-    out = os.path.join(OUT_DIR, f"backtest_v3_{tag}_{ts}.json")
+    tag = ("ipoban" if ipo_ban else "noipoban") + f"_cd{int(a.cooldown)}"
+    out_root = os.path.realpath(OUT_DIR)
+    out = os.path.realpath(os.path.join(out_root, f"backtest_v3_{tag}_{ts}.json"))
+    if os.path.dirname(out) != out_root:  # filename is built from ints; belt-and-braces
+        raise SystemExit(f"refusing to write outside {out_root}: {out}")
     with open(out, "w") as f:
         json.dump({"version": 3, "start": a.start, "end": a.end, "tickers": tickers, "ipo_ban": ipo_ban,
                    "stop_cooldown_days": a.cooldown,

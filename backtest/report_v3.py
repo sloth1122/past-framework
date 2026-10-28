@@ -6,13 +6,49 @@ Every number in the paper's results section must come from this file.
 """
 import argparse, collections, json, os
 
-def load(p):
-    import glob
-    p = os.path.expanduser(p)
-    hits = sorted(glob.glob(p)) if any(c in p for c in "*?[") else [p]
-    if not hits:
+ROOT = os.path.realpath(os.path.join(os.path.dirname(__file__), ".."))
+# JSON inputs may only come from the repo or the backtest output directory.
+INPUT_ROOTS = [ROOT, os.path.realpath(os.path.expanduser(
+    os.environ.get("OUT_DIR", "~/trading-arena/state/backtests")))]
+
+
+def safe_path(path, base_dir):
+    """Canonicalize *path* and require it to stay inside *base_dir*
+    (same guard as backtest_v2.safe_path). Raises ValueError otherwise."""
+    base_dir = os.path.realpath(base_dir)
+    resolved = os.path.realpath(path)
+    # separator suffix prevents "/data/resources-secret" matching "/data/resources"
+    if resolved != base_dir and not resolved.startswith(base_dir + os.sep):
+        raise ValueError(f"path {path!r} resolves outside {base_dir!r}")
+    return resolved
+
+
+def _safe_dir(d):
+    for root in INPUT_ROOTS:
+        try:
+            return safe_path(d, root)
+        except ValueError:
+            continue
+    raise ValueError(f"input directory {d!r} is outside {INPUT_ROOTS}")
+
+
+def safe_input(p):
+    """Resolve a CLI path whose FILENAME may hold a glob (e.g. *_cd0_*.json)
+    to the newest-named matching .json file inside an allowed directory."""
+    import fnmatch
+    d, pattern = os.path.split(os.path.expanduser(p))
+    if not pattern.endswith(".json"):
+        raise ValueError(f"input must be a .json file: {p!r}")
+    d = _safe_dir(d or ".")
+    names = sorted(n for n in os.listdir(d) if fnmatch.fnmatch(n, pattern))
+    if not names:
         raise FileNotFoundError(p)
-    return json.load(open(hits[-1]))
+    return safe_path(os.path.join(d, names[-1]), d)
+
+
+def load(p):
+    with open(safe_input(p)) as f:
+        return json.load(f)
 
 def money(x):
     return f"{'+' if x >= 0 else '−'}${abs(x):,.2f}"
@@ -54,7 +90,7 @@ def main():
     L.append(f"| Tickers | {', '.join(d['tickers'])} |")
     L.append(f"| Capital | ${d['alloc_per_agent']:,.0f} per agent, one shared cash pool across all tickers |")
     L.append(f"| Fills | {d['fills']} |")
-    L.append(f"| Indicators | rolling 52-week window; every value at day D uses only D−252…D |")
+    L.append("| Indicators | rolling 52-week window; every value at day D uses only D−252…D |")
     L.append(f"| Stop re-entry cooldown | {d['stop_cooldown_days']} trading day(s) |")
     L.append(f"| IPO ban (Judge 11c) | {'ON — no entries < 90 days public' if d['ipo_ban'] else 'OFF'} |")
     L.append(f"| Judge | {d['judge']} |")
@@ -133,8 +169,11 @@ def main():
         L.append("")
         L.append("Cooldown semantics: 0 = a ticker stopped at session D may be re-entered at D+1 (live-matching); N = N further sessions must pass; −1 = same-bar re-entry (v1 artifact). Beta's result is dominated by whether MU is re-entered on 2026-03-31 ($337.79) or not until 2026-06-10 ($891.74); see paper §7.6.\n")
 
-    out = os.path.abspath(a.out)
-    open(out, "w").write("\n".join(L))
+    out = safe_path(a.out, ROOT)
+    if not out.endswith(".md"):
+        raise SystemExit(f"--out must be a .md file inside the repo: {out}")
+    with open(out, "w") as f:
+        f.write("\n".join(L))
     print(f"wrote {out}")
 
 if __name__ == "__main__":

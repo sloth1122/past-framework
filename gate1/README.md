@@ -47,6 +47,10 @@ python3 gate1_pregate.py --thesis t.json --account a.json --market m.json --book
 python3 gate1_pregate.py --thesis t.json --demo --shadow
 ```
 
+Input files must be `.json` files inside the script's folder or
+`~/trading-arena/state` (add one more folder with `GATE1_INPUT_ROOT`);
+anything else is refused with exit 2.
+
 Every verdict is appended to `gate1_log.jsonl` with claimed-vs-verified
 evidence. A check that *crashes* is treated as a FAIL, never a silent
 pass — the gate cannot fail quietly by construction.
