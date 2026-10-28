@@ -38,6 +38,7 @@ Usage:
 import argparse
 import json
 import math
+import os
 import sys
 from dataclasses import dataclass, field, asdict
 from datetime import datetime, timedelta, timezone, date
@@ -961,6 +962,39 @@ def selftest():
 #     queue — the override valve.
 # ---------------------------------------------------------------------------
 
+# Input files (thesis + trusted data) may only be .json files inside these
+# directories: the script's own folder, the arena state folder, or an extra
+# folder named by GATE1_INPUT_ROOT (e.g. for a test harness).
+INPUT_ROOTS = [os.path.dirname(os.path.realpath(__file__)),
+               os.path.expanduser("~/trading-arena/state")]
+if os.environ.get("GATE1_INPUT_ROOT"):
+    INPUT_ROOTS.append(os.path.expanduser(os.environ["GATE1_INPUT_ROOT"]))
+
+
+def safe_path(path, base_dir):
+    """Canonicalize *path* and require it to stay inside *base_dir*.
+    Raises ValueError otherwise (same guard as backtest_v2.safe_path)."""
+    base_dir = os.path.realpath(base_dir)
+    resolved = os.path.realpath(path)
+    # separator suffix prevents "/data/state-secret" matching "/data/state"
+    if resolved != base_dir and not resolved.startswith(base_dir + os.sep):
+        raise ValueError(f"path {path!r} resolves outside {base_dir!r}")
+    return resolved
+
+
+def read_input_json(path):
+    if not str(path).endswith(".json"):
+        raise ValueError(f"input must be a .json file: {path!r}")
+    for root in INPUT_ROOTS:
+        try:
+            safe = safe_path(path, root)
+        except ValueError:
+            continue
+        with open(safe) as f:
+            return json.load(f)
+    raise ValueError(f"input {path!r} is outside the allowed folders {INPUT_ROOTS}")
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--thesis", help="path to thesis JSON")
@@ -980,7 +1014,10 @@ def main():
     if not args.thesis:
         print(__doc__); sys.exit(2)
 
-    thesis = json.loads(Path(args.thesis).read_text())
+    try:
+        thesis = read_input_json(args.thesis)
+    except (ValueError, OSError) as e:
+        print(f"ERROR: {e}"); sys.exit(2)
     embedded = {k: thesis.pop(k) for k in ("account", "market", "agent_book")
                 if k in thesis}
 
@@ -994,9 +1031,12 @@ def main():
               + ". Refusing to fall back to submitter-embedded data.")
         sys.exit(2)
     if supplied:
-        account = json.loads(Path(args.account).read_text())
-        market = json.loads(Path(args.market).read_text())
-        book = json.loads(Path(args.book).read_text())
+        try:
+            account = read_input_json(args.account)
+            market = read_input_json(args.market)
+            book = read_input_json(args.book)
+        except (ValueError, OSError) as e:
+            print(f"ERROR: {e}"); sys.exit(2)
         mode = "shadow" if args.shadow else "enforce"
     elif args.demo:
         account = embedded.get("account", {})
