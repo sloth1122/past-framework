@@ -5,6 +5,89 @@ Format based on [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [v0.4.2] — 2026-09-28 — Gate 1: Deterministic Pre-Gate for the LLM Judge
+
+### Summary
+
+A new mechanical fact-check layer (`gate1/gate1_pregate.py`) now runs
+**before** the LLM Judge on every agent thesis submission. Motivated by
+an audit of the Judge's own decision log: nearly every catch across
+Sep 16–28 was arithmetic, not reasoning — misstated market caps (5.5x,
+6x), buying-power misrepresentation (shared-account cash claimed as
+deployable), stale prices placed into pre-market gaps, and R/R ratios
+that don't recompute. No LLM should spend reasoning budget on arithmetic
+a script cannot get wrong.
+
+Also included: the stop-out recovery audit that drove the `STOP` check.
+Of 7 consecutive stopped-out positions, 3 recovered above their stop
+price within days (ALAB +24.7%, MU +16.2%, COHR +2.1% same-day) — the
+theses were right, but a fixed 10% stop on a high-ATR name is ~2 days
+of normal volatility, so thesis-correct trades were being converted
+into permanent losses by the risk rule itself. The fix: stops must
+clear 2× ATR14, with position size reduced so dollar risk is unchanged.
+
+### Added — `gate1/` (9 deterministic checks, zero LLM)
+
+`CAPITAL` (deployable math) · `SLOTS` (book/layer caps) · `MKTCAP`
+(claimed vs verified ±10%) · `PRICE` (freshness <5 min, ±2% sanity,
+gap-chase detection) · `RR` (recomputed from entry/target/stop; floor
+2:1; >5% misrepresentation rejected) · `STOP` (2×ATR14 minimum, 20%
+cap) · `RISK` (wider stop ⇒ smaller size, dollar risk constant) ·
+`EARN` (7-day blackout as first shipped; now gap sizing — see update
+below) · `REENTRY` (5-day ban after stop-out).
+
+**Validation methodology:** (1) selftest ran 19 synthetic scenarios at
+launch (44 after the update below)
+built from the failure patterns documented in the Judge's decision log
+(including positive controls and adversarial cases — backdated-clock
+attack, understated position value, allocation_share inflation,
+circular risk budget); run after any edit; (2) shadow mode logs
+verdicts alongside the LLM Judge for comparison before enforcement
+(danger case: gate-FAIL + Judge-APPROVE → mandatory human review);
+(3) enforce when disagreement < 10%. Check crashes are treated as
+FAILs, never silent passes; every verdict is appended to an
+append-only JSONL audit log with claimed-vs-verified evidence.
+
+**Trust model:** enforce mode accepts account/market/book data only
+from the harness (live MCP pulls). Thesis-embedded data is restricted
+to explicit `--demo` mode; the evaluation clock is always the gate's
+own, preventing backdated freshness checks.
+
+**Integration:** the pre-market health check
+(`scripts/trading_arena_premarket_health.py`, published with PR #6) runs the
+selftest of the arena's deployed copy (`~/trading-arena/gate1_pregate.py`, kept
+identical to `gate1/gate1_pregate.py`) every morning (5 AM) alongside model/API checks — any edit
+that breaks a check alerts before agents trade.
+
+### Updated 2026-10-26 — synced to the live Arena v5.1 Gate 1
+
+The published `gate1_pregate.py` is now the version the arena runs
+(Oct 24 2026; the Arena v5 rule changes are documented in the v0.5.x
+entries added by PR #6, merged after this one): `STOP` =
+2×ATR14 with a 5% floor (was 10%) and 20% cap; `RISK` uses an explicit
+budget of 3% of equity ($290) instead of 10% of the position cap;
+`EARN` no longer blacks out earnings — earnings inside the hold must be
+gap-sized against the risk budget; max 4 positions (was 5), max
+position $2,900 (was $750, and now enforced in `CAPITAL`), $50 fee buffer
+(was a $500 reserve).
+
+Review fixes in the same update: new `INPUT` check fails closed on zero,
+negative or non-numeric sizing fields; enforce mode refuses to run unless
+all three trusted sources are supplied (it previously filled missing ones
+from the thesis itself); `SLOTS` rejects unknown layers; earnings on the
+evaluation day need gap sizing unless trusted data marks them reported;
+a stop at the 20% cap gets one-cent tolerance; future quote timestamps
+fail `PRICE`; `allocation_share` is read only from the trusted account
+payload (default 1.0 = single-agent v5), never from the thesis; naive quote
+timestamps are treated as UTC instead of crashing `PRICE`; `STOP` fails
+closed without ATR14; `REENTRY` matches tickers case-insensitively; the
+30% cap and 3% risk budget are derived from `equity` when the trusted
+account payload provides it (scaled by `allocation_share`); `RR` rejects
+only overstated ratios, not conservative ones, and treats a null
+`claimed_rr` as no claim. Selftest: 44 cases, 44 pass.
+
+---
+
 ## [v0.4.1] — 2026-09-10 — Backtest v3: Portfolio-Level Harness, Results Retracted and Re-Run
 
 > **Restored 2026-10-26.** This work was finished on Sep 10 but never committed; on Sep 13 an
