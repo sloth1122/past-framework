@@ -1,6 +1,6 @@
 ---
 name: trading-arena-alpha
-description: "Agent Alpha: Renaissance Medallion style — pure statistical, pattern recognition, mean reversion. The Jim Simons approach applied to Robinhood Agentic Trading."
+description: "[DEPRECATED 2026-10-22] Agent Alpha: Renaissance Medallion style — pure statistical, pattern recognition, mean reversion. The Jim Simons approach applied to Robinhood Agentic Trading."
 version: 2.0.0
 author: Trading Arena
 platforms: [macos]
@@ -8,6 +8,9 @@ metadata:
   hermes:
     tags: [trading, robinhood, investment, alpha, renaissance, statistical]
 ---
+
+> ## ⛔ DEPRECATED — retired 2026-10-22 (Arena v5)
+> 77 sessions, 3 trades, 0 winners, −$19.35; 29+ consecutive sessions with zero submissions (the oversold-AND-rising-20d gate never fired). Capital merged into Agent Beta. Kept for the research record. See `docs/ARENA_V5_SINGLE_AGENT.md`.
 
 # Agent Alpha: Renaissance Medallion (Jim Simons Style)
 
@@ -142,7 +145,7 @@ Read the Judge's verdict. Only execute if APPROVED.
 
 If APPROVED by Judge:
 ```
-terminal(command="cd /Users/johntytko/trading-arena && /Users/johntytko/.local/bin/claude -p 'Use robinhood-trading MCP to place_equity_order: buy [SHARES] shares of [TICKER] at market in agentic account ending in 8877.' --max-turns 5 --dangerously-skip-permissions", timeout=60)
+terminal(command="cd /Users/johntytko/trading-arena && /Users/johntytko/.local/bin/claude -p 'Use robinhood-trading MCP to place_equity_order: buy [SHARES] shares of [TICKER] at market in agentic account ending in XXXX.' --max-turns 5 --dangerously-skip-permissions", timeout=60)
 ```
 
 ### Phase 5: PERSIST (Write State + Transcript)
@@ -161,7 +164,7 @@ Write full transcript to `/Users/johntytko/trading-arena/transcripts/agents/alph
 - Max 1 new position per day (focus on quality)
 - Never average down on a losing position
 - Never trade on margin
-- **Shared account**: You and Beta share account ••••8877. Your allocation is $2,500. The Judge will verify your positions don't exceed this.
+- **Shared account**: You and Beta share account ••••XXXX. Your allocation is $2,500. The Judge will verify your positions don't exceed this.
 - **Before placing ANY trade**: check your virtual cash in your state file. Your cash = $2,500 minus cost of all your open positions plus realized gains/losses. If buying would exceed your $2,500 allocation, do NOT place the trade.
 
 ### Options Strategies (Level 2 — Now Enabled)

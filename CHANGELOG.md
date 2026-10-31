@@ -5,6 +5,48 @@ Format based on [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [v0.5.2] — 2026-10-24 — Arena v5.2: risk-tiered Judge, model-policy check, review fixes
+
+### Changed
+- **One Judge, risk-tiered** (`judge_vote.py`): HIGH-RISK (every option trade; crypto/leverage; stock above John's size threshold) = 3 runs on Fable 5.1 high, unanimous; ROUTINE stock = 1 run on Opus 5.5 high. Failover to Opus 5.5 ×3 (logged); 10% non-voting Opus shadow runs; split and agreement reports at 50.
+- **Health check** verifies every Hermes chat, subagent and agent cron is on Claude Opus 5.5 high and rewrites `model_status.md` from that check; GLM/Deepseek shown only as retired; dead Z.AI/Ollama checks removed; Alpha's frozen state file no longer checked.
+- **Docs:** options are ON for Beta (two docs still said "not enabled").
+
+### Fixed
+- Judge: a repeated vote line rejected trades that all runs approved ("REJECTED 4/3"). Votes are now JSON, tallied by run_id, with one re-run on an invalid vote.
+- `option_payoff.py`: expiry-day ZeroDivisionError in probability of profit; naked short max loss now "unlimited".
+- `charlie_vol_snapshot.py`: a missing VIX3M/VIX9D quote no longer reports "VIX fetch failed" and discards the VIX level.
+
+### Tests
+- `test_judge_vote.py` 13/13 · `test_options_guard.py` 26/26 · `test_option_payoff.py` 4/4 · `test_charlie_vol_snapshot.py` 4/4 · `test_premarket_health.py` 6/6.
+
+See `docs/ARENA_V5_SINGLE_AGENT.md` § v5.2.
+
+---
+
+## [v0.5.0] — 2026-10-22 — Arena v5: One Agent, Core + Event Bets
+
+### Summary
+Eleven weeks of live trading (Aug 3 → Oct 21) returned −5.4% vs SPY +2.0%: 11 closed trades, 1 winner, 7 exits by stop-loss. Agent Alpha placed no trade in its last 29+ sessions. Consistent with FINSABER (arXiv 2505.07078: LLM traders too cautious in bull markets, too aggressive in bear markets, no significant alpha), StockBench (arXiv 2510.02209) and Agent Market Arena (arXiv 2510.11695: architecture > model), v5 changes the structure, not the model.
+
+### Changed
+- **Agent Alpha retired** (skill deprecated; cron paused). **Agent Beta is the sole agent** on the whole account.
+- **Beta v5.0.0 mandate:** 10% mechanical CORE in QQQ gated by the 200-day SMA; 90% EVENT BETS (max 3, dated catalyst ≤ 30 trading days, ≤ $1,500 and ≤ $150 dollar risk per bet, stop = 2×ATR(14) within 5–20%, earnings allowed only with gap-risk sizing).
+- **Judge:** Beta-only audit; enforces v5 sizing; options checklist (options ON for Beta since 2026-10-23).
+- **Scoreboard:** Beta vs QQQ from the v5 baseline ($4,678.46 / QQQ $706.68, 2026-10-22). 90-day review ~2027-01-20.
+- **Models:** all agents on Claude Opus 5.5 (high effort); GLM-5.2 / Z.AI and Nous fallbacks removed.
+- **PAST vector (Beta, user directive):** Position concentration 4→6, Hold Duration 7→5, Entry Patience 6→5.
+
+- **v5.1 (2026-10-23):** $5,000 added (equity $9,692.16); account converted to limited margin (no borrowing); sizing re-expressed as % of equity (bet ≤ 30%, risk ≤ 3%, core ≈10%); scoreboard baseline $9,676.71 / QQQ $704.59.
+
+- **v5.1 decision discipline (2026-10-23):** decision ledger (every buy/hold/pass vs QQQ, 5d/20d, first-close entry) with auto lessons; Polymarket odds; 3-vote unanimous Judge (fail-closed); required real-news bear case; stop-slippage tracking. Adapted from TauricResearch/TradingAgents (Apache-2.0).
+- **Options enabled for Beta (2026-10-23):** buy calls/puts + debit verticals; `options_guard.py` (26/26 tests as of v5.2); max loss 3% equity; $1,500/month premium cap.
+- **Agent Charlie (2026-10-23):** non-trading options strategist (ApexVol blueprint adapted to a debit-only account); proposals → Beta → Rocky coach consult (`rocky_consult.py`) → the Judge. `option_payoff.py` (payoff/greeks/xlsx), `charlie_vol_snapshot.py` (VIX regime, HV30, IV history).
+
+See `docs/ARENA_V5_SINGLE_AGENT.md`.
+
+---
+
 ## [v0.4.2] — 2026-09-28 — Gate 1: Deterministic Pre-Gate for the LLM Judge
 
 ### Summary
