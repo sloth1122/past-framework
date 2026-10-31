@@ -47,6 +47,7 @@ cases = [
     ("explicit ratio 1 ok", {**base, "direction": "debit",
                              "legs": [{**call(250, "buy"), "ratio_quantity": 1}, {**call(270, "sell"), "ratio_quantity": "1"}]}, True),
     ("single leg ratio 3", {**base, "legs": [{**call(250, "buy"), "ratio_quantity": 3}]}, False),
+    ("missing order type", {k: v for k, v in {**base, "legs": [call(250, "buy")]}.items() if k != "type"}, False),
 ]
 fails = 0
 for name, o, want in cases:

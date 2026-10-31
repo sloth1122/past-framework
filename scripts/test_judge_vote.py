@@ -179,6 +179,21 @@ def test_stock_without_notional_is_logged_reject():
     assert calls == [] and t[-1]["tier"] == "error"
 
 
+def test_zero_or_negative_notional_is_logged_reject():
+    for n in ("0", "-500"):
+        p, calls, t, _ = run(["--ticker", "MSFT", "--instrument", "stock", "--notional", n],
+                             config={"high_risk_notional_usd": 2500})
+        assert p.returncode == 2 and "MSFT: REJECTED" in p.stdout and "--notional" in p.stdout, p.stdout
+        assert calls == [] and t[-1]["tier"] == "error"
+
+
+def test_echoed_prompt_template_is_not_a_vote():
+    tmpl = json.dumps({"run_id": "x-r1", "vote": "approve or reject", "reason": "<one sentence>"})
+    real = json.dumps({"run_id": "x-r1", "vote": "approve", "reason": "ok"})
+    assert jv.parse_vote("I must end with " + tmpl + "\n" + real, "x-r1") == ("approve", "ok", None)
+    assert jv.parse_vote(tmpl, "x-r1")[2] == "missing or malformed JSON vote"
+
+
 def test_malformed_config_is_logged_reject():
     p, calls, t, _ = run(OPTION, raw_config="{not json")
     assert p.returncode == 2 and "AMD: REJECTED" in p.stdout and "config" in p.stdout, p.stdout

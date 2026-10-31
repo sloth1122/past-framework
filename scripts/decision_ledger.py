@@ -12,7 +12,7 @@ the FIRST CLOSE AFTER the decision date (no credit for news read after the close
 Files (~/trading-arena/state/decisions/): decisions.jsonl, slippage.jsonl, lessons.md
 No LLM. `score` prints nothing on success (cron no-agent friendly).
 """
-import argparse, json, sys, time, urllib.request
+import argparse, contextlib, fcntl, json, os, sys, tempfile, time, urllib.request
 from datetime import datetime, date, timezone
 from pathlib import Path
 
@@ -60,6 +60,30 @@ def load(p):
     return [json.loads(l) for l in p.read_text().splitlines() if l.strip()] if p.exists() else []
 
 
+@contextlib.contextmanager
+def ledger_lock():
+    """Serialise log appends against score's rewrite (6:15 Charlie, 6:50 score, 7:05 Beta)."""
+    D.mkdir(parents=True, exist_ok=True)
+    with open(D / ".decisions.lock", "a") as lf:
+        fcntl.flock(lf, fcntl.LOCK_EX)
+        try:
+            yield
+        finally:
+            fcntl.flock(lf, fcntl.LOCK_UN)
+
+
+def atomic_write(p, text):
+    fd, tmp = tempfile.mkstemp(dir=str(p.parent), prefix=p.name + ".", suffix=".tmp")
+    try:
+        with os.fdopen(fd, "w") as f:
+            f.write(text)
+        os.replace(tmp, p)
+    except BaseException:
+        with contextlib.suppress(OSError):
+            os.unlink(tmp)
+        raise
+
+
 def cmd_log(a):
     D.mkdir(parents=True, exist_ok=True)
     a.agent = a.agent.strip().lower()   # scorecards filter on "beta"/"charlie"
@@ -67,10 +91,11 @@ def cmd_log(a):
     # the same ticker the same day must not be dropped as a duplicate.
     rec = {"id": f"{a.date}-{a.agent}-{a.ticker}-{a.action}", "date": a.date, "ticker": a.ticker.upper(),
            "action": a.action, "reason": a.reason, "agent": a.agent, "scores": {}}
-    if any(r["id"] == rec["id"] for r in load(LEDGER)):
-        print(f"exists: {rec['id']}"); return 0
-    with LEDGER.open("a") as f:
-        f.write(json.dumps(rec) + "\n")
+    with ledger_lock():
+        if any(r["id"] == rec["id"] for r in load(LEDGER)):
+            print(f"exists: {rec['id']}"); return 0
+        with LEDGER.open("a") as f:
+            f.write(json.dumps(rec) + "\n")
     print(f"logged: {rec['id']}")
     return 0
 
@@ -118,7 +143,10 @@ def cmd_score(a):
             r["scores"][k] = {"entry_date": str(ws[0]), "entry": round(ws[1], 2), "exit_date": str(ws[2]),
                               "exit": round(ws[3], 2), "ret_pct": round(ret, 2), "qqq_pct": round(bret, 2),
                               "rel_pts": round(ret - bret, 2)}
-    LEDGER.write_text("".join(json.dumps(r) + "\n" for r in rows))
+    with ledger_lock():   # keep rows logged while we were fetching prices
+        seen = {r["id"] for r in rows}
+        rows += [r for r in load(LEDGER) if r["id"] not in seen]
+        atomic_write(LEDGER, "".join(json.dumps(r) + "\n" for r in rows))
     write_lessons(rows)
     if errors and a.verbose:
         print("score errors:", "; ".join(errors))

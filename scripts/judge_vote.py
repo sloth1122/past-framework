@@ -142,6 +142,8 @@ def parse_vote(out, run_id, rc=0):
         except ValueError:
             continue
         if isinstance(o, dict) and "run_id" in o and "vote" in o:
+            if str(o["vote"]).strip().lower() == "approve or reject":
+                continue   # the model echoed the prompt's template line, not a vote
             objs.append(o)
     if not objs:
         return None, None, "missing or malformed JSON vote"
@@ -228,8 +230,8 @@ def reject_early(a, stamp, reason):
 
 
 def judge(a, stamp):
-    if a.instrument == "stock" and a.notional is None:
-        return reject_early(a, stamp, "stock orders must pass --notional (order size in USD) so the size tier can be checked")
+    if a.instrument == "stock" and (a.notional is None or a.notional <= 0):
+        return reject_early(a, stamp, "stock orders must pass a positive --notional (order size in USD) so the size tier can be checked")
     try:
         cfg = json.loads(Path(a.config).read_text()) if Path(a.config).exists() else {}
         if cfg.get("high_risk_notional_usd") is not None:

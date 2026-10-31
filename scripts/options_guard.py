@@ -71,7 +71,7 @@ def check(o, today=None):
         errs.append("account must be the arena account")
     if str(o.get("ticker", "")).upper() in BLOCKLIST:
         errs.append("ticker is blocklisted")
-    if o.get("type", "limit") != "limit":
+    if o.get("type") != "limit":   # absent type BLOCKs: the JSON must mirror the real order
         errs.append("limit orders only")
     if not 1 <= len(legs) <= 2:
         errs.append("1 or 2 legs only")
